@@ -2,8 +2,8 @@
 
 ## Status
 - Current phase: Phase 0 (in progress)
-- Last completed: tasks 0.1 + 0.2, keccak-256 and RLP with dual-source goldens (2026-06-10)
-- Next up: task 0.3 (secp256k1 + RFC-6979), then 0.4 signer
+- Last completed: task 0.3, secp256k1 + RFC-6979 with triple-source goldens (2026-06-10)
+- Next up: task 0.4 (signer.py, EIP-155 type-0), then 0.5 ABI + precompile wrappers
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -20,7 +20,7 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 **Tasks:**
 - [x] 0.1 `src/nvnm_cite/chain/keccak.py`: keccak-f[1600] + keccak-256 with ORIGINAL Keccak padding (hashlib.sha3_256 is NIST SHA-3, a different algorithm). Goldens in `tests/golden/keccak/`: published literature digests + ethers-oracle vectors straddling the 136-byte sponge rate (vector sourcing: see DECISIONS 2026-06-10), plus a negative test asserting output differs from hashlib.sha3_256 on the same input.
 - [x] 0.2 `src/nvnm_cite/chain/rlp.py`: RLP encoding (bytes, ints, lists; encode-only). Goldens: published RLP spec examples + ethers encodeRlp oracle vectors (55/56-byte boundaries, 0x7f/0x80 single-byte edge, long-form lengths, legacy-tx shape).
-- [ ] 0.3 `src/nvnm_cite/chain/secp256k1.py`: curve operations + RFC-6979 deterministic k (HMAC-SHA256 via stdlib `hmac`). Goldens: RFC 6979 Appendix A vectors (they validate the k-derivation machinery; the RFC has no secp256k1 vectors, so pass the curve order as a parameter), plus known private-key to address pairs.
+- [x] 0.3 `src/nvnm_cite/chain/secp256k1.py`: generic Weierstrass curve ops + RFC-6979 deterministic k (HMAC-SHA256 via stdlib `hmac`), EIP-2 low-s, EIP-55 addresses. Goldens: RFC 6979 Appendix A.2.5 P-256 vectors verbatim from rfc-editor.org (nonces AND full signatures, exercising the same generic code paths), plus ethers-oracle exact r/s/recovery-id agreement on secp256k1 and key-to-address pairs.
 - [ ] 0.4 `src/nvnm_cite/chain/signer.py`: EIP-155 legacy type-0 signing with `chain_id` as a parameter. Goldens: the EIP-155 worked example (chain id 1, nonce 9, key `0x4646...46`, v=37, known signed raw tx), plus cross-check vectors for chain id 787111 generated once with ethers (node v20 is installed; nvnm-tutorial has ethers in node_modules).
 - [ ] 0.5 `src/nvnm_cite/chain/abi.py` + `precompile.py`: ABI encode/decode for addRegistry, addRecord (10-field tuple), records, registries, grantRole against `abi/anchoring.json`. Goldens: encoded calldata for fixed inputs; verify selectors addRecord=9b7b7869, addRegistry=318b38b1, records=02abafdf.
 - [ ] 0.6 Round-trip on testnet: create a `dev-probe` registry, addRecord, read it back via a `records()` eth_call, and confirm the tx on the Blockscout explorer. Load `NVNM_TESTNET_KEY` from `.env`, accepting the key with or without the `0x` prefix (MetaMask exports without it); validate it is 64 hex chars before use. The calldata being human-readable on the explorer IS the plaintext-on-chain claim (there are no events to show).
