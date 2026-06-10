@@ -24,7 +24,9 @@ any transaction.
 
 End every session by saying "wrap up". The ritual in CLAUDE.md then updates the state files, commits, and pushes without further prompting.
 
-Two sessions deserve an extra line pasted after the kickoff prompt: the Phase 0 experiment session (paste the experiment matrix (a)-(i) from the plan so nothing gets silently skipped) and the Phase 2 bulk-load session (paste the tranche scope and budget numbers from DECISIONS.md). Use plan mode for Phase 0 and for any session that sends chain transactions.
+Session cadence: **one phase per session**. Open a fresh session at each phase boundary; tasks within the same phase continue in the same session, even a long one (the auto-summarized context plus these state files carry the thread).
+
+Two phases deserve an extra line pasted after the kickoff prompt: Phase 0 (paste the experiment matrix (a)-(i) from the plan so nothing gets silently skipped) and the Phase 2 bulk-load (paste the tranche scope and budget numbers from DECISIONS.md). Before any chain transaction is sent, the session must present its plan and get an explicit OK.
 
 ## Setup
 
@@ -38,7 +40,7 @@ Case data comes from [CourtListener](https://www.courtlistener.com), a project o
 
 ## Layout
 
-- `abi/anchoring.json`: vendored NVNM anchoring precompile ABI (5 methods, from the NVNM_MCP_Server project)
+- `src/nvnm_cite/chain/anchoring.json`: vendored NVNM anchoring precompile ABI (5 methods, from the NVNM_MCP_Server project)
 - `src/nvnm_cite/`: the package (`chain/`, `normalizer/`, `loader/`, `verifier/`, `receipts/` land phase by phase)
 - `tests/`: pytest suites; `tests/golden/` holds the signer and normalizer contracts
 - `docs/`: `canonical-citation-spec.md` and `record-schema.md` (Phase 1); `docs/ARCHIVE/` for superseded plans

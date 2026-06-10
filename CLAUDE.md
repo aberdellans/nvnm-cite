@@ -23,7 +23,7 @@ What this is NOT: it never asserts a case supports a proposition, and it never a
 | EVM explorer (Blockscout) | https://explorer.evm.testnet.nvnmchain.io | https://evm.explorer.nvnmchain.io |
 | Gas token | wmantraUSD | wmmUSD |
 
-- Anchor precompile: `0x0000000000000000000000000000000000000A00` (same address on both networks). Vendored ABI: `abi/anchoring.json` (addRegistry, addRecord, records, registries, grantRole). `updateRecordStatus` exists in the chain spec but was missing from the deployed testnet binary as of May 2026.
+- Anchor precompile: `0x0000000000000000000000000000000000000A00` (same address on both networks). Vendored ABI: `src/nvnm_cite/chain/anchoring.json` (addRegistry, addRecord, records, registries, grantRole). `updateRecordStatus` exists in the chain spec but was missing from the deployed testnet binary as of May 2026.
 - `records(registry, checksum, recordId, index, pagination)` gives a keyed existence read by registry name + checksum string.
 - The precompile emits NO events (privacy by design). Indexing means paging `records()` via eth_call, never log scans.
 - Min gas price 40 gwei; the token pegs to roughly $1.
@@ -44,7 +44,8 @@ What this is NOT: it never asserts a case supports a proposition, and it never a
 - No new dependency without a dated DECISIONS.md entry (name, version pin, license).
 - Never print private keys, `.env` values, or seed phrases.
 - Case data attribution (CourtListener / Free Law Project) stays in README, registry metadata, and demos.
-- Use plan mode for any session that sends chain transactions.
+- Before sending any chain transaction, present the plan and get an explicit OK (use plan mode when available).
+- Session cadence (user preference, 2026-06-10): one phase per session. Do not suggest opening a fresh session between tasks of the same phase; wrap up at phase boundaries.
 
 ## Where state lives
 

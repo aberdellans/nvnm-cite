@@ -2,8 +2,8 @@
 
 ## Status
 - Current phase: Phase 0 (in progress)
-- Last completed: task 0.4, EIP-155 signer assembled; full signing pipeline done (2026-06-10)
-- Next up: task 0.5 (abi.py + precompile.py against abi/anchoring.json), then 0.6 testnet round-trip (plan mode)
+- Last completed: task 0.5, ABI codec + precompile wrappers; offline chain layer complete (2026-06-10)
+- Next up: task 0.6 (testnet round-trip; requires explicit OK before sending), then 0.7 experiment matrix
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -22,7 +22,7 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 - [x] 0.2 `src/nvnm_cite/chain/rlp.py`: RLP encoding (bytes, ints, lists; encode-only). Goldens: published RLP spec examples + ethers encodeRlp oracle vectors (55/56-byte boundaries, 0x7f/0x80 single-byte edge, long-form lengths, legacy-tx shape).
 - [x] 0.3 `src/nvnm_cite/chain/secp256k1.py`: generic Weierstrass curve ops + RFC-6979 deterministic k (HMAC-SHA256 via stdlib `hmac`), EIP-2 low-s, EIP-55 addresses. Goldens: RFC 6979 Appendix A.2.5 P-256 vectors verbatim from rfc-editor.org (nonces AND full signatures, exercising the same generic code paths), plus ethers-oracle exact r/s/recovery-id agreement on secp256k1 and key-to-address pairs.
 - [x] 0.4 `src/nvnm_cite/chain/signer.py`: EIP-155 legacy type-0 signing with `chain_id` as a parameter, plus `parse_private_key` (0x prefix optional per the MetaMask convention). Goldens: the EIP-155 worked example verbatim from eips.ethereum.org (signing data, sighash, v=37, exact r/s, full raw tx), plus ethers Transaction oracle vectors for chain 787111 including precompile-target and 600-byte-calldata cases (unsigned hash, raw bytes, and tx hash all match exactly).
-- [ ] 0.5 `src/nvnm_cite/chain/abi.py` + `precompile.py`: ABI encode/decode for addRegistry, addRecord (10-field tuple), records, registries, grantRole against `abi/anchoring.json`. Goldens: encoded calldata for fixed inputs; verify selectors addRecord=9b7b7869, addRegistry=318b38b1, records=02abafdf.
+- [x] 0.5 `src/nvnm_cite/chain/abi.py` + `precompile.py`: generic head/tail ABI codec (string/bytes/uintN/bool/address/tuple/tuple[]) + typed builders and decoders for all five methods, driven by the vendored ABI (moved into the package at `src/nvnm_cite/chain/anchoring.json`). Goldens: published selectors confirmed (addRecord=9b7b7869, addRegistry=318b38b1, records=02abafdf; ethers additionally pins grantRole=b8fdd1a7, registries=15ae270f) and ethers Interface oracle agreement on calldata + result decoding, including unicode and pagination-key cases.
 - [ ] 0.6 Round-trip on testnet: create a `dev-probe` registry, addRecord, read it back via a `records()` eth_call, and confirm the tx on the Blockscout explorer. Load `NVNM_TESTNET_KEY` from `.env`, accepting the key with or without the `0x` prefix (MetaMask exports without it); validate it is 64 hex chars before use. The calldata being human-readable on the explorer IS the plaintext-on-chain claim (there are no events to show).
 - [ ] 0.7 Experiment matrix; every result becomes a dated DECISIONS.md entry:
   - [ ] (a) Duplicate (registry, checksum): submit an identical record twice, then the same checksum with different metadata. Which behavior: revert as duplicate (observed on mainnet, May 2026) or new index / isLatest flip (chain spec)? Also test whether eth_estimateGas already reverts on the duplicate (a free idempotency probe for the bulk loader).
