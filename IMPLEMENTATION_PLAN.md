@@ -1,0 +1,154 @@
+# nvnm-cite Implementation Plan
+
+## Status
+- Current phase: Phase 0 (not started)
+- Last completed: repo bootstrap (2026-06-10)
+- Next up: tasks 0.1 - 0.3 (keccak, RLP, secp256k1, with golden tests)
+
+How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
+
+Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, P5: 1, P6: 1). P3 can merge into P4 if sessions run long.
+
+---
+
+## Phase 0: Pure-Python signer + precompile characterization (2-3 sessions, plan mode)
+
+**Goal:** A golden-tested from-scratch signer, thin precompile wrappers, one successful write/read round-trip on testnet, and empirical answers to every remaining chain uncertainty, recorded in DECISIONS.md.
+
+**Depends on:** `.env` populated with a funded testnet key (`NVNM_TESTNET_KEY`).
+
+**Tasks:**
+- [ ] 0.1 `src/nvnm_cite/chain/keccak.py`: keccak-f[1600] + keccak-256 with ORIGINAL Keccak padding (hashlib.sha3_256 is NIST SHA-3, a different algorithm). Goldens in `tests/golden/keccak/`: vendored subset of the Keccak team's ShortMsgKAT_256.txt (pre-NIST KATs, original padding; do not confuse with the SHA-3 variant files), the empty-string digest (`c5d2...a470`) and `"abc"`, plus a negative test asserting output differs from hashlib.sha3_256 on the same input.
+- [ ] 0.2 `src/nvnm_cite/chain/rlp.py`: RLP encoding (bytes, ints, lists). Goldens vendored from ethereum/tests RLPTests.
+- [ ] 0.3 `src/nvnm_cite/chain/secp256k1.py`: curve operations + RFC-6979 deterministic k (HMAC-SHA256 via stdlib `hmac`). Goldens: RFC 6979 Appendix A vectors (they validate the k-derivation machinery; the RFC has no secp256k1 vectors, so pass the curve order as a parameter), plus known private-key to address pairs.
+- [ ] 0.4 `src/nvnm_cite/chain/signer.py`: EIP-155 legacy type-0 signing with `chain_id` as a parameter. Goldens: the EIP-155 worked example (chain id 1, nonce 9, key `0x4646...46`, v=37, known signed raw tx), plus cross-check vectors for chain id 787111 generated once with ethers (node v20 is installed; nvnm-tutorial has ethers in node_modules).
+- [ ] 0.5 `src/nvnm_cite/chain/abi.py` + `precompile.py`: ABI encode/decode for addRegistry, addRecord (10-field tuple), records, registries, grantRole against `abi/anchoring.json`. Goldens: encoded calldata for fixed inputs; verify selectors addRecord=9b7b7869, addRegistry=318b38b1, records=02abafdf.
+- [ ] 0.6 Round-trip on testnet: create a `dev-probe` registry, addRecord, read it back via a `records()` eth_call, and confirm the tx on the Blockscout explorer. The calldata being human-readable on the explorer IS the plaintext-on-chain claim (there are no events to show).
+- [ ] 0.7 Experiment matrix; every result becomes a dated DECISIONS.md entry:
+  - [ ] (a) Duplicate (registry, checksum): submit an identical record twice, then the same checksum with different metadata. Which behavior: revert as duplicate (observed on mainnet, May 2026) or new index / isLatest flip (chain spec)? Also test whether eth_estimateGas already reverts on the duplicate (a free idempotency probe for the bulk loader).
+  - [ ] (b) Metadata size ceiling + gas curve: addRecord with metadata of 256 B / 1 KB / 4 KB / 8 KB / 16 KB / 32 KB / 64 KB until failure; record gas used at each step. Sets the receipt design (task 4.3) and the cost model (task 2.6).
+  - [ ] (c) addRegistry name uniqueness: create `dev-probe` twice; reject or duplicate id?
+  - [ ] (d) Write permissions: from a second throwaway key, attempt addRecord into the first key's registry (expect deny); grantRole editor to key 2; retry (expect allow). Validates that the third-party-attestor invariant is possible, not just claimed.
+  - [ ] (e) Throughput: ~200 sequential-nonce addRecords at pipeline depths 1 / 5 / 20; measure sustained confirmed-tx/s and whether the mempool accepts nonce-gapped bursts.
+  - [ ] (f) updateRecordStatus present? eth_call its selector; "unknown method" means still missing (it was absent from the deployed testnet binary as of May 2026). Sets the correction policy: supersede with a new version or write a tombstone record, contingent on (a).
+  - [ ] (g) records() pagination stability while a concurrent writer appends; find the max page size one eth_call returns.
+  - [ ] (h) Historical eth_call depth: call records() at height minus 1000 or more. Does the public RPC serve archive state? (The NVNM_MCP_Server repo has an archive-RPC env var, which hints one exists.) Receipt re-verification pinned to a block depends on this; the fallback is designed in task 4.4.
+  - [ ] (i) Gas budget: key balance versus planned testnet record count x measured gas x 40 gwei. Decide the tranche scope BEFORE the bulk load. If short, top up via the DuKong bridge flow documented in nvnm-tutorial/README.md.
+
+**Exit criteria:** all goldens green with zero non-stdlib runtime deps in `chain/`; one registry + record visible on the testnet explorer; DECISIONS.md entries for (a)-(i); duplicate handling, metadata ceiling, and checksumAlgo strings settled.
+
+---
+
+## Phase 1: Normalizer, jurisdiction mapper, open spec (1-2 sessions)
+
+**Goal:** Text in, list of (as_written, canonical, registry, metadata) out, under an open versioned spec, with the on-chain record schema locked.
+
+**Depends on:** Phase 0 experiments (a) and (b) for task 1.5; the rest can start any time.
+
+**Tasks:**
+- [ ] 1.1 Add dependencies `eyecite`, `reporters-db`, `courts-db` via uv; record version pins and licenses in DECISIONS.md.
+- [ ] 1.2 `normalizer/canonical.py`: `clean_text(["all_whitespace", "underscores"])`, then `get_citations`, then `resolve_citations`. Canonical form = `"<volume> <corrected_reporter()> <page>"`. Short forms (short cites, id., supra) inherit the antecedent's canonical via eyecite's Resource grouping. Export `NORMALIZER_VERSION`.
+- [ ] 1.3 `normalizer/jurisdiction.py`: eyecite's `metadata.court` (already a courts-db id, e.g. `ca11`, parsed from the court parenthetical) + the reporter's cite_type map to a registry name (`us-` + courts-db id). U.S. / S. Ct. / L. Ed. map to `us-scotus` (eyecite flags scotus editions even without a parenthetical). F.2d / F.3d / F.4th / F. App'x with no recognizable court parenthetical: return AMBIGUOUS_JURISDICTION. Never guess.
+- [ ] 1.4 `docs/canonical-citation-spec.md` (cite-canonical/v1, the open spec): canonical key is the reporters-db EDITION string (`F.3d`, not `F.`; editions are what appear in citations and in CourtListener's citation table, so registry keys and corpus keys align by construction); volume/page normalization rules; the FIRST-PAGE rule stated explicitly (registry keys are first-page citations; interior/pin pages are never keys); parallel citations are distinct records sharing a cluster id. Spec version constant exported from the package.
+- [ ] 1.5 Lock `docs/record-schema.md` v1 from the draft in DECISIONS.md, informed by experiments (a)/(b). Mirror the one-paragraph summary into CLAUDE.md. After this point, schema changes require a version bump, never an edit.
+- [ ] 1.6 Golden suite: 200+ fixtures covering parallel citations, reporter variants (`"F. 3d"`), short-form chains, line-break-mangled strings, missing parentheticals; plus 3-5 real RECAP brief PDFs as integration fixtures with a source-URL manifest (the actual Mata v. Avianca brief is in RECAP, SDNY 1:22-cv-01461, and makes a fitting fixture).
+
+**Exit criteria:** golden suite green; spec + record schema reviewed by Albert; normalizer version stamped in every output object.
+
+---
+
+## Phase 2: Corpus pipeline, chain index, bulk load, reconcile (2-3 sessions)
+
+**Goal:** SCOTUS + ca11 corpora extracted from CourtListener bulk data, loaded into testnet registries, and a reconcile command proving chain matches corpus.
+
+**Depends on:** Phases 0 and 1.
+
+**Tasks:**
+- [ ] 2.1 `loader/courtlistener.py`: streaming three-file join over the quarterly bulk CSVs (S3 bucket com-courtlistener-storage, prefix bulk-data/). Needed files only: citations (~127 MB bz2), opinion-clusters (~2.5 GB bz2), dockets (~5 GB bz2). The ~40 GB opinions full-text dump is NOT needed. Pass 1: stream dockets, keep docket_id where court_id in {scotus, ca11}. Pass 2: stream clusters, keep (cluster_id, case_name, date_filed) for those dockets. Pass 3: stream citations, keep (volume, reporter, page, type, cluster_id) for those clusters. Write to `corpus.sqlite`. Handle the COPY escape format; raise csv.field_size_limit; downloads under `data/` (gitignored); never materialize uncompressed files.
+- [ ] 2.2 Census FIRST, before any chain write: per-court cluster and citation-row counts; precedential vs memoranda split; citation-string collisions (distinct cases sharing a first page; the record metadata uses a case array when it happens); confirm `925 F.3d 1339` is absent; confirm ca11 2019 F.3d coverage (the demo gate; fallback to ca2 per DECISIONS.md). All numbers go to DECISIONS.md.
+- [ ] 2.3 `chain/indexer.py`: page `records()` via eth_call into `chain_index.sqlite`, persisting the pagination cursor (semantics from experiment (g)). CLI: `sync` (incremental) and `rebuild-index` (from scratch). rebuild-index is the public-auditability story made executable: anyone with an RPC URL can reconstruct the registry without trusting us.
+- [ ] 2.4 `loader/bulk_load.py`: checkpointed writer. SQLite `load_state(canonical, status pending/submitted/confirmed, tx_hash, nonce)`; single-key monotonic nonce manager seeded from `eth_getTransactionCount(pending)`; pipeline depth from experiment (e); on a stuck nonce, re-send the same nonce at +25% gas; on RPC ambiguity, halt and reconcile rather than guess. Idempotency under BOTH possible duplicate behaviors: if duplicates revert, re-runs are naturally idempotent (the estimateGas probe skips already-loaded records for free); if duplicates create versions, never blind-resubmit: trust the checkpoint DB and on resume re-verify only the in-flight window via `records(registry, checksum)` reads. Do not pre-check existence per record in steady state (doubles RPC traffic for nothing).
+- [ ] 2.5 `loader/reconcile.py`: `corpus.sqlite` vs `chain_index.sqlite` diff producing a coverage report (missing-on-chain, extra-on-chain, metadata drift). First-class CLI command and a demo artifact, not a test utility.
+- [ ] 2.6 Testnet load. Tranche 1 = ca11 complete + SCOTUS precedential. Tranche 2 = SCOTUS memoranda, gated on budget (experiment (i)) and census numbers. Measure real gas/record and sustained confirmed-tx/s; extrapolate the mainnet load cost into DECISIONS.md. Cost model at the ~$1 peg and 40 gwei: dollars roughly N x gas x 40e-9 (e.g. 300k records at 150k gas is about $1.8k notional; wall clock at 5 tx/s about 17 hours, at 20 tx/s about 4 hours). The load runs as a detached background process against the checkpoint DB; no session babysits it, and the next session starts with `reconcile`.
+- [ ] 2.7 `loader/update.py`: daily incremental append of newly published opinions via the REST API (date_created cursor), cron-shaped, with `--dry-run`. The citation-lookup API (250 cites/request, 60 valid cites/min) is a spot-check oracle only: never the bulk path, never in the verifier's runtime.
+
+**Exit criteria:** `us-scotus` and `us-ca11` populated on testnet (tranche 1); reconcile diff zero or every gap documented; measured throughput and cost table in DECISIONS.md.
+
+---
+
+## Phase 3: Verifier (1 session; may merge into Phase 4)
+
+**Goal:** `nvnm-cite check brief.pdf` produces honest per-citation statuses from chain-backed data, local-only by default, no chain trace.
+
+**Depends on:** Phases 1 and 2.
+
+**Tasks:**
+- [ ] 3.1 `verifier/extract.py`: PDF (pdfplumber), DOCX (python-docx), plain text. Text cleanup before eyecite (line-break-mangled citations are the main recall killer in real PDFs). Extraction recall measured against the RECAP fixtures and committed alongside the goldens.
+- [ ] 3.2 `verifier/check.py`: extract, normalize, map, look up. Drafting-time default: local `chain_index.sqlite` only (no RPC, no trace; the strategy-leak rationale from CLAUDE.md invariant 3 gets a docs paragraph). Receipt path: a direct `records(registry, checksum)` eth_call for every result that will enter a receipt, so the receipt claims a chain read at a stated block.
+- [ ] 3.3 Statuses (locked in DECISIONS.md): VERIFIED / NOT_FOUND / NOT_COVERED / AMBIGUOUS_JURISDICTION / UNPARSEABLE, plus the per-result `name_check: match | mismatch | unknown` field (fuzzy compare of the brief's party names against registry metadata).
+
+**Exit criteria:** end-to-end run on the RECAP fixtures plus a synthetic brief that exercises all five statuses and a name_check mismatch.
+
+---
+
+## Phase 4: Receipts + anchoring (1-2 sessions)
+
+**Goal:** Filing-time receipts anchored to `receipts-v1` on testnet, verifiable by a third party.
+
+**Depends on:** Phase 3, plus Phase 0 experiments (b) and (h).
+
+**Tasks:**
+- [ ] 4.1 `receipts/schema.py`: receipt v1 object: {schema: "nvnm-cite-receipt/v1", chain_id, document_sha256, checked_at_block, normalizer_version, registries: [{id, head_block}], results: [{as_written, canonical, registry, status, name_check, cluster}], agent: {kya_id, address}, timestamp}. Canonical serialization: sorted keys, no whitespace, UTF-8.
+- [ ] 4.2 `receipts/anchor.py`: addRecord to `receipts-v1` (checksum = document SHA-256 hex, checksumAlgo = "sha256", metadata = the receipt JSON). Anchoring happens only with an explicit `--anchor` flag.
+- [ ] 4.3 Size fallback, only if experiment (b) caps metadata low: compact "v1c" serialization (single-char statuses, indexed registry table, omit as_written when identical to canonical, omit unknown name_checks); a 100-cite receipt fits in roughly 6-8 KB. Citations stay plaintext: compaction is encoding, never hashing. Record the outcome in DECISIONS.md the day (b) resolves.
+- [ ] 4.4 `receipts/verify.py`: tx hash + original file in: fetch the tx calldata (calldata is permanent and needs no archive node), recompute the document SHA-256, re-run the check pinned to checked_at_block (archive eth_call if (h) succeeded; fallback: rebuild the local index to that height), report match or mismatch field by field. This is the artifact a court or insurer consumes.
+- [ ] 4.5 `cli.py`: `nvnm-cite check | anchor | verify | sync | rebuild-index | reconcile | stats | load`.
+
+**Exit criteria:** anchor + verify round-trip on testnet against a real RECAP brief; the receipt calldata is human-readable on Blockscout; verify catches a one-byte tamper of the document.
+
+---
+
+## Phase 5: MCP server (1 session)
+
+**Goal:** Any agent can call the verifier. Stdio transport first; this is the KYA story.
+
+**Depends on:** Phase 4.
+
+**Tasks:**
+- [ ] 5.1 MCP server on the official Python MCP SDK (FastMCP), stdio transport. Tools: `check_citations` (read-only), `anchor_receipt` (requires an explicit confirm argument), `verify_receipt`, `registry_stats`, `coverage(court)`. Mark read-only vs destructive in tool annotations.
+- [ ] 5.2 Claude Desktop config snippet in README; smoke-test from the desktop app (the actual runtime here) against testnet.
+- [ ] 5.3 HTTP transport and any mcp.nvnmchain.io fold-in: deferred to post-pilot. Note the decision, build nothing.
+
+**Exit criteria:** all five tools callable from Claude Desktop against testnet; anchoring impossible without the explicit confirm argument.
+
+---
+
+## Phase 6: Demo + pilot wrap (1 session)
+
+**Goal:** The two-minute Mata v. Avianca demo, scripted, rehearsed, and recorded.
+
+**Depends on:** Phases 4 and 5; the Phase 2 census gate (Varghese absent, ca11 2019 F.3d coverage confirmed).
+
+**Tasks:**
+- [ ] 6.1 Fixture brief PDF (born-digital): 5 real SCOTUS cites + 1 real ca11 cite + "Varghese v. China Southern Airlines, 925 F.3d 1339 (11th Cir. 2019)" + 1 real ca2 cite. The ca2 cite shows NOT_COVERED honestly on stage, which turns the pilot's scope limit into a trust feature.
+- [ ] 6.2 Demo script, under two minutes, rehearsed twice: `check` (Varghese comes back NOT_FOUND in seconds), `anchor`, open the explorer to the receipt tx with readable calldata, `verify`, tamper one byte of the PDF, `verify` again and watch it fail.
+- [ ] 6.3 `demo/RUNBOOK.md` + a terminal recording.
+- [ ] 6.4 Pilot-close DECISIONS.md entry listing the mainnet cutover preconditions: key ceremony for the registry write key and the receipts agent key (outside Claude Code sessions), open-source posture for the normalizer (open spec; reference implementation licensing decision), registry ID + spec + schema publication, mainnet load budget sign-off (extrapolated cost from task 2.6). All human-gated.
+
+**Exit criteria:** demo runs clean from a fresh shell on testnet; a third party, given only the explorer and the published spec, can independently verify the receipt.
+
+---
+
+## Known risks (tracked, not hidden)
+
+- Parallel citations: one cluster can have up to three registry records (U.S. / S. Ct. / L. Ed.); receipts group results by cluster id.
+- Citation-string collisions: two short orders can share a reporter first page; record metadata holds a case array when the census finds them.
+- 5th/11th Circuit split: pre-October-1981 old-Fifth cases are binding ca11 precedent but live under court ca5 and are cited "(5th Cir.)"; during the pilot they are honestly NOT_COVERED (registries mirror court identity, not precedential reach). The demo uses post-1981 cites.
+- Unpublished/WL-only ca11 cites map to NOT_COVERED with a named reason; the census measures the gap and the reconcile report publishes it.
+- PDF extraction recall is the demo-day risk for arbitrary real briefs: two-column layouts, footnotes, scans. Mitigations: RECAP fixtures from Phase 1, measured recall per release, UNPARSEABLE as honest output, born-digital demo fixture.
+- Archive-state dependency for pinned-block re-verification has a designed fallback (task 4.4).
+- Attribution: Free Law Project requests attribution for CourtListener data; it lives in README, registry metadata, and the demo. Never copy FLP site prose (CC BY-ND) into project docs.
+
+## Mainnet cutover (post-pilot, human-gated; not session work)
+
+Preconditions per task 6.4. Then: create registries on mainnet 1611 from a hardened script outside Claude Code; bulk load tranche 1; run reconcile until the diff is zero or documented; wire the daily update cron; publish registry IDs, the citation spec, and the receipt schema; add monitoring for load failures and registry staleness. Acceptance: a third party, given only the explorer and the published spec, can independently confirm registry coverage and verify a receipt.
