@@ -1,9 +1,9 @@
 # nvnm-cite Implementation Plan
 
 ## Status
-- Current phase: Phase 0 (not started)
-- Last completed: repo bootstrap (2026-06-10)
-- Next up: tasks 0.1 - 0.3 (keccak, RLP, secp256k1, with golden tests)
+- Current phase: Phase 0 (in progress)
+- Last completed: tasks 0.1 + 0.2, keccak-256 and RLP with dual-source goldens (2026-06-10)
+- Next up: task 0.3 (secp256k1 + RFC-6979), then 0.4 signer
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -18,8 +18,8 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 **Depends on:** `.env` populated with a funded testnet key (`NVNM_TESTNET_KEY`).
 
 **Tasks:**
-- [ ] 0.1 `src/nvnm_cite/chain/keccak.py`: keccak-f[1600] + keccak-256 with ORIGINAL Keccak padding (hashlib.sha3_256 is NIST SHA-3, a different algorithm). Goldens in `tests/golden/keccak/`: vendored subset of the Keccak team's ShortMsgKAT_256.txt (pre-NIST KATs, original padding; do not confuse with the SHA-3 variant files), the empty-string digest (`c5d2...a470`) and `"abc"`, plus a negative test asserting output differs from hashlib.sha3_256 on the same input.
-- [ ] 0.2 `src/nvnm_cite/chain/rlp.py`: RLP encoding (bytes, ints, lists). Goldens vendored from ethereum/tests RLPTests.
+- [x] 0.1 `src/nvnm_cite/chain/keccak.py`: keccak-f[1600] + keccak-256 with ORIGINAL Keccak padding (hashlib.sha3_256 is NIST SHA-3, a different algorithm). Goldens in `tests/golden/keccak/`: published literature digests + ethers-oracle vectors straddling the 136-byte sponge rate (vector sourcing: see DECISIONS 2026-06-10), plus a negative test asserting output differs from hashlib.sha3_256 on the same input.
+- [x] 0.2 `src/nvnm_cite/chain/rlp.py`: RLP encoding (bytes, ints, lists; encode-only). Goldens: published RLP spec examples + ethers encodeRlp oracle vectors (55/56-byte boundaries, 0x7f/0x80 single-byte edge, long-form lengths, legacy-tx shape).
 - [ ] 0.3 `src/nvnm_cite/chain/secp256k1.py`: curve operations + RFC-6979 deterministic k (HMAC-SHA256 via stdlib `hmac`). Goldens: RFC 6979 Appendix A vectors (they validate the k-derivation machinery; the RFC has no secp256k1 vectors, so pass the curve order as a parameter), plus known private-key to address pairs.
 - [ ] 0.4 `src/nvnm_cite/chain/signer.py`: EIP-155 legacy type-0 signing with `chain_id` as a parameter. Goldens: the EIP-155 worked example (chain id 1, nonce 9, key `0x4646...46`, v=37, known signed raw tx), plus cross-check vectors for chain id 787111 generated once with ethers (node v20 is installed; nvnm-tutorial has ethers in node_modules).
 - [ ] 0.5 `src/nvnm_cite/chain/abi.py` + `precompile.py`: ABI encode/decode for addRegistry, addRecord (10-field tuple), records, registries, grantRole against `abi/anchoring.json`. Goldens: encoded calldata for fixed inputs; verify selectors addRecord=9b7b7869, addRegistry=318b38b1, records=02abafdf.
