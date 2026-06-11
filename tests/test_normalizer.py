@@ -108,6 +108,21 @@ class TestJurisdictionMapping:
         r = normalize("Varghese v. China S. Airlines Co., 925 F.3d 1339 (11th Cir. 2019).")
         assert only(r).registry == "us-ca11"
 
+    def test_3d_cir_bluebook_ordinal_maps(self) -> None:
+        # eyecite 2.7.6 misses "3d Cir." (it knows "3rd Cir."); the
+        # closed-set fallback must cover the Bluebook-standard form.
+        r = normalize("Quux v. Corge, 900 F.3d 50, 55 (3d Cir. 2018).")
+        c = only(r)
+        assert c.registry == "us-ca3"
+        assert c.disposition is Disposition.OK
+
+    def test_circuit_fallback_never_crosses_into_next_citation(self) -> None:
+        r = normalize("A v. B, 900 F.3d 50; C v. D, 901 F.2d 60 (3d Cir. 1990).")
+        first, second = r.citations
+        assert first.disposition is Disposition.AMBIGUOUS_JURISDICTION
+        assert first.registry is None
+        assert second.registry == "us-ca3"
+
     def test_registry_for_court_validates(self) -> None:
         assert registry_for_court("scotus") == "us-scotus"
         assert registry_for_court("ca11") == "us-ca11"

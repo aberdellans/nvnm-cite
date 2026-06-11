@@ -1,0 +1,231 @@
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 1 of 14
+Docket No. 23-13843-H
+The United States
+Court of Appeals
+For
+The Eleventh Circuit
+Mark Walters, Appellant
+v.
+OpenAI, L.L.C., Appellee
+Appeal from the United States District Court
+For
+The Northern District of Georgia
+The Hon. Michael L. Brown, District Judge
+Brief of Appellant
+John R. Monroe
+John Monroe Law, P.C.
+156 Robert Jones Road
+Dawsonville, GA 30534
+jrm@johnmonroelaw.com
+(678) 362-7650
+Attorney for Appellant
+1
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 2 of 14
+Certificate of Interested Persons
+Appellant certifies that the following persons are known to Appellant to
+have an interest in the outcome of this case:
+Brown, Michael L., The Hon.
+Bussey-Garza, Marie, Esq.
+Carr, Ashley Allen, Esq.
+DLA Piper
+Eisentstein, Ilana Hope, Esq.
+John Monroe Law, P.C.
+Karanjia, Peter, Esq.
+Monroe, John R., Esq.
+OpenAI, L.L.C.
+Tobey, Daniel Lee, Esq.
+Walters, Mark
+Appellant further certifies that John Monroe Law, P.C. does not have parents
+or subsidiaries and it is not publicly traded.
+2
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 3 of 14
+Statement on Oral Argument
+Appellant in this case does not request oral argument. The appeal
+involves the application of well-established law to an undisputed set of facts. The
+Court would not be aided by oral argument.
+3
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 4 of 14
+Table of Contents
+Certificate of Interested Persons .............................................................................. 2
+Statement on Oral Argument ................................................................................... 3
+Table of Contents ...................................................................................................... 4
+Table of Citations ...................................................................................................... 5
+Statement on Jurisdiction ......................................................................................... 6
+Statement of the Issues .............................................................................................. 7
+Statement of the Case ................................................................................................ 7
+Statement of the Facts ............................................................................................... 8
+Statement on the Standard of Review ..................................................................... 8
+Summary of the Argument ....................................................................................... 9
+Argument and Citations of Authority ................................................................... 10
+Conclusion ................................................................................................................ 11
+Certificate of Compliance ....................................................................................... 13
+Certificate of Service ............................................................................................... 14
+4
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 5 of 14
+Table of Citations
+Cases
+American Civil Liberties Union of Georgia v. Barnes, 168 F.3d 423, 427 (11th Cir. 1999)
+................................................................................................................................. 10
+Bauknight v. Monroe County Florida, 446 F.3d. 1327, 1329 (11th Cir. 2006). ............ 8
+Continental Illinois Corp. v. Lewis, 827 F.2d 1517 (11th Cir. 1987) .............................. 10
+Danley v. Allen, 480 F.3d 1090, 1092 (11th Cir. 2007) ............................................... 11
+Gilmere v. City of Atlanta, 931 F.2d 811 (11th Cir. 1991) .............................................. 10
+Legg v. Wyeth, 428 F.3d 1317 (11th Cir. 2005) ............................................................ 6
+Lewis v. Continental Bank Corp., 494 U.S. 472, 110 S.Ct. 1249, 108 L.Ed.2d 400 (1990)
+................................................................................................................................. 10
+United States v. Gilbert, 198 F.3d 1293, 1298 (11th Cir. 1999) ...................................... 10
+Statutes
+28 U.S.C. § 1332(a) ...................................................................................................... 6
+28 U.S.C. § 1447(c) ...................................................................................................... 8
+Rules
+F.R.A.P. § 4(a)(1)(A) .................................................................................................... 6
+F.R.A.P. 32(a)(7)(B) ................................................................................................... 13
+Constitutional Provisions
+Second Amendment ................................................................................................... 1, 2
+5
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 6 of 14
+Statement on Jurisdiction
+The District Court did not have jurisdiction in this case. The case began in state
+court and Appellee OpenAI, L.L.C. (“OAI”) removed the case to the district court
+based on diversity jurisdiction under 28 U.S.C. § 1332(a). Thereafter, the district
+court remanded the case to state court when OAI failed to prove diversity.
+Appellant Mark Walters (“Walters”) had moved for an award of costs and attorney’s
+fees for the removal, and in the remand order the district court denied the motion.
+This court has jurisdiction to consider appeals regarding awards of costs and fees
+associated with a remand order. Legg v. Wyeth, 428 F.3d 1317 (11th Cir. 2005).
+The District Court entered its remand and fee denial order on October 25,
+2023. Doc. 39. Walters filed his notice of appeal on November 16, 2023. Doc.
+41. This appeal is therefore timely. F.R.A.P. § 4(a)(1)(A).
+6
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 7 of 14
+Statement of the Issues
+The District Court erred in failing to provide any reasoning for its
+denial of costs and fees on remand.
+Statement of the Case
+Nature of the Case
+Walters commenced this defamation action in the Superior Court of
+Gwinnett County, Georgia against OAI after OAI’s system known as ChatGPT
+communicated allegedly libelous statements about Walters to a third party.
+Proceedings Below
+OAI removed the case to the district court based on diversity of citizenship.
+Doc. 1. On August 7, 2023, the district court issued a text-only order to show
+cause why the case should not be remanded for lack of subject matter jurisdiction
+because OAI had not adequately shown diversity of citizenship. The district court
+also ordered Walters to reply to OAI’s response to the order.
+OAI responded to the order [Doc. 22] and Walters replied [Doc. 23], saying
+that OAI’s response was still inadequate. On September 22, 2023, the district
+court entered another text-only order, giving OAI one last chance to demonstrate
+diversity or the case would be remanded. OAI responded by “withdrawing” its
+notice of removal, saying “OpenAI is not in a position to provide further
+information beyond its prior filings.” Doc. 33. Walters then filed the motion for
+costs and fees that is at issue in this case. Doc. 34. In the remand order [Doc.
+7
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 8 of 14
+39], the district court addressed the motion for costs and fees in a single sentence:
+“The Court DENIES Plaintiff’s Motion for Costs and Attorney’s Fees (Dkt. 34).”
+[Emphasis in original].
+Statement of the Facts
+The facts of this case are not germane to the appeal, because the appeal is
+not based on a decision on the merits. Walters will therefore provide only a brief
+recitation of the facts. Walters is a natural person who is a resident of Georgia.
+Doc. 30, ¶ 1. OAI is a Delaware limited liability company headquartered in
+California. Id., ¶¶ 2-3. OAI has an artificial intelligence platform known as
+ChatGPT. Id., ¶ 5. On May 4, 2023, a third party (Fred Riehl) had an interaction
+with ChatGPT that resulted in ChatGPT making allegedly defamatory statements
+about Walters to Riehl. Id., ¶¶ 8-52.
+Statement on the Standard of Review
+The standard of review for denial of a costs and fees under 28 U.S.C. §
+1447(c) is abuse of discretion. Bauknight v. Monroe County Florida, 446 F.3d.
+1327, 1329 (11th Cir. 2006).
+8
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 9 of 14
+Summary of the Argument
+The district court failed to provide an explanation or analysis with its denial
+of costs and fees, which leaves this Court with no means of reviewing whether the
+district court abused its discretion. This Court has no alternative but to vacate the
+denial of costs and fees and remand to the district court to enter a new order granting
+or denying the motion for costs and fees, with an explanation of such decision.
+9
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 10 of 14
+Argument and Citations of Authority
+An abuse of discretion occurs if the judge fails to apply the proper legal
+standard or to follow proper procedure in making the determination, or bases an
+award or denial upon findings of fact that are clearly erroneous. United States v.
+Gilbert, 198 F.3d 1293, 1298 (11th Cir. 1999) citing American Civil Liberties
+Union of Georgia v. Barnes, 168 F.3d 423, 427 (11th Cir. 1999). When a district
+court fails to provide an explanation for a denial of a motion for fees, it is
+impossible for a reviewing court to discern the correctness of the district court’s
+judgment and the case must be remanded for an explanation. McLaughlin v.
+Mosher Steel Co., 876 F.2d 1485, 1496 (11th Cir. 1989) (“Without any
+explanation for its denial of a request for fees, however, it is impossible for us to
+discern the correctness of the district court’s judgment. It is necessary therefore,
+to remand the case to the district court for an explanation….”); Continental
+Illinois Corp. v. Lewis, 827 F.2d 1517 (11th Cir. 1987), vacated on other grounds
+by Lewis v. Continental Bank Corp., 494 U.S. 472, 110 S.Ct. 1249, 108 L.Ed.2d
+400 (1990). See also Gilmere v. City of Atlanta, 931 F.2d 811 (11th Cir. 1991)
+(Remanding case to district court for “full, explicit explanation” of order on
+attorney’s fees).
+OpenAI might argue in response that this Court is as qualified as the
+district court to rule on the merits of the motion for costs and fees, but this Court
+10
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 11 of 14
+has rejected such suggestions. Danley v. Allen, 480 F.3d 1090, 1092 (11th Cir.
+2007) (“Many times, and in many contexts, this Court has admonished
+district courts that their orders should contain sufficient explanations of their
+rulings so as to provide this Court with an opportunity to engage in
+meaningful appellate review [citation to collected cases omitted]. In this
+case, we conclude that the district court’s one-sentence summary denial of [a
+motion] wholly fails to provide this Court with an opportunity to conduct
+meaningful appellate review. While this Court certainly could review the
+record and applicable case law and reader a reasoned decision on the …
+issue, this is the responsibility of the district court in the first instance.
+Accordingly, we vacate the district court’s orders … and remand the case to
+the district court to consider the case in full and to enter reasoned orders …
+and detail the legal analysis used by the district court….”) [Emphasis
+supplied].
+Because the district court provided a one-sentence denial of
+Walters’ motion for costs and fees, with no explanation or analysis of any
+kind, the order denying Walters’ motion must be vacated and the case
+remanded to the district court for a detail of the legal analysis used.
+Conclusion
+The order of the district court denying Walters’ motion for costs and fees
+11
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 12 of 14
+should be vacated and the case remanded for an explanation of the district court’s
+decision.
+JOHN R. MONROE
+John Monroe Law, P.C.
+/s/ John R. Monroe
+John R. Monroe
+Georgia State Bar No. 516193
+156 Robert Jones Road
+Dawsonville, GA 30534
+Telephone: (678) 362-7650
+jrm@johnmonroelaw.com
+ATTORNEY FOR APPELLANT
+12
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 13 of 14
+Certificate of Compliance
+I certify that this Brief of Appellant complies with F.R.A.P. 32(a)(7)(B)
+length limitations, and that this Brief of Appellants contains 1,649 words as
+determined by the word processing system used to create this Brief of Appellant.
+/s/ John R. Monroe
+John R. Monroe
+Attorney for Appellants
+156 Robert Jones Road
+Dawsonville, Ga 30534
+State Bar No. 516193
+678-362-7650
+13
+USCA11 Case: 23-13843 Document: 9 Date Filed: 12/08/2023 Page: 14 of 14
+Certificate of Service
+I certify that I served a copy of the foregoing Brief of Appellant via all
+counsel of record via the Court’s ECF system.
+/s/ John R. Monroe
+John R. Monroe
+Attorney for Appellants
+156 Robert Jones Road
+Dawsonville, GA 30534
+State Bar No. 516193
+678-362-7650
+14

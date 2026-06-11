@@ -1,9 +1,9 @@
 # nvnm-cite Implementation Plan
 
 ## Status
-- Current phase: Phase 0 COMPLETE (2026-06-10, tag phase-0-done)
-- Last completed: task 0.7 experiment matrix; all chain unknowns resolved (DECISIONS 2026-06-10 entries)
-- Next up: Phase 1 (normalizer + spec) in a fresh session; Phase 2 prerequisites flagged: ~2,000 wmantraUSD top-up + multi-key strategy before the bulk load
+- Current phase: Phase 1 COMPLETE (2026-06-11, tag phase-1-done)
+- Last completed: task 1.6 golden suite (214 vectors + 4 RECAP fixtures); cite-canonical/v1 spec + record schema v1 LOCKED (DECISIONS 2026-06-11 entries)
+- Next up: Phase 2 (corpus pipeline, chain index, bulk load) in a fresh session; load gated on ~2,000 wmantraUSD top-up via DuKong bridge + multi-key strategy (DECISIONS 0.7 (i))
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -51,7 +51,7 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 - [x] 1.3 `normalizer/jurisdiction.py`: eyecite's `metadata.court` (already a courts-db id, e.g. `ca11`, parsed from the court parenthetical) + the reporter's cite_type map to a registry name (`us-` + courts-db id). U.S. / S. Ct. / L. Ed. map to `us-scotus` (eyecite flags scotus editions even without a parenthetical). F.2d / F.3d / F.4th / F. App'x with no recognizable court parenthetical: return AMBIGUOUS_JURISDICTION. Never guess.
 - [x] 1.4 `docs/canonical-citation-spec.md` (cite-canonical/v1, the open spec): canonical key is the reporters-db EDITION string (`F.3d`, not `F.`; editions are what appear in citations and in CourtListener's citation table, so registry keys and corpus keys align by construction); volume/page normalization rules; the FIRST-PAGE rule stated explicitly (registry keys are first-page citations; interior/pin pages are never keys); parallel citations are distinct records sharing a cluster id. Spec version constant exported from the package.
 - [x] 1.5 Lock `docs/record-schema.md` v1 from the draft in DECISIONS.md, informed by experiments (a)/(b). The locked schema must assign every chain-required tuple field a non-empty value for BOTH record types (uri, checksumAlgo, metadata are required; receipts get a defined uri, e.g. the published spec URL, chosen here rather than improvised at anchor time) and respect the measured caps (checksum 64 B, uri/metadata 2048 B; collision case-arrays included). Mirror the one-paragraph summary into CLAUDE.md. After this point, schema changes require a version bump, never an edit.
-- [ ] 1.6 Golden suite: 200+ fixtures covering parallel citations, reporter variants (`"F. 3d"`), short-form chains, line-break-mangled strings, missing parentheticals; plus 3-5 real RECAP brief PDFs as integration fixtures with a source-URL manifest (the actual Mata v. Avianca brief is in RECAP, SDNY 1:22-cv-01461, and makes a fitting fixture).
+- [x] 1.6 Golden suite: 200+ fixtures covering parallel citations, reporter variants (`"F. 3d"`), short-form chains, line-break-mangled strings, missing parentheticals; plus 3-5 real RECAP brief PDFs as integration fixtures with a source-URL manifest (the actual Mata v. Avianca brief is in RECAP, SDNY 1:22-cv-01461, and makes a fitting fixture).
 
 **Exit criteria:** golden suite green; spec + record schema reviewed by Albert; normalizer version stamped in every output object.
 

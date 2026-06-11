@@ -1,0 +1,883 @@
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 1 of 43
+UNITED STATES DISTRICT COURT
+SOUTHERN DISTRICT OF NEW YORK
+-----------------------------------------------------------x
+ROBERTO MATA,
+Plaintiff, 22-cv-1461 (PKC)
+-against-
+OPINION AND ORDER
+ON SANCTIONS
+AVIANCA, INC.,
+Defendant.
+-----------------------------------------------------------x
+CASTEL, U.S.D.J.
+In researching and drafting court submissions, good lawyers appropriately obtain
+assistance from junior lawyers, law students, contract lawyers, legal encyclopedias and databases
+such as Westlaw and LexisNexis. Technological advances are commonplace and there is
+nothing inherently improper about using a reliable artificial intelligence tool for assistance. But
+existing rules impose a gatekeeping role on attorneys to ensure the accuracy of their filings.
+Rule 11, Fed. R. Civ. P. Peter LoDuca, Steven A. Schwartz and the law firm of Levidow,
+Levidow & Oberman P.C. (the “Levidow Firm”) (collectively, “Respondents”) abandoned their
+responsibilities when they submitted non-existent judicial opinions with fake quotes and citations
+created by the artificial intelligence tool ChatGPT, then continued to stand by the fake opinions
+after judicial orders called their existence into question.
+Many harms flow from the submission of fake opinions.1 The opposing party
+wastes time and money in exposing the deception. The Court’s time is taken from other
+1 The potential mischief is demonstrated by an innocent mistake made by counsel for Mr. Schwartz and the Levidow
+Firm, which counsel promptly caught and corrected on its own. In the initial version of the brief in response to the
+Orders to Show Cause submitted to the Court, it included three of the fake cases in its Table of Authorities. (ECF
+45.)
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 2 of 43
+important endeavors. The client may be deprived of arguments based on authentic judicial
+precedents. There is potential harm to the reputation of judges and courts whose names are
+falsely invoked as authors of the bogus opinions and to the reputation of a party attributed with
+fictional conduct. It promotes cynicism about the legal profession and the American judicial
+system. And a future litigant may be tempted to defy a judicial ruling by disingenuously
+claiming doubt about its authenticity.
+The narrative leading to sanctions against Respondents includes the filing of the
+March 1, 2023 submission that first cited the fake cases. But if the matter had ended with
+Respondents coming clean about their actions shortly after they received the defendant’s March
+15 brief questioning the existence of the cases, or after they reviewed the Court’s Orders of April
+11 and 12 requiring production of the cases, the record now would look quite different. Instead,
+the individual Respondents doubled down and did not begin to dribble out the truth until May 25,
+after the Court issued an Order to Show Cause why one of the individual Respondents ought not
+be sanctioned.
+For reasons explained and considering the conduct of each individual Respondent
+separately, the Court finds bad faith on the part of the individual Respondents based upon acts of
+conscious avoidance and false and misleading statements to the Court. (See, e.g., Findings of
+Fact ¶¶ 17, 20, 22-23, 40-41, 43, 46-47 and Conclusions of Law ¶¶ 21, 23-24.) Sanctions will
+therefore be imposed on the individual Respondents. Rule 11(c)(1) also provides that “[a]bsent
+exceptional circumstances, a law firm must be held jointly responsible for a violation committed
+by its . . . associate, or employee.” Because the Court finds no exceptional circumstances,
+sanctions will be jointly imposed on the Levidow Firm. The sanctions are “limited to what
+- 2 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 3 of 43
+suffices to deter repetition of the conduct or comparable conduct by others similarly situated.”
+Rule 11(c)(4).
+Set forth below are this Court’s Findings of Fact and Conclusions of Law
+following the hearing of June 8, 2023.
+FINDINGS OF FACT
+1. Roberto Mata commenced this action on or about February 2, 2022, when
+he filed a Verified Complaint in the Supreme Court of the State of New York, New York
+County, asserting that he was injured when a metal serving cart struck his left knee during a
+flight from El Salvador to John F. Kennedy Airport. (ECF 1.) Avianca removed the action to
+federal court on February 22, 2022, asserting federal question jurisdiction under the Convention
+for the Unification of Certain Rules Relating to International Carriage by Air, Done at Montreal,
+Canada, on 28 May 1999, reprinted in S. Treaty Doc. 106-45 (1999) (the “Montreal
+Convention”). (ECF 1.)
+2. Steven A. Schwartz of the Levidow Firm had been the attorney listed on
+the state court complaint. But upon removal from state court to this Court, Peter LoDuca of the
+Levidow Firm filed a notice of appearance on behalf of Mata on March 31, 2022. (ECF 8.) Mr.
+Schwartz is not admitted to practice in this District. Mr. LoDuca has explained that because Mr.
+Schwartz is not admitted, Mr. LoDuca filed the notice of appearance while Mr. Schwartz
+continued to perform all substantive legal work. (LoDuca May 25 Aff’t ¶¶ 3-4 (ECF 32);
+Schwartz May 25 Aff’t ¶ 4 (ECF 32-1).)
+3. On January 13, 2023, Avianca filed a motion to dismiss urging that Mata’s
+claims are time-barred under the Montreal Convention. (ECF 16.)
+- 3 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 4 of 43
+4. On January 18, 2023, a letter signed by Mr. Schwartz and filed by Mr.
+LoDuca requested a one-month extension to respond to the motion, from February 3, 2023, to
+March 3, 2023. (ECF 19.) The letter stated that “the undersigned will be out of the office for a
+previously planned vacation” and cited a need for “extra time to properly respond to the
+extensive motion papers filed by the defendant.” (Id.) The Court granted the request. (ECF 20.)
+5. On March 1, 2023, Mr. LoDuca filed an “Affirmation in Opposition” to
+the motion to dismiss (the “Affirmation in Opposition”).2 (ECF 21.) The Affirmation in
+Opposition cited and quoted from purported judicial decisions that were said to be published in
+the Federal Reporter, the Federal Supplement and Westlaw. (Id.) Above Mr. LoDuca’s
+signature line, the Affirmation in Opposition states, “I declare under penalty of perjury that the
+foregoing is true and correct.” (Id.)
+6. Although Mr. LoDuca signed the Affirmation in Opposition and filed it on
+ECF, he was not its author. (Tr. 8-9.) It was researched and written by Mr. Schwartz. (Tr. 8.)
+Mr. LoDuca reviewed the affirmation for style, stating, “I was basically looking for a flow, make
+sure there was nothing untoward or no large grammatical errors.” (Tr. 9.) Before executing the
+Affirmation, Mr. LoDuca did not review any judicial authorities cited in his affirmation. (Tr. 9.)
+There is no claim or evidence that he made any inquiry of Mr. Schwartz as to the nature and
+extent of his research or whether he had found contrary precedent. Mr. LoDuca simply relied on
+a belief that work produced by Mr. Schwartz, a colleague of more than twenty-five years, would
+be reliable. (LoDuca May 25 Aff’t ¶¶ 6-7.) There was no claim made by any Respondent in
+response to the Court’s Orders to Show Cause that Mr. Schwartz had prior experience with the
+2 Plaintiff’s opposition was submitted as an “affirmation” and not a memorandum of law. The Local Civil Rules of
+this District require that “the cases and other authorities relied upon” in opposition to a motion be set forth in a
+memorandum of law. Local Civil Rule 7.1(a)(2), 7.1(b). An affirmation is a creature of New York state practice
+that is akin to a declaration under penalty of perjury. Compare N.Y. C.P.L.R. 2106 with 28 U.S.C. § 1746.
+- 4 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 5 of 43
+Montreal Convention or bankruptcy stays. Mr. Schwartz has stated that “my practice has always
+been exclusively in state court . . . .” (Schwartz June 6 Decl. ¶ 6.) Respondents’ memorandum
+of law asserts that Mr. Schwartz attempted “to research a federal bankruptcy issue with which he
+was completely unfamiliar.” (ECF 49 at 21.)
+7. Avianca filed a five-page reply memorandum on March 15, 2023. (ECF
+24.) It included the following statement: “Although Plaintiff ostensibly cites to a variety of cases
+in opposition to this motion, the undersigned has been unable to locate most of the case law cited
+in Plaintiff’s Affirmation in Opposition, and the few cases which the undersigned has been able
+to locate do not stand for the propositions for which they are cited.” (ECF 24 at 1.) It impliedly
+asserted that certain cases cited in the Affirmation in Opposition were non-existent: “Plaintiff
+does not dispute that this action is governed by the Montreal Convention, and Plaintiff has not
+cited any existing authority holding that the Bankruptcy Code tolls the two-year limitations
+period or that New York law supplies the relevant statute of limitations.” (ECF 24 at 1;
+emphasis added.) It then detailed by name and citation seven purported “decisions” that
+Avianca’s counsel could not locate, and set them apart with quotation marks to distinguish a non-
+existent case from a real one, even if cited for a proposition for which it did not stand. (ECF 24.)
+8. Despite the serious nature of Avianca’s allegations, no Respondent sought
+to withdraw the March 1 Affirmation or provide any explanation to the Court of how it could
+possibly be that a case purportedly in the Federal Reporter or Federal Supplement could not be
+found.
+9. The Court conducted its own search for the cited cases but was unable to
+locate multiple authorities cited in the Affirmation in Opposition.
+- 5 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 6 of 43
+10. Mr. LoDuca testified at the June 8 sanctions hearing that he received
+Avianca’s reply submission and did not read it before he forwarded it to Mr. Schwartz. (Tr. 10.)
+Mr. Schwartz did not alert Mr. LoDuca to the contents of the reply. (Tr. 12.)
+11. As it was later revealed, Mr. Schwartz had used ChatGPT, which
+fabricated the cited cases. Mr. Schwartz testified at the sanctions hearing that when he reviewed
+the reply memo, he was “operating under the false perception that this website [i.e., ChatGPT]
+could not possibly be fabricating cases on its own.” (Tr. at 31.) He stated, “I just was not
+thinking that the case could be fabricated, so I was not looking at it from that point of view.”
+(Tr. at 35.) “My reaction was, ChatGPT is finding that case somewhere. Maybe it’s
+unpublished. Maybe it was appealed. Maybe access is difficult to get. I just never thought it
+could be made up.” (Tr. at 33.)
+12. Mr. Schwartz also testified at the hearing that he knew that there were free
+sites available on the internet where a known case citation to a reported decision could be entered
+and the decision displayed. (Tr. 23-24, 28-29.) He admitted that he entered the citation to
+“Varghese” but could not find it:
+THE COURT: Did you say, well they gave me part of Varghese, let
+me look at the full Varghese decision?
+MR. SCHWARTZ: I did.
+THE COURT: And what did you find when you went to look up the
+full Varghese decision?
+MR. SCHWARTZ: I couldn’t find it.
+THE COURT: And yet you cited it in the brief to me.
+MR. SCHWARTZ: I did, again, operating under the false
+assumption and disbelief that this website could produce completely
+fabricated cases. And if I knew that, I obviously never would have
+submitted these cases.
+- 6 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 7 of 43
+(Tr. 28.)3
+13. On April 11, 2023, the Court issued an Order directing Mr. LoDuca to file
+an affidavit by April 18, 20234 that annexed copies of the following decisions cited in the
+Affirmation in Opposition: Varghese v. China Southern Airlines Co., Ltd., 925 F.3d 1339 (11th
+Cir. 2019); Shaboon v. Egyptair, 2013 IL App (1st) 111279-U (Ill. App. Ct. 2013); Peterson v.
+Iran Air, 905 F. Supp. 2d 121 (D.D.C. 2012); Martinez v. Delta Airlines, Inc., 2019 WL 4639462
+(Tex. App. Sept. 25, 2019); Estate of Durden v. KLM Royal Dutch Airlines, 2017 WL 2418825
+(Ga. Ct. App. June 5, 2017); Ehrlich v. American Airlines, Inc., 360 N.J. Super. 360 (App. Div.
+2003); Miller v. United Airlines, Inc., 174 F.3d 366, 371-72 (2d Cir. 1999); and In re Air Crash
+Disaster Near New Orleans, LA, 821 F.2d 1147, 1165 (5th Cir. 1987). (ECF 25.) The Order
+stated: “Failure to comply will result in dismissal of the action pursuant to Rule 41(b), Fed. R.
+Civ. P.” (ECF 25.)
+14. On April 12, 2023, the Court issued an Order that directed Mr. LoDuca to
+annex an additional decision, which was cited in the Affirmation in Opposition as Zicherman v.
+Korean Air Lines Co., Ltd., 516 F.3d 1237, 1254 (11th Cir. 2008). (ECF 27.)
+15. Mr. Schwartz understood the import of the Orders of April 11 and 12
+requiring the production of the actual cases: “I thought the Court searched for the cases [and]
+could not find them . . . .” (Tr. 36.)
+16. Mr. LoDuca requested an extension of time to respond to April 25, 2023.
+(ECF 26.) The letter stated: “This extension is being requested as the undersigned is currently
+3 Mr. Schwartz’s testimony appears to acknowledge that he knew that “Varghese” could not be found before the
+March 1 Affirmation was filed citing the fake case. His answer also could refer to the April 25 Affidavit submitting
+the actual cases. Either way, he knew before making a submission to the Court that the full text of “Varghese” could
+not be found but kept silent.
+4 The Court’s Order directed the filing to be made by April 18, 2022, not 2023.
+- 7 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 8 of 43
+out of the office on vacation and will be returning April 18, 2023.” (Id.) Mr. LoDuca signed the
+letter and filed it on ECF. (Id.)
+17. Mr. LoDuca’s statement was false and he knew it to be false at the time he
+made the statement. Under questioning by the Court at the sanctions hearing, Mr. LoDuca
+admitted that he was not out of the office on vacation. (Tr. 13-14, 19.) Mr. LoDuca testified that
+“[m]y intent of the letter was because Mr. Schwartz was away, but I was aware of what was in
+the letter when I signed it. . . . I just attempted to get Mr. Schwartz the additional time he
+needed because he was out of the office at the time.” (Tr. 44.) The Court finds that Mr. LoDuca
+made a knowingly false statement to the Court that he was “out of the office on vacation” in a
+successful effort to induce the Court to grant him an extension of time. (ECF 28.) The lie had
+the intended effect of concealing Mr. Schwartz’s role in preparing the March 1 Affirmation and
+the April 25 Affidavit and concealing Mr. LoDuca’s lack of meaningful role in confirming the
+truth of the statements in his affidavit. This is evidence of the subjective bad faith of Mr.
+LoDuca.
+18. Mr. LoDuca executed and filed an affidavit on April 25, 2023 (the “April
+25 Affidavit”) that annexed what were purported to be copies or excerpts of all but one of the
+decisions required by the Orders of April 11 and 12. Mr. LoDuca stated “[t]hat I was unable to
+locate the case of Zicherman v. Korean Air Lines Co., Ltd., 516 F.3d 1237 (11th Cir. 2008)
+which was cited by the Court in Varghese.” (ECF 29.)
+19. The April 25 Affidavit stated that the purported decisions it annexed “may
+not be inclusive of the entire opinions but only what is made available by online database.” (Id.
+¶ 4.) It did not identify any “online database” by name. It also stated “[t]hat the opinion in
+- 8 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 9 of 43
+Shaboon v. Egyptair 2013 IL App (1st) 111279-U (Ill. App. Ct. 2013) is an unpublished
+opinion.” (Id. ¶ 5.)
+20. In fact, Mr. LoDuca did not author the April 25 Affidavit, had no role in
+its preparation and no knowledge of whether the statements therein were true. Mr. Schwartz was
+the attorney who drafted the April 25 Affidavit and compiled its exhibits. (Tr. 38.)
+21. At the sanctions hearing, Mr. Schwartz testified that he prepared Mr.
+LoDuca’s affidavit, walked it into “his office” twenty feet away, and “[h]e looked it over, and he
+signed it.” (Tr. 41.)5 There is no evidence that Mr. LoDuca asked a single question. Mr.
+LoDuca had not been provided with a draft of the affidavit before he signed it. Mr. LoDuca
+knew that Mr. Schwartz did not practice in federal court and, in response to the Order to Show
+Cause, he has never contended that Mr. Schwartz had experience with the Montreal Convention
+or bankruptcy stays. Indeed, at the sanctions hearing, Mr. Schwartz testified that he thought a
+citation in the form “F.3d” meant “federal district, third department.” (Tr. 33.)6
+22. Facially, the April 25 Affidavit did not comply with the Court’s Orders of
+April 11 and 12 because it did not attach the full text of any of the “cases” that are now admitted
+to be fake. It attached only excerpts of the “cases.” And the April 25 Affidavit recited that one
+“case,” “Zicherman v. Korean Air Lines Co., Ltd., 516 F.3d 1237 (11th Cir. 2008)”, notably with
+a citation to the Federal Reporter, could not be found. (ECF 29.) No explanation was offered.
+23. Regarding the Court’s Orders of April 11 and 12 requiring an affidavit
+from Mr. LoDuca, Mr. LoDuca testified, “Me, I didn’t do anything other than turn over to Mr.
+5 The declaration of Mr. Schwartz claimed that the April 25 Affidavit was executed in his own office, not Mr.
+LoDuca’s office. (Schwartz June 6 Dec. ¶ 27 (“Mr. LoDuca then came into my office and signed the affidavit in
+front of me . . . .”).)
+6 The Court finds this claim from a lawyer who has practiced in the litigation arena for approximately 30 years to be
+not credible and was contradicted by his later testimony. (See Tr. 34 (“THE COURT: And F.3d is the third edition
+of the Federal Reporter, correct? MR. SCHWARTZ: Right.”).)
+- 9 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 10 of 43
+Schwartz to locate the cases that [the Court] had requested.” (Tr. 13.) He testified that he read
+the April 25 Affidavit and “saw the cases that were attached to it. Mr. Schwartz had assured me
+that this was what he could find with respect to the cases. And I submitted it to the Court.” (Tr.
+14.) Mr. LoDuca had observed that the “cases” annexed to his April 25 Affidavit were not being
+submitted in their entirety, and explained that “I understood that was the best that Mr. Schwartz
+could find at the time based on the search that he or – the database that he had available to him.”
+(Tr. 15.) Mr. LoDuca testified that it “never crossed my mind” that the cases were bogus. (Tr.
+16.)
+24. The Court reviewed the purported decisions annexed to the April 25
+Affidavit, which have some traits that are superficially consistent with actual judicial decisions.
+The Court need not describe every deficiency contained in the fake decisions annexed to the
+April 25 Affidavit. It makes the following exemplar findings as to the three “decisions” that
+were purported to be issued by federal courts.
+25. The “Varghese” decision is presented as being issued by a panel of judges
+on the United States Court of Appeals for the Eleventh Circuit that consisted of Judges Adalberto
+Jordan, Robin S. Rosenbaum and Patrick Higginbotham,7 with the decision authored by Judge
+Jordan. (ECF 29-1.) It bears the docket number 18-13694. (Id.) “Varghese” discusses the
+Montreal Convention’s limitations period and the purported tolling effects of the automatic
+federal bankruptcy stay, 11 U.S.C. § 362(a). (ECF 29-1.)
+26. The Clerk of the United States Court of Appeals for the Eleventh Circuit
+has confirmed that the decision is not an authentic ruling of the Court and that no party by the
+name of “Vargese” or “Varghese” has been party to a proceeding in the Court since the
+7 Judge Higginbotham is a Senior Judge of the United States Court of Appeals for the Fifth Circuit, not the Eleventh
+Circuit. Judges Jordan and Rosenbaum sit on the Eleventh Circuit.
+- 10 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 11 of 43
+institution of its electronic case filing system in 2010. A copy of the fake “Varghese” opinion is
+attached as Appendix A.
+27. The “Varghese” decision shows stylistic and reasoning flaws that do not
+generally appear in decisions issued by United States Courts of Appeals. Its legal analysis is
+gibberish. It references a claim for the wrongful death of George Scaria Varghese brought by
+Susan Varghese. (Id.) It then describes the claims of a plaintiff named Anish Varghese who,
+due to airline overbooking, was denied boarding on a flight from Bangkok to New York that had
+a layover in Guangzhou, China. (Id.) The summary of the case’s procedural history is difficult
+to follow and borders on nonsensical, including an abrupt mention of arbitration and a reference
+to plaintiff’s decision to file for Chapter 7 bankruptcy as a tactical response to the district court’s
+dismissal of his complaint. (Id.) Without explanation, “Varghese” later references the plaintiff’s
+Chapter 13 bankruptcy proceeding. (Id.) The “Varghese” defendant is also said to have filed for
+bankruptcy protection in China, also triggering a stay of proceedings. (Id.) Quotation marks are
+often unpaired. The “Varghese” decision abruptly ends without a conclusion.
+28. The “Varghese” decision bears the docket number 18-13694, which is
+associated with the case George Cornea v. U.S. Attorney General, et al. The Federal Reporter
+citation for “Varghese” is associated with J.D. v Azar, 925 F.3d 1291 (D.C. Cir. 2019).
+29. The “Varghese” decision includes internal citations and quotes from
+decisions that are themselves non-existent:
+a. It cites to “Holliday v. Atl. Capital Corp., 738 F.2d 1153 (11th Cir.
+1984)”, which does not exist. The case appearing at that citation is Gibbs
+v. Maxwell House, 738 F.2d 1153 (11th Cir. 1984).
+- 11 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 12 of 43
+b. It cites to “Gen. Wire Spring Co. v. O’Neal Steel, Inc., 556 F.2d 713, 716
+(5th Cir. 1977)”, which does not exist. The case appearing at that citation
+is United States v. Clerkley, 556 F.2d 709 (4th Cir. 1977).
+c. It cites to “Hyatt v. N. Cent. Airlines, 92 F.3d 1074 (11th Cir. 1996)”,
+which does not exist. There are two brief orders appearing at 92 F.3d
+1074 issued by the Eleventh Circuit in other cases.
+d. It cites to “Zaunbrecher v. Transocean Offshore Deepwater Drilling, Inc.,
+772 F.3d 1278, 1283 (11th Cir. 2014)”, which does not exist. The case
+appearing at that citation is Witt v. Metropolitan Life Ins. Co., 772 F.3d
+1269 (11th Cir. 2014).
+e. It cites to “Zicherman v. Korean Air Lines Co., 516 F.3d 1237, 1254 (11th
+Cir. 2008)”, which does not exist as cited. A Supreme Court decision with
+the same name, Zicherman v. Korean Air Lines Co., 516 U.S. 217 (1996),
+held that the Warsaw Convention does not permit a plaintiff to recover
+damages for loss of society resulting from the death of a relative, and did
+not discuss the federal bankruptcy stay. The Federal Reporter citation for
+“Zicherman” is for Miccosukee Tribe v. United States, 516 F.3d 1235
+(11th Cir. 2008).
+f. It cites to “In re BDC 56 LLC, 330 B.R. 466, 471 (Bankr. D.N.H. 2005)”,
+which does not exist as cited. A Second Circuit decision with the same
+name, In re BDC 56 LLC, 330 F.3d 111 (2d Cir. 2003), did not discuss the
+federal bankruptcy stay. The case appearing at the Bankruptcy Reporter
+- 12 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 13 of 43
+citation is In re 652 West 160th LLC, 330 B.R. 455 (Bankr. S.D.N.Y.
+2005).
+g. Other “decisions” cited in “Varghese” have correct names and citations
+but do not contain the language quoted or support the propositions for
+which they are offered. In re Rimstat, Ltd., 212 F.3d 1039 (7th Cir. 2000),
+is a decision relating to Rule 11 sanctions for attorney misconduct and
+does not discuss the federal bankruptcy stay. In re PPI Enterprises (U.S.),
+Inc., 324 F.3d 197 (3d Cir. 2003), does not discuss the federal bankruptcy
+stay, and is incorrectly identified as an opinion of the Second Circuit.
+Begier v. I.R.S., 496 U.S. 53 (1990), does not discuss the federal
+bankruptcy stay, and addresses whether a trustee in bankruptcy may
+recover certain payments made by the debtor to the Internal Revenue
+Service. Kaiser Steel Corp. v. W. S. Ranch Co., 391 U.S. 593 (1968) (per
+curiam), does not discuss the federal bankruptcy stay, and held that a
+federal proceeding should have been stayed pending the outcome of New
+Mexico state court proceedings relating to the interpretation of the state
+constitution. El Al Israel Airlines, Ltd. v. Tsui Yuan Tseng, 525 U.S. 155
+(1999), does not contain the quoted language discussing the purpose of the
+Montreal Convention. In re Gandy, 299 F.3d 489 (5th Cir. 2002),
+affirmed a bankruptcy court’s denial of a motion to compel arbitration.
+30. The April 25 Affidavit annexes a decision identified as “Miller v. United
+Airlines, Inc., 174 F.3d 366 (2d Cir. 1999).” (ECF 29-7.) As submitted, the “Miller” decision
+seems to be an excerpt from a longer decision and consists only of two introductory paragraphs.
+- 13 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 14 of 43
+(Id.) It bears the docket number 98-7926, and purports to be written by Judge Barrington D.
+Parker of the Second Circuit, with Judges Joseph McLaughlin and Dennis Jacobs also on the
+panel. (Id.) It abruptly ends with the phrase “Section 11 of the Bankruptcy Act of 1898”. (Id.)
+31. “Miller” purports to apply the Warsaw Convention to a claim arising out
+of the real and tragic 1991 crash of United Airlines Flight 585, which was a domestic flight from
+Denver to Colorado Springs.8 “Miller” references a Chapter 11 bankruptcy petition filed by
+United Airlines on December 4, 1992. (Id.) There is no public record of any United Airlines
+bankruptcy proceeding in or around that time.9 (Id.) “Miller” identifies Alberto R. Gonzales,
+purportedly from the law firm of Curtis, Mallet-Prevost, Colt & Mosle LLP, as one of the
+attorneys for the defendant. (Id.) Alberto R. Gonzales is the name of the former United States
+Attorney General, who served from 2005 to 2007.10
+32. The “Miller” decision does not exist. Second Circuit docket number 98-
+7926 is associated with the case Vitale v. First Fidelity, which was assigned to a panel consisting
+of Judges Richard Cardamone, Amalya Kearse and Chester Straub. The Federal Reporter
+citation for “Miller” is to Greenleaf v. Garlock, Inc., 174 F.3d 352 (3d Cir. 1999).
+33. The April 25 Affidavit also annexes a decision identified as “Petersen v.
+Iran Air, 905 F. Supp. 2d 121 (D.D.C. 2012)”, which bears an additional citation to 2012 U.S.
+Dist. LEXIS 17409. (ECF 29-3.) It is identified as a decision by Judge Reggie B. Walton and
+has the docket number 10-0542. (Id.) “Petersen” appears to confuse the District of Columbia
+8 See National Transportation Safety Board, “Aircraft Accident Report: Uncontrolled Descent and Collision With
+Terrain, United Airlines Flight 585,” https://www.ntsb.gov/investigations/AccidentReports/Reports/AAR0101.pdf
+(last accessed June 21, 2023).
+9 It appears that United Airlines filed for Chapter 11 bankruptcy protection in 2002. See Edward Wong, “Airline
+Shock Waves: The Overview; Bankruptcy Case Is Filed by United,” N.Y. Times, Dec. 10, 2002, Sec. A p. 1,
+https://www.nytimes.com/2002/12/10/business/airline-shock-waves-the-overview-bankruptcy-case-is-filed-by-
+united.html (last accessed June 21, 2023).
+10 See, e.g., https://georgewbush-whitehouse.archives.gov/government/gonzales-biohtml (last accessed June 21,
+2023).
+- 14 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 15 of 43
+with the state of Washington. (Id. (“Therefore, Petersen’s argument that the state courts of
+Washington have concurrent jurisdiction is unavailing.”).) As support for its legal conclusion,
+“Petersen” cites itself as precedent: “‘Therefore, the Court has concurrent jurisdiction with any
+other court that may have jurisdiction under applicable law, including any foreign court.’
+(Petersen v. Iran Air, 905 F. Supp. 2d 121, 126 (D.D.C. 2012))”. (ECF 29-3.)
+34. The “Petersen” decision does not exist. Docket number 10-cv-542
+(D.D.C.) is associated with the case Cummins-Allison Corp. v. Kappos, which was before Judge
+Ellen S. Huvelle. The Federal Supplement citation is to United States v. ISS Marine Services,
+905 F. Supp. 2d 121 (D.D.C. 2012), a decision by Judge Beryl A. Howell. The Lexis citation is
+to United States v. Baker, 2012 U.S. Dist. LEXIS 17409 (W.D. Mich. Feb. 13, 2012), in which
+Judge Janet T. Neff adopted the Report and Recommendation of a Magistrate Judge.
+35. The “Shaboon”, “Martinez” and “Durden” decisions contain similar
+deficiencies.
+36. Respondents have now acknowledged that the “Varghese”, “Miller”,
+“Petersen”, “Shaboon”, “Martinez” and “Durden” decisions were generated by ChatGPT and do
+not exist. (See, e.g., ECF 32, 32-1.)
+37. Mr. Schwartz has endeavored to explain why he turned to ChatGPT for
+legal research. The Levidow Firm primarily practices in New York state courts. (Schwartz June
+6 Decl. ¶ 10; Tr. 45.) It uses a legal research service called Fastcase and does not maintain
+Westlaw or LexisNexis accounts. (Tr. 22-23.) When Mr. Schwartz began to research the
+Montreal Convention, the firm’s Fastcase account had limited access to federal cases. (Schwartz
+June 6 Decl. ¶ 12; Tr. 24.) “And it had occurred to me that I heard about this new site which I
+assumed -- I falsely assumed was like a super search engine called ChatGPT, and that’s what I
+- 15 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 16 of 43
+used.” (Tr. 24; see also Schwartz June 6 Decl. ¶ 15.) Mr. Schwartz had not previously used
+ChatGPT and became aware of it through press reports and conversations with family members.
+(Schwartz June 6 Decl. ¶ 14.)
+38. Mr. Schwartz testified that he began by querying ChatGPT for broad legal
+guidance and then narrowed his questions to cases that supported the argument that the federal
+bankruptcy stay tolled the limitations period for a claim under the Montreal Convention. (Tr. 25-
+27.) ChatGPT generated summaries or excerpts but not full “opinions.” (Tr. 27 & ECF 46-1;
+Schwartz June 6 Decl. ¶ 19.)
+39. The June 6 Schwartz Declaration annexes the history of Mr. Schwartz’s
+prompts to ChatGPT and the chatbot’s responses. (ECF 46-1.) His first prompt stated, “argue
+that the statute of limitations is tolled by bankruptcy of defendant pursuant to montreal
+convention”. (Id. at 2.) ChatGPT responded with broad descriptions of the Montreal
+Convention, statutes of limitations and the federal bankruptcy stay, advised that “[t]he answer to
+this question depends on the laws of the country in which the lawsuit is filed”11 and then stated
+that the statute of limitations under the Montreal Convention is tolled by a bankruptcy filing. (Id.
+at 2-3.) ChatGPT did not cite case law to support these statements. Mr. Schwartz then entered
+various prompts that caused ChatGPT to generate descriptions of fake cases, including “provide
+case law in support that statute of limitations is tolled by bankruptcy of defendant under montreal
+convention”, “show me specific holdings in federal cases where the statute of limitations was
+tolled due to bankruptcy of the airline”, “show me more cases” and “give me some cases where
+te [sic] montreal convention allowed tolling of the statute of limitations due to bankruptcy”. (Id.
+11 In fact, courts have generally held that the Montreal Convention seeks to create uniformity in the limitations
+periods enforced across its signatory countries. See, e.g., Ireland v. AMR Corp., 20 F. Supp. 3d 341, 347 (E.D.N.Y.
+2014) (citing Fishman v. Delta Air Lines, Inc., 132 F.3d 138, 144 (2d Cir. 1998)).
+- 16 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 17 of 43
+at 2, 10, 11.) When directed to “provide case law”, “show me specific holdings”, “show me
+more cases” and “give me some cases”, the chatbot complied by making them up.
+40. At the time that he prepared the Affirmation in Opposition, Mr. Schwartz
+did not have the full text of any “decision” generated by ChatGPT. (Tr. 27.) He cited and
+quoted only from excerpts generated by the chatbot. (Tr. 27.)
+41. In his affidavit filed on May 25, Mr. Schwartz stated that he relied on
+ChatGPT “to supplement the legal research performed.” (ECF 32-1 ¶ 6; emphasis added).) He
+also stated that he “greatly regrets having utilized generative artificial intelligence to supplement
+the legal research performed herein . . . .” (Id. ¶ 13; emphasis added.) But at the hearing, Mr.
+Schwartz acknowledged that ChatGPT was not used to “supplement” his research:
+THE COURT: Let me ask you, did you do any other research in
+opposition to the motion to dismiss other than through ChatGPT?
+MR. SCHWARTZ: Other than initially going to Fastcase and failing
+there, no.
+THE COURT: You found nothing on Fastcase.
+MR. SCHWARTZ: Fastcase was insufficient as to being able to
+access, so, no, I did not.
+THE COURT: You did not find anything on Fastcase?
+MR. SCHWARTZ: No.
+THE COURT: In your declaration in response to the order to show
+cause, didn't you tell me that you used ChatGPT to supplement your
+research?
+MR. SCHWARTZ: Yes.
+THE COURT: Well, what research was it supplementing?
+MR. SCHWARTZ: Well, I had gone to Fastcase, and I was able to
+authenticate two of the cases through Fastcase that ChatGPT had
+given me. That was it.
+- 17 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 18 of 43
+THE COURT: But ChatGPT was not supplementing your research.
+It was your research, correct?
+MR. SCHWARTZ: Correct. It became my last resort. So I guess
+that’s correct.
+(Tr. 37-38.) Mr. Schwartz’s statement in his May 25 affidavit that ChatGPT “supplemented” his
+research was a misleading attempt to mitigate his actions by creating the false impression that he
+had done other, meaningful research on the issue and did not rely exclusive on an AI chatbot,
+when, in truth and in fact, it was the only source of his substantive arguments.12 These
+misleading statements support the Court’s finding of subjective bad faith.
+42. Following receipt of the April 25 Affirmation, the Court issued an Order
+dated May 4, 2023 directing Mr. LoDuca to show cause why he ought not be sanctioned pursuant
+to: (1) Rule 11(b)(2) & (c), Fed. R. Civ. P., (2) 28 U.S.C. § 1927, and (3) the inherent power of
+the Court, for (A) citing non-existent cases to the Court in his Affirmation in Opposition, and (B)
+submitting to the Court annexed to April 25 Affidavit copies of non-existent judicial opinions.
+(ECF 31.) It directed Mr. LoDuca to file a written response and scheduled a show-cause hearing
+for 12 p.m. on June 8, 2023. (Id.) Mr. LoDuca submitted an affidavit in response, which also
+annexed an affidavit from Mr. Schwartz. (ECF 32, 32-1.)
+43. Mr. Schwartz made the highly dubious claim that, before he saw the first
+Order to Show Cause of May 4, he “still could not fathom that ChatGPT could produce multiple
+fictitious cases . . . .” (Schwartz June 6 Decl. ¶ 30.) He states that when he read the Order of
+May 4, “I realized that I must have made a serious error and that there must be a major flaw with
+12 Cf. Lewis Carroll, Alice’s Adventures in Wonderland, 79 (Puffin Books ed. 2015) (1865):
+“Take some more tea,” the March Hare said to Alice, very earnestly.
+“I’ve had nothing yet,” Alice replied in an offended tone, “so I can’t take more.”
+“You mean you can’t take less,” said the Hatter: “it’s very easy to take more than nothing.”
+- 18 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 19 of 43
+the search aspects of the ChatGPT program.” (Schwartz June 6 Decl. ¶ 29.) The Court rejects
+Mr. Schwartz’s claim because (a) he acknowledges reading Avianca’s brief claiming that the
+cases did not exist and could not be found (Tr. 31-33); (b) concluded that the Court could not
+locate the cases when he read the April 11 and 12 Orders (Tr. 36-37); (c) had looked for
+“Varghese” and could not find it (Tr. 28); and (d) had been “unable to locate” “Zicherman” after
+the Court ordered its submission (Apr. 25 Aff’t ¶ 3).
+44. The Schwartz Affidavit of May 25 contained the first acknowledgement
+from any Respondent that the Affirmation in Opposition cited to and quoted from bogus cases
+generated by ChatGPT. (ECF 32-1.)
+45. The Schwartz Affidavit of May 25 included screenshots taken from a
+smartphone in which Mr. Schwartz questioned ChatGPT about the reliability of its work (e.g.,
+“Is Varghese a real case” and “Are the other cases you provided fake”). (ECF 32-1.) ChatGPT
+responded that it had supplied “real” authorities that could be found through Westlaw,
+LexisNexis and the Federal Reporter. (Id.) The screenshots are annexed as Appendix B to this
+Opinion and Order.
+46. When those screenshots were submitted as exhibits to Mr. Schwartz’s
+affidavit of May 25, he stated: “[T]he citations and opinions in question were provided by Chat
+GPT which also provided its legal source and assured the reliability of its content. Excerpts from
+the queries presented and responses provided are attached hereto.” (Schwartz May 25 Aff’t ¶ 8.)
+This is an assertion by Mr. Schwartz that he was misled by ChatGPT into believing that it had
+provided him with actual judicial decisions. While no date is given for the queries, the
+declaration strongly suggested that he questioned whether “Varghese” was “real” prior to either
+the March 1 Affirmation in Opposition or the April 25 Affidavit.
+- 19 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 20 of 43
+47. But Mr. Schwartz’s declaration of June 6 offers a different explanation
+and interpretation, and asserts that those same ChatGPT answers confirmed his by-then-growing
+suspicions that the chatbot had been responding “without regard for the truth of the answers it
+was providing”:
+Before the First OSC, however, I still could not fathom that
+ChatGPT could produce multiple fictitious cases, all of which had
+various indicia of reliability such as case captions, the names of the
+judges from the correct locations, and detailed fact patterns and legal
+analysis that sounded authentic. The First OSC caused me to have
+doubts. As a result, I asked ChatGPT directly whether one of the
+cases it cited, “Varghese v. China Southern Airlines Co. Ltd., 925
+F.3d 1339 (11th Cir. 2009),” was a real case. Based on what I was
+beginning to realize about ChatGPT, I highly suspected that it was
+not. However, ChatGPT again responded that Varghese “does
+indeed exist” and even told me that it was available on Westlaw and
+LexisNexis, contrary to what the Court and defendant’s counsel
+were saying. This confirmed my suspicion that ChatGPT was not
+providing accurate information and was instead simply responding
+to language prompts without regard for the truth of the answers it
+was providing. However, by this time the cases had already been
+cited in our opposition papers and provided to the Court.
+(Schwartz June 6 Decl. ¶ 30; emphasis added.) These shifting and contradictory explanations,
+submitted even after the Court raised the possibility of Rule 11 sanctions, undermine the
+credibility of Mr. Schwartz and support a finding of subjective bad faith.
+48. On May 26, 2023, the Court issued a supplemental Order directing Mr.
+Schwartz to show cause at the June 8 hearing why he ought not be sanctioned pursuant to Rule
+11(b)(2) and (c), 28 U.S.C. § 1927 and the Court’s inherent powers for aiding and causing the
+citation of non-existent cases in the Affirmation in Opposition, the submission of non-existent
+judicial opinions annexed to the April 25 Affidavit and the use of a false and fraudulent
+notarization in the April 25 Affidavit. (ECF 31.) The same Order directed the Levidow Firm to
+also show cause why it ought not be sanctioned and directed Mr. LoDuca to show cause why he
+- 20 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 21 of 43
+ought not be sanctioned for the use of a false or fraudulent notarization in the April 25 Affidavit.
+(Id.) The Order also directed the Respondents to file written responses. (Id.)
+49. Counsel thereafter filed notices of appearance on behalf of Mr. Schwartz
+and the Levidow Firm, and, separately, on behalf of Mr. LoDuca. (ECF 34-36, 39-40.) Messrs.
+LoDuca and Schwartz filed supplemental declarations on June 6. (ECF 44-1, 46.) Thomas R.
+Corvino, who describes himself as the sole equity partner of the Levidow Firm, also filed a
+declaration. (ECF 47.)
+50. On June 8, 2023, the Court held a sanctions hearing on the Order to Show
+Cause and the supplemental Order to Show Cause. After being placed under oath, Messrs.
+LoDuca and Schwartz responded to questioning from the Court and delivered prepared
+statements in which they expressed their remorse. Mr. Corvino, a member of the Levidow Firm,
+also delivered a statement.
+51. At no time has any Respondent written to this Court seeking to withdraw
+the March 1 Affirmation in Opposition or advise the Court that it may no longer rely upon it.
+CONCLUSIONS OF LAW
+1. Rule 11(b)(2) states: “By presenting to the court a pleading, written
+motion, or other paper—whether by signing, filing, submitting, or later advocating it—an
+attorney or unrepresented party certifies that to the best of the person’s knowledge, information,
+and belief, formed after an inquiry reasonable under the circumstances: . . . the claims, defenses,
+and other legal contentions are warranted by existing law or by a nonfrivolous argument for
+extending, modifying, or reversing existing law or for establishing new law . . . .”
+- 21 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 22 of 43
+2. “Under Rule 11, a court may sanction an attorney for, among other things,
+misrepresenting facts or making frivolous legal arguments.” Muhammad v. Walmart Stores
+East, L.P., 732 F.3d 104, 108 (2d Cir. 2013) (per curiam).
+3. A legal argument may be sanctioned as frivolous when it amounts to an
+“‘abuse of the adversary system . . . .’” Salovaara v. Eckert, 222 F.3d 19, 34 (2d Cir. 2000)
+(quoting Mareno v. Rowe, 910 F.2d 1043, 1047 (2d Cir. 1990)). “Merely incorrect legal
+statements are not sanctionable under Rule 11(b)(2).” Storey v. Cello Holdings, L.L.C., 347
+F.3d 370, 391 (2d Cir. 2003). “The fact that a legal theory is a long-shot does not necessarily
+mean it is sanctionable.” Fishoff v. Coty Inc., 634 F.3d 647, 654 (2d Cir. 2011). A legal
+contention is frivolous because it has “no chance of success” and there “is no reasonable
+argument to extend, modify or reverse the law as it stands.” Id. (quotation marks omitted).
+4. An attorney violates Rule 11(b)(2) if existing caselaw unambiguously
+forecloses a legal argument. See Star Mark Mgmt., Inc. v. Koon Chun Hing Kee Soy & Sauce
+Factory, Ltd., 682 F.3d 170, 178 (2d Cir. 2012) (affirming Rule 11(b)(2) sanction for frivolous
+claims where plaintiff’s trademark claims “clearly lacked foundation”) (per curiam); Simon
+DeBartolo Grp., L.P. v. Richard E. Jacobs Grp., Inc., 186 F.3d 157, 176 (2d Cir. 1999)
+(affirming Rule 11(b)(2) sanction where no authority supported plaintiff’s theory of liability
+under SEC Rule 10b-13).
+5. The filing of papers “without taking the necessary care in their
+preparation” is an “abuse of the judicial system” that is subject to Rule 11 sanction. Cooter &
+Gell v. Hartmax Corp., 496 U.S. 384, 398 (1990). Rule 11 creates an “incentive to stop, think
+and investigate more carefully before serving and filing papers.” Id. (quotation marks omitted).
+“Rule 11 ‘explicitly and unambiguously imposes an affirmative duty on each attorney to conduct
+- 22 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 23 of 43
+a reasonable inquiry into the viability of a pleading before it is signed.’” AJ Energy LLC v.
+Woori Bank, 829 Fed. App’x 533, 535 (2d Cir. 2020) (summary order) (quoting Gutierrez v.
+Fox, 141 F.3d 425, 427 (2d Cir. 1998)).
+6. Rule 3.3(a)(1) of the New York Rules of Professional Conduct, 22
+N.Y.C.R.R. § 1200.0, states: “A lawyer shall not knowingly make a false statement of fact or law
+to a tribunal or fail to correct a false statement of material fact or law previously made to the
+tribunal by the lawyer . . . .” A lawyer may make a false statement of law where he “liberally
+us[ed] ellipses” in order to “change” or “misrepresent” a court’s holding. United States v.
+Fernandez, 516 Fed. App’x 34, 36 & n.2 (2d Cir. 2013) (admonishing but not sanctioning
+attorney for his “editorial license” and noting his affirmative obligation to correct false
+statements of law) (summary order); see also United States v. Salameh, 1993 WL 168568, at *2-
+3 & n.1 (S.D.N.Y. May 18, 1993) (admonishing but not sanctioning attorney for failing to
+disclose that the sole decision cited in support of a legal argument was vacated on appeal)
+(Duffy, J.).
+7. It is a crime to knowingly forge the signature of a United States judge or
+the seal of a federal court. 18 U.S.C. § 505.13 Writing for the panel, then-Judge Sotomayor
+explained that “[section] 505 is concerned . . . with protecting the integrity of a government
+function – namely, federal judicial proceedings.” United States v. Reich, 479 F.3d 179, 188 (2d
+Cir. 2007). “When an individual forges a judge’s signature in order to pass off a false document
+13 The statute states: “Whoever forges the signature of any judge, register, or other officer of any court of the United
+States, or of any Territory thereof, or forges or counterfeits the seal of any such court, or knowingly concurs in using
+any such forged or counterfeit signature or seal, for the purpose of authenticating any proceeding or document, or
+tenders in evidence any such proceeding or document with a false or counterfeit signature of any such judge,
+register, or other officer, or a false or counterfeit seal of the court, subscribed or attached thereto, knowing such
+signature or seal to be false or counterfeit, shall be fined under this title or imprisoned not more than five years, or
+both.” 18 U.S.C. § 505.
+- 23 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 24 of 43
+as an authentic one issued by the courts of the United States, such conduct implicates the
+interests protected by § 505 whether or not the actor intends to deprive another of money or
+property.” Id. Reich affirmed the jury’s guilty verdict against an attorney-defendant who drafted
+and circulated a forged Order that was purported to be signed by a magistrate judge, which
+prompted his adversary to withdraw an application pending before the Second Circuit. Id. at
+182-83, 189-90; see also United States v. Davalos, 2008 WL 4642109 (S.D.N.Y. Oct. 20, 2008)
+(sentencing defendant to 15 months’ imprisonment for the use of counterfeit Orders containing
+forged signatures of Second Circuit judges) (Sweet, J.).
+8. The fake opinions cited and submitted by Respondents do not include any
+signature or seal, and the Court therefore concludes that Respondents did not violate section 505.
+The Court notes, however, that the citation and submission of fake opinions raises similar
+concerns to those described in Reich.
+9. The Court has described Respondents’ submission of fake cases as an
+unprecedented circumstance. (ECF 31 at 1.) A fake opinion is not “existing law” and citation to
+a fake opinion does not provide a non-frivolous ground for extending, modifying, or reversing
+existing law, or for establishing new law.14 An attempt to persuade a court or oppose an
+adversary by relying on fake opinions is an abuse of the adversary system. Salovaara, 222 F.3d
+at 34.
+10. An attorney’s compliance with Rule 11(b)(2) is not assessed solely at the
+moment that the paper is submitted. The 1993 amendments to Rule 11 added language that
+certifies an attorney’s Rule 11 obligation continues when “later advocating” a legal contention
+14 To the extent that the Affirmation in Opposition cited existing authorities, those decisions did not support the
+propositions for which they were offered, with the exception of Ashcroft v. Iqbal, 556 U.S. 662 (2009), and, in part,
+Doe v. United States, 419 F.3d 1058 (9th Cir. 2005).
+- 24 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 25 of 43
+first made in a written filing covered by the Rule. Thus, “a litigant’s obligations with respect to
+the contents of these papers are not measured solely as of the time they are filed with or
+submitted to the court, but include reaffirming to the court and advocating positions contained in
+those pleadings and motions after learning that they cease to have any merit.” Rule 11, advisory
+committee’s note to 1993 amendment. The failure to correct a prior statement in a pending
+motion is the later advocacy of that statement and is subject to sanctions. Galin v. Hamada, 283
+F. Supp. 3d 189, 202 (S.D.N.Y. 2017) (“[A] court may impose sanctions on a party for refusing
+to withdraw an allegation or claim even after it is shown to be inaccurate.”) (Furman, J.) (internal
+quotation marks, alterations, and citation omitted); Bressler v. Liebman, 1997 WL 466553, at *8
+(S.D.N.Y. Aug. 14, 1997) (an attorney was potentially liable under Rule 11 when he “continued
+to press the claims . . . in conferences after information provided by opposing counsel and
+analysis by the court indicated the questionable merit of those claims.”) (Preska, J.).
+11. Rule 11(c)(3) states: “On its own, the court may order an attorney, law
+firm, or party to show cause why conduct specifically described in the order has not violated
+Rule 11(b).” “If, after notice and a reasonable opportunity to respond, the court determines that
+Rule 11(b) has been violated, the court may impose an appropriate sanction on any attorney, law
+firm, or party that violated the rule or is responsible for the violation. Absent exceptional
+circumstances, a law firm must be held jointly responsible for a violation committed by its
+partner, associate, or employee.” Rule 11(c)(1).
+12. Any Rule 11 sanction should be “made with restraint” because in
+exercising sanctions powers, a trial court may be acting “as accuser, fact finder and sentencing
+judge.” Storey v. Cello Holdings, L.L.C., 347 F.3d 370, 387 (2d Cir. 2003) (quotation marks and
+citations omitted). Sanctions should not be imposed “for minor, inconsequential violations of the
+- 25 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 26 of 43
+standards prescribed by subdivision (b).” Rule 11, advisory committee’s note to 1993
+amendment.
+13. Mr. Schwartz is not admitted to practice in this District and did not file a
+notice of appearance. However, Rule 11(c)(1) permits a court to “impose an appropriate
+sanction on any attorney . . . that violated the rule or is responsible for the violation.” The Court
+has authority to impose an appropriate sanction on Mr. Schwartz for a Rule 11 violation.
+14. When, as here, a court considers whether to impose sanctions sua sponte,
+it “is akin to the court’s inherent power of contempt,” and, “like contempt, sua sponte sanctions
+in those circumstances should issue only upon a finding of subjective bad faith.” Muhammad,
+732 F.3d at 108. By contrast, where an adversary initiates sanctions proceedings under Rule
+11(c)(2), the attorney may take advantage of that Rule’s 21-day safe harbor provision and
+withdraw or correct the challenged filing, in which case sanctions may issue if the attorney’s
+statement was objectively unreasonable. Muhammad, 732 F.3d at 108; In re Pennie & Edmonds
+LLP, 323 F.3d 86, 90 (2d Cir. 2003). Subjective bad faith is “a heightened mens rea standard”
+that is intended to permit zealous advocacy while deterring improper submissions. Id. at 91.
+15. A finding of bad faith is also required for a court to sanction an attorney
+pursuant to its inherent power. See, e.g., United States v. Int’l Bhd. of Teamsters, Chauffeurs,
+Warehousemen & Helpers of Am., AFL-CIO, 948 F.2d 1338, 1345 (2d Cir. 1991). “Because of
+their very potency, inherent powers must be exercised with restraint and discretion. A primary
+aspect of that discretion is the ability to fashion an appropriate sanction for conduct which abuses
+the judicial process.” Chambers v. NASCO, Inc., 501 U.S. 32, 44-45 (1991) (internal citation
+omitted).
+- 26 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 27 of 43
+16. “[B]ad faith may be inferred where the action is completely without
+merit.” In re 60 E. 80th St. Equities, Inc., 218 F.3d 109, 116 (2d Cir. 2000). Any notice or
+warning provided to the attorney is relevant to a finding of bad faith. See id. (“Here, not only
+were the claims meritless, but [appellant] was warned of their frivolity by the Bankruptcy Court
+before he filed the appeal to the District Court.”).
+17. The Second Circuit has most often discussed subjective bad faith in the
+context of false factual statements and not unwarranted or frivolous legal arguments. Subjective
+bad faith includes the knowing and intentional submission of a false statement of fact. See, e.g.,
+Rankin v. City of Niagara Falls, Dep’t of Public Works, 569 Fed. App’x 25 (2d Cir. 2014)
+(affirming Rule 11 sanctions on attorney who obtained extensions by falsely claiming that the
+submission of a “substantive” summary judgment filing had been delayed by heavy workload)
+(summary order). An attorney acts in subjective bad faith by offering “essential” facts that
+explicitly or impliedly “run contrary to statements” that the attorney made on behalf of the same
+client in other proceedings. Revellino & Byzcek, LLP v. Port Authority of N.Y. & N.J., 682
+Fed. App’x 73, 75-76 (2d Cir. 2017) (affirming Rule 11 sanctions where allegations in a federal
+civil rights complaint misleadingly omitted key facts asserted by the same attorney on behalf of
+the same client in a related state criminal proceeding) (summary order).
+18. An assertion may be made in subjective bad faith even when it was based
+in confusion. United States ex rel. Hayes v. Allstate Ins. Co., 686 Fed. App’x 23, 28 (2d Cir.
+2017) (“[C]onfusion about corporate complexities would not justify falsely purporting to have
+personal knowledge as to more than sixty defendants’ involvement in wrongdoing.”) (summary
+order). A false statement of knowledge can constitute subjective bad faith where the speaker
+“‘knew that he had no such knowledge . . . .’” Id. at 27 (quoting United States ex rel. Hayes v.
+- 27 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 28 of 43
+Allstate Ins. Co., 2014 WL 10748104, at *6 (W.D.N.Y. Oct. 16, 2014), R & R adopted, 2016
+WL 463732 (W.D.N.Y. Feb. 8, 2016)).
+19. “Evidence that would satisfy the knowledge standard in a criminal case
+ought to be sufficient in a sanctions motion and, thus, knowledge may be proven by
+circumstantial evidence and conscious avoidance may be the equivalent of knowledge.”
+Cardona v. Mohabir, 2014 WL 1804793, at *3 (S.D.N.Y. May 6, 2014) (citing United States v.
+Svoboda, 347 F.3d 471, 477-79 (2d Cir. 2003)); accord Estevez v. Berkeley College, 2022 WL
+17177971, at *1 (S.D.N.Y. Nov. 23, 2022) (“[R]equisite actual knowledge may be demonstrated
+by circumstantial evidence and inferred from conscious avoidance.”) (Seibel, J.) (quotation
+marks omitted). The conscious avoidance test is met when a person “consciously avoided
+learning [a] fact while aware of a high probability of its existence, unless the factfinder is
+persuaded that the [person] actually believed the contrary.” United States v. Finkelstein, 229
+F.3d 90, 95 (2d Cir. 2000) (internal citations omitted). “The rationale for imputing knowledge in
+such circumstances is that one who deliberately avoided knowing the wrongful nature of his
+conduct is as culpable as one who knew.” Id. It requires more than being “merely negligent,
+foolish or mistaken,” and the person must be “aware of a high probability of the fact in dispute
+and consciously avoided confirming that fact.” Svoboda, 347 F.3d at 481-82 (quotation marks
+and brackets omitted).
+20. Respondents point to the Report and Recommendation of Magistrate
+Judge Freeman, as adopted by Judge McMahon, in Braun ex rel. Advanced Battery Techs., Inc.
+v. Zhiguo Fu, 2015 WL 4389893, at *19 (S.D.N.Y. July 10, 2015), which declined to sanction a
+law firm associate who drafted and signed a complaint that falsely alleged that the plaintiff in a
+shareholder derivative suit was a shareholder of the nominal defendant. That attorney acted in
+- 28 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 29 of 43
+reliance on the plaintiff’s signed verification of the complaint, partner communications with the
+plaintiff, and contents of law firm files that appeared to contain false information. Id. at *5-6,
+19. Braun concluded that this attorney did not act with subjective bad faith by innocently relying
+on the mistruths of others. Id. at *19. There is no suggestion in Braun that this attorney had a
+reason to know or suspect that he was relying on falsehoods or misinformation.
+21. Here, Respondents advocated for the fake cases and legal arguments
+contained in the Affirmation in Opposition after being informed by their adversary’s submission
+that their citations were non-existent and could not be found. (Findings of Fact ¶¶ 7, 11.) Mr.
+Schwartz understood that the Court had not been able to locate the fake cases. (Findings of Fact
+¶ 15.) Mr. LoDuca, the only attorney of record, consciously avoided learning the facts by neither
+reading the Avianca submission when received nor after receiving the Court’s Orders of April 11
+and 12. Respondents’ circumstances are not similar to those of the attorney in Braun.
+22. “In considering Rule 11 sanctions, the knowledge and conduct of each
+respondent lawyer must be separately assessed and principles of imputation of knowledge do not
+apply.” Weddington v. Sentry Indus., Inc., 2020 WL 264431, at *7 (S.D.N.Y. Jan. 17, 2020).
+23. The Court concludes that Mr. LoDuca acted with subjective bad faith in
+violating Rule 11 in the following respects:
+a. Mr. LoDuca violated Rule 11 in not reading a single case cited in
+his March 1 Affirmation in Opposition and taking no other steps on his own to check whether
+any aspect of the assertions of law were warranted by existing law. An inadequate or inattentive
+“inquiry” may be unreasonable under the circumstances. But signing and filing that affirmation
+after making no “inquiry” was an act of subjective bad faith. This is especially so because he
+knew of Mr. Schwartz’s lack of familiarity with federal law, the Montreal Convention and
+- 29 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 30 of 43
+bankruptcy stays, and the limitations of research tools made available by the law firm with which
+he and Mr. Schwartz were associated.
+b. Mr. LoDuca violated Rule 11 in swearing to the truth of the April
+25 Affidavit with no basis for doing so. While an inadequate inquiry may not suggest bad faith,
+the absence of any inquiry supports a finding of bad faith. Mr. Schwartz walked into his office,
+presented him with an affidavit that he had never seen in draft form, and Mr. LoDuca read it and
+signed it under oath. A cursory review of his own affidavit would have revealed that (1)
+“Zicherman v. Korean Air Lines Co., Ltd., 516 F.3d 1237 (11th Cir. 2008)” could not be found,
+(2) many of the cases were excerpts and not full cases and (3) reading only the opening passages
+of, for example, “Varghese”, would have revealed that it was internally inconsistent and
+nonsensical.
+c. Further, the Court directed Mr. LoDuca to submit the April 25
+Affidavit and Mr. LoDuca lied to the Court when seeking an extension, claiming that he, Mr.
+LoDuca, was going on vacation when, in truth and in fact, Mr. Schwartz, the true author of the
+April 25 Affidavit, was the one going on vacation. This is evidence of Mr. LoDuca’s bad faith.
+24. The Court concludes that Mr. Schwartz acted with subjective bad faith in
+violating Rule 11 in the following respects:
+a. Mr. Schwartz violated Rule 11 in connection with the April 25
+Affidavit because, as he testified at the hearing, when he looked for “Varghese” he “couldn’t
+find it,” yet did not reveal this in the April 25 Affidavit. He also offered no explanation for his
+inability to find “Zicherman”. Poor and sloppy research would merely have been objectively
+unreasonable. But Mr. Schwartz was aware of facts that alerted him to the high probability that
+“Varghese” and “Zicherman” did not exist and consciously avoided confirming that fact.
+- 30 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 31 of 43
+b. Mr. Schwartz’s subjective bad faith is further supported by the
+untruthful assertion that ChatGPT was merely a “supplement” to his research, his conflicting
+accounts about his queries to ChatGPT as to whether “Varghese” is a “real” case, and the failure
+to disclose reliance on ChatGPT in the April 25 Affidavit.
+25. The Levidow Firm is jointly and severally liable for the Rule 11(b)(2)
+violations of Mr. LoDuca and Mr. Schwartz. Rule 11(c)(1) provides that “[a]bsent exceptional
+circumstances, a law firm must be held jointly responsible for a violation committed by its
+partner, associate, or employee.” The Levidow Firm has not pointed to exceptional
+circumstances that warrant a departure from Rule 11(c)(1). Mr. Corvino has acknowledged
+responsibility, identified remedial measures taken by the Levidow Firm, including an expanded
+Fastcase subscription and CLE programming, and expressed his regret for Respondents’
+submissions. (Corvino Decl. ¶¶ 10-15; Tr. 44-47.)
+26. The Court declines to separately impose any sanction pursuant to 28
+U.S.C. § 1927, which provides for a sanction against any attorney “who so multiplies the
+proceedings in any case unreasonably and vexatiously . . . .” “By its terms, § 1927 looks to
+unreasonable and vexatious multiplications of proceedings; and it imposes an obligation on
+attorneys throughout the entire litigation to avoid dilatory tactics. The purpose of this statute is
+to deter unnecessary delays in litigation.” Int’l Bhd. of Teamsters, 948 F.2d at 1345 (internal
+citations and quotation marks omitted). Respondents’ reliance on fakes cases has caused several
+harms but dilatory tactics and delay were not among them.
+27. Each of the Respondents is sanctioned under Rule 11 and, alternatively,
+under the inherent power of this Court.
+- 31 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 32 of 43
+28. A Rule 11 sanction should advance both specific and general deterrence.
+Cooter & Gell, 496 U.S. at 404. “A sanction imposed under [Rule 11] must be limited to what
+suffices to deter repetition of the conduct or comparable conduct by others similarly situated.
+The sanction may include nonmonetary directives; an order to pay a penalty into court; or, if
+imposed on motion and warranted for effective deterrence, an order directing payment to the
+movant of part or all of the reasonable attorney’s fees and other expenses directly resulting from
+the violation.” Rule 11(c)(4). “The court has available a variety of possible sanctions to impose
+for violations, such as striking the offending paper; issuing an admonition, reprimand, or
+censure; requiring participation in seminars or other educational programs; ordering a fine
+payable to the court; referring the matter to disciplinary authorities (or, in the case of government
+attorneys, to the Attorney General, Inspector General, or agency head), etc.” Rule 11, advisory
+committee’s note to 1993 amendment.
+29. “‘[B]ecause the purpose of imposing Rule 11 sanctions is deterrence, a
+court should impose the least severe sanctions necessary to achieve the goal.’” (RC) 2 Pharma
+Connect, LLC v. Mission Pharmacal Co., 2023 WL 112552, at *3 (S.D.N.Y. Jan. 4, 2023)
+(Liman, J.) (quoting Schottenstein v. Schottenstein, 2005 WL 912017, at *2 (S.D.N.Y. Apr. 18,
+2005)). “[T]he Court has ‘wide discretion’ to craft an appropriate sanction, and may consider the
+effects on the parties and the full knowledge of the relevant facts gained during the sanctions
+hearing.” Heaston v. City of New York, 2022 WL 182069, at *9 (E.D.N.Y. Jan. 20, 2022)
+(Chen, J.) (quoting Oliveri v. Thompson, 803 F.2d 1265, 1280 (2d Cir. 1986)).
+30. The Court has considered the specific circumstances of this case. The
+Levidow Firm has arranged for outside counsel to conduct a mandatory Continuing Legal
+Education program on technological competence and artificial intelligence programs. (Corvino
+- 32 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 33 of 43
+Decl. ¶ 14.) The Levidow Firm also intends to hold mandatory training for all lawyers and staff
+on notarization practices. (Corvino Decl. ¶ 15.) Imposing a sanction of further and additional
+mandatory education would be redundant.
+31. Counsel for Avianca has not sought the reimbursement of attorneys’ fees
+or expenses. Ordering the payment of opposing counsel’s fees and expenses is not warranted.
+32. In considering the need for specific deterrence, the Court has weighed the
+significant publicity generated by Respondents’ actions. (See, e.g., Alger Decl. Ex. E.) The
+Court credits the sincerity of Respondents when they described their embarrassment and
+remorse. The fake cases were not submitted for any respondent’s financial gain and were not
+done out of personal animus. Respondents do not have a history of disciplinary violations and
+there is a low likelihood that they will repeat the actions described herein.
+33. There is a salutary purpose of placing the most directly affected persons
+on notice of Respondents’ conduct. The Court will require Respondents to inform their client
+and the judges whose names were wrongfully invoked of the sanctions imposed. The Court will
+not require an apology from Respondents because a compelled apology is not a sincere apology.
+Any decision to apologize is left to Respondents.
+34. An attorney may be required to pay a fine, or, in the words of Rule 11, a
+“penalty,” to advance the interests of deterrence and not as punishment or compensation. See,
+e.g., Universitas Education, LLC v. Nova Grp., Inc., 784 F.3d 99, 103-04 (2d Cir. 2015). The
+Court concludes that a penalty of $5,000 paid into the Registry of the Court is sufficient but not
+more than necessary to advance the goals of specific and general deterrence.
+- 33 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 34 of 43
+CONCLUSION
+The Court Orders the following sanctions pursuant to Rule 11, or, alternatively,
+its inherent authority:
+a. Within 14 days of this Order, Respondents shall send via first-class
+mail a letter individually addressed to plaintiff Roberto Mata that identifies and attaches this
+Opinion and Order, a transcript of the hearing of June 8, 2023 and a copy of the April 25
+Affirmation, including its exhibits.
+b. Within 14 days of this Order, Respondents shall send via first-class
+mail a letter individually addressed to each judge falsely identified as the author of the fake
+“Varghese”, “Shaboon”, “Petersen”, “Martinez”, “Durden” and “Miller” opinions. The letter
+shall identify and attach this Opinion and Order, a transcript of the hearing of June 8, 2023 and a
+copy of the April 25 Affirmation, including the fake “opinion” attributed to the recipient judge.
+c. Within 14 days of this Opinion and Order, respondents shall file
+with this Court copies of the letters sent in compliance with (a) and (b).
+d. A penalty of $5,000 is jointly and severally imposed on
+Respondents and shall be paid into the Registry of this Court within 14 days of this Opinion and
+Order.
+SO ORDERED.
+Dated: New York, New York
+June 22, 2023
+- 34 -
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 35 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 36 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 37 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 38 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 39 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 40 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 41 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 42 of 43
+Case 1:22-cv-01461-PKC Document 54 Filed 06/22/23 Page 43 of 43

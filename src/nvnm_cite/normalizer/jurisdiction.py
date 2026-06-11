@@ -20,6 +20,8 @@ Mapping rules, in order:
 
 from __future__ import annotations
 
+import re
+
 import courts_db
 from eyecite.models import CaseCitation
 
@@ -38,6 +40,32 @@ AMBIGUOUS_FEDERAL_REPORTERS = frozenset(
 
 _VALID_COURT_IDS: frozenset[str] = frozenset(c["id"] for c in courts_db.courts)
 
+# Closed-set fallback for standard federal appellate parentheticals.
+# eyecite 2.7.6 resolves "(3rd Cir.)" but not the Bluebook-standard
+# "(3d Cir.)" (measured; "2d Cir." works, the gap is 3d only). The spec's
+# rule 2 makes these 13 forms recognizable per se, so when eyecite reports
+# no court we match them exactly: ordinal + "Cir." right after the cite,
+# with only pin-cite characters allowed in between so a neighboring
+# citation's parenthetical can never be misattributed. An exact whitelist
+# is not a guess.
+_CIRCUIT_BY_ORDINAL: dict[str, str] = {
+    "1st": "ca1", "2d": "ca2", "2nd": "ca2", "3d": "ca3", "3rd": "ca3",
+    "4th": "ca4", "5th": "ca5", "6th": "ca6", "7th": "ca7", "8th": "ca8",
+    "9th": "ca9", "10th": "ca10", "11th": "ca11", "D.C.": "cadc", "Fed.": "cafc",
+}
+_CIRCUIT_PARENTHETICAL = re.compile(
+    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.]*)"  # optional pin cites only
+    r"\((?P<ordinal>1st|2d|2nd|3d|3rd|4th|5th|6th|7th|8th|9th|10th|11th|D\.C\.|Fed\.)"
+    r"\s+Cir\.?(?:[\s,][^)]*)?\)"
+)
+
+
+def _circuit_from_following_text(following_text: str) -> str | None:
+    match = _CIRCUIT_PARENTHETICAL.match(following_text)
+    if not match:
+        return None
+    return _CIRCUIT_BY_ORDINAL[match.group("ordinal")]
+
 
 def registry_for_court(court_id: str) -> str:
     """Registry name for a courts-db court ID. Raises if the ID is unknown."""
@@ -46,10 +74,15 @@ def registry_for_court(court_id: str) -> str:
     return REGISTRY_PREFIX + court_id
 
 
-def map_citation(citation: CaseCitation) -> tuple[str | None, str | None]:
+def map_citation(
+    citation: CaseCitation, following_text: str = ""
+) -> tuple[str | None, str | None]:
     """(registry, None) when the citation maps cleanly, else (None, reason).
 
-    A (None, reason) result means AMBIGUOUS_JURISDICTION to the caller.
+    following_text is the cleaned text immediately after the citation span,
+    used only for the closed-set circuit-parenthetical fallback when eyecite
+    reports no court. A (None, reason) result means AMBIGUOUS_JURISDICTION
+    to the caller.
     """
     edition = citation.corrected_reporter()
     if edition in SCOTUS_EDITIONS:
@@ -62,6 +95,10 @@ def map_citation(citation: CaseCitation) -> tuple[str | None, str | None]:
         # eyecite court IDs come from courts-db, so this branch should be
         # unreachable; if the libraries ever skew, refuse rather than guess.
         return None, f"court id {court!r} not found in courts-db"
+
+    fallback = _circuit_from_following_text(following_text)
+    if fallback is not None:
+        return REGISTRY_PREFIX + fallback, None
 
     if edition in AMBIGUOUS_FEDERAL_REPORTERS:
         return None, f"{edition} citation with no recognizable court parenthetical"

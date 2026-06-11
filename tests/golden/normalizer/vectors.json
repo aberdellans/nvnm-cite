@@ -1,0 +1,3109 @@
+{
+ "_meta": {
+  "spec": "cite-canonical-v1",
+  "generator": "generate_vectors.py",
+  "note": "Expectations hand-derived from docs/canonical-citation-spec.md; adjudications recorded in DECISIONS.md. Compared fields: as_written, canonical, registry, disposition, kind.",
+  "vector_count": 214,
+  "expectation_rows": 230
+ },
+ "vectors": [
+  {
+   "id": "scotus_editions-001",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 U.S. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-002",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 U. S. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 U. S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-003",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 S. Ct. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 S. Ct. 113",
+     "canonical": "410 S. Ct. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-004",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 S.Ct. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 S.Ct. 113",
+     "canonical": "410 S. Ct. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-005",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 L. Ed. 2d 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 L. Ed. 2d 113",
+     "canonical": "410 L. Ed. 2d 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-006",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 L.Ed.2d 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 L.Ed.2d 113",
+     "canonical": "410 L. Ed. 2d 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-007",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 L. Ed. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 L. Ed. 113",
+     "canonical": "410 L. Ed. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-008",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 410 L.Ed. 113 (1990).",
+   "expect": [
+    {
+     "as_written": "410 L.Ed. 113",
+     "canonical": "410 L. Ed. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-009",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 U.S. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 U.S. 483",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-010",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 U. S. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 U. S. 483",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-011",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 S. Ct. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 S. Ct. 483",
+     "canonical": "347 S. Ct. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-012",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 S.Ct. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 S.Ct. 483",
+     "canonical": "347 S. Ct. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-013",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 L. Ed. 2d 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 L. Ed. 2d 483",
+     "canonical": "347 L. Ed. 2d 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-014",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 L.Ed.2d 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 L.Ed.2d 483",
+     "canonical": "347 L. Ed. 2d 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-015",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 L. Ed. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 L. Ed. 483",
+     "canonical": "347 L. Ed. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-016",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 347 L.Ed. 483 (1990).",
+   "expect": [
+    {
+     "as_written": "347 L.Ed. 483",
+     "canonical": "347 L. Ed. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-017",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 U.S. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 U.S. 310",
+     "canonical": "558 U.S. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-018",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 U. S. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 U. S. 310",
+     "canonical": "558 U.S. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-019",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 S. Ct. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 S. Ct. 310",
+     "canonical": "558 S. Ct. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-020",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 S.Ct. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 S.Ct. 310",
+     "canonical": "558 S. Ct. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-021",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 L. Ed. 2d 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 L. Ed. 2d 310",
+     "canonical": "558 L. Ed. 2d 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-022",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 L.Ed.2d 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 L.Ed.2d 310",
+     "canonical": "558 L. Ed. 2d 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-023",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 L. Ed. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 L. Ed. 310",
+     "canonical": "558 L. Ed. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-024",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 558 L.Ed. 310 (1990).",
+   "expect": [
+    {
+     "as_written": "558 L.Ed. 310",
+     "canonical": "558 L. Ed. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-025",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 U.S. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 U.S. 400",
+     "canonical": "565 U.S. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-026",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 U. S. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 U. S. 400",
+     "canonical": "565 U.S. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-027",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 S. Ct. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 S. Ct. 400",
+     "canonical": "565 S. Ct. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-028",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 S.Ct. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 S.Ct. 400",
+     "canonical": "565 S. Ct. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-029",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 L. Ed. 2d 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 L. Ed. 2d 400",
+     "canonical": "565 L. Ed. 2d 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-030",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 L.Ed.2d 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 L.Ed.2d 400",
+     "canonical": "565 L. Ed. 2d 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-031",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 L. Ed. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 L. Ed. 400",
+     "canonical": "565 L. Ed. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-032",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 565 L.Ed. 400 (1990).",
+   "expect": [
+    {
+     "as_written": "565 L.Ed. 400",
+     "canonical": "565 L. Ed. 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-033",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 U.S. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 U.S. 644",
+     "canonical": "576 U.S. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-034",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 U. S. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 U. S. 644",
+     "canonical": "576 U.S. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-035",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 S. Ct. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 S. Ct. 644",
+     "canonical": "576 S. Ct. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-036",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 S.Ct. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 S.Ct. 644",
+     "canonical": "576 S. Ct. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-037",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 L. Ed. 2d 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 L. Ed. 2d 644",
+     "canonical": "576 L. Ed. 2d 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-038",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 L.Ed.2d 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 L.Ed.2d 644",
+     "canonical": "576 L. Ed. 2d 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-039",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 L. Ed. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 L. Ed. 644",
+     "canonical": "576 L. Ed. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "scotus_editions-040",
+   "category": "scotus_editions",
+   "text": "See Alpha v. Beta, 576 L.Ed. 644 (1990).",
+   "expect": [
+    {
+     "as_written": "576 L.Ed. 644",
+     "canonical": "576 L. Ed. 644",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-001",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (1st Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca1",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-002",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (2d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-003",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (3d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca3",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-004",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (4th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca4",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-005",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (5th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca5",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-006",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (6th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca6",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-007",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (7th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca7",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-008",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (8th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca8",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-009",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (9th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-010",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (10th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca10",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-011",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-012",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (D.C. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-cadc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-013",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 800 F.2d 1339, 1345 (Fed. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 1339",
+     "canonical": "800 F.2d 1339",
+     "registry": "us-cafc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-014",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (1st Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca1",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-015",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (2d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-016",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (3d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca3",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-017",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (4th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca4",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-018",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (5th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca5",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-019",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (6th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca6",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-020",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (7th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca7",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-021",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (8th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca8",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-022",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (9th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-023",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (10th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca10",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-024",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-025",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (D.C. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-cadc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-026",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F.3d 1339, 1345 (Fed. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-cafc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-027",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (1st Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca1",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-028",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (2d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-029",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (3d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca3",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-030",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (4th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca4",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-031",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (5th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca5",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-032",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (6th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca6",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-033",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (7th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca7",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-034",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (8th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca8",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-035",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (9th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-036",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (10th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca10",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-037",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-038",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (D.C. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-cadc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-039",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 50 F.4th 1339, 1345 (Fed. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 1339",
+     "canonical": "50 F.4th 1339",
+     "registry": "us-cafc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-040",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (1st Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca1",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-041",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (2d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-042",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (3d Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca3",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-043",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (4th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca4",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-044",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (5th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca5",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-045",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (6th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca6",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-046",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (7th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca7",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-047",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (8th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca8",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-048",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (9th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-049",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (10th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca10",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-050",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-051",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (D.C. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-cadc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-052",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 789 F. App'x 1339, 1345 (Fed. Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 1339",
+     "canonical": "789 F. App'x 1339",
+     "registry": "us-cafc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-053",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F. 3d 1339 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F. 3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-054",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F. 4th 1339 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F. 4th 1339",
+     "canonical": "925 F.4th 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-055",
+   "category": "circuit_parentheticals",
+   "text": "Gamma v. Delta, 925 F. 2d 1339 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F. 2d 1339",
+     "canonical": "925 F.2d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-056",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (1st Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca1",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-057",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (2d Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-058",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (3d Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca3",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-059",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (4th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca4",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-060",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (5th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca5",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-061",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (6th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca6",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-062",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (7th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca7",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-063",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (8th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca8",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-064",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (9th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-065",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (10th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca10",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-066",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (11th Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-067",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (D.C. Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-cadc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "circuit_parentheticals-068",
+   "category": "circuit_parentheticals",
+   "text": "Kappa v. Lambda, 412 F.3d 88 (Fed. Cir. 2005).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-cafc",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-001",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 300 F. 57.",
+   "expect": [
+    {
+     "as_written": "300 F. 57",
+     "canonical": "300 F. 57",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-002",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 800 F.2d 100.",
+   "expect": [
+    {
+     "as_written": "800 F.2d 100",
+     "canonical": "800 F.2d 100",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-003",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 538 F.3d 1000.",
+   "expect": [
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-004",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 50 F.4th 700.",
+   "expect": [
+    {
+     "as_written": "50 F.4th 700",
+     "canonical": "50 F.4th 700",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-005",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 789 F. App'x 12.",
+   "expect": [
+    {
+     "as_written": "789 F. App'x 12",
+     "canonical": "789 F. App'x 12",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-006",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 100 F. Supp. 9.",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 9",
+     "canonical": "100 F. Supp. 9",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-007",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 200 F. Supp. 2d 19.",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 19",
+     "canonical": "200 F. Supp. 2d 19",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-008",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 300 F. Supp. 3d 29.",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 29",
+     "canonical": "300 F. Supp. 3d 29",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-009",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 538 F.3d 1000, 1004 (2010).",
+   "expect": [
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-010",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 800 F.2d 100, 105 (2010).",
+   "expect": [
+    {
+     "as_written": "800 F.2d 100",
+     "canonical": "800 F.2d 100",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-011",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 50 F.4th 700, 702 (2010).",
+   "expect": [
+    {
+     "as_written": "50 F.4th 700",
+     "canonical": "50 F.4th 700",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "federal_no_parenthetical-012",
+   "category": "federal_no_parenthetical",
+   "text": "Epsilon v. Zeta, 200 F. Supp. 2d 19, 25 (2010).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 19",
+     "canonical": "200 F. Supp. 2d 19",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-001",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (S.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-nysd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-002",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (E.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-nyed",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-003",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (N.D. Ga. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-gand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-004",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (S.D. Fla. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-flsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-005",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (N.D. Cal. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-cand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-006",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (D. Mass. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-mad",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-007",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (S.D. Tex. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-txsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-008",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 100 F. Supp. 99 (D.N.J. 2015).",
+   "expect": [
+    {
+     "as_written": "100 F. Supp. 99",
+     "canonical": "100 F. Supp. 99",
+     "registry": "us-njd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-009",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (S.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-nysd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-010",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (E.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-nyed",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-011",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (N.D. Ga. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-gand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-012",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (S.D. Fla. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-flsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-013",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (N.D. Cal. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-cand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-014",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (D. Mass. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-mad",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-015",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (S.D. Tex. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-txsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-016",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 200 F. Supp. 2d 99 (D.N.J. 2015).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 99",
+     "canonical": "200 F. Supp. 2d 99",
+     "registry": "us-njd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-017",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (S.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-nysd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-018",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (E.D.N.Y. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-nyed",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-019",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (N.D. Ga. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-gand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-020",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (S.D. Fla. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-flsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-021",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (N.D. Cal. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-cand",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-022",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (D. Mass. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-mad",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-023",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (S.D. Tex. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-txsd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "district_parentheticals-024",
+   "category": "district_parentheticals",
+   "text": "Eta v. Theta, 300 F. Supp. 3d 99 (D.N.J. 2015).",
+   "expect": [
+    {
+     "as_written": "300 F. Supp. 3d 99",
+     "canonical": "300 F. Supp. 3d 99",
+     "registry": "us-njd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-001",
+   "category": "line_break_mangled",
+   "text": "See Iota v. Kappa, 410\nU.S. 113 (1990), on point.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-002",
+   "category": "line_break_mangled",
+   "text": "See Iota v. Kappa, 410 U.S.\n113 (1990), on point.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-003",
+   "category": "line_break_mangled",
+   "text": "See Iota v. Kappa, 410\nU. S.\n113 (1990), on point.",
+   "expect": [
+    {
+     "as_written": "410 U. S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-004",
+   "category": "line_break_mangled",
+   "text": "See Iota v. Kappa, 132\nS. Ct. 945 (1990), on point.",
+   "expect": [
+    {
+     "as_written": "132 S. Ct. 945",
+     "canonical": "132 S. Ct. 945",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-005",
+   "category": "line_break_mangled",
+   "text": "See Iota v. Kappa, 181 L. Ed.\n2d 911 (1990), on point.",
+   "expect": [
+    {
+     "as_written": "181 L. Ed. 2d 911",
+     "canonical": "181 L. Ed. 2d 911",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-006",
+   "category": "line_break_mangled",
+   "text": "Lambda v. Mu, 925 F.\n3d 1339 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F. 3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-007",
+   "category": "line_break_mangled",
+   "text": "Lambda v. Mu, 925\nF.3d\n1339 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-008",
+   "category": "line_break_mangled",
+   "text": "Varghese v.\nChina S. Airlines Co., 925 F.3d 1339 (11th\nCir. 2019).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-009",
+   "category": "line_break_mangled",
+   "text": "Roe v.\nWade, 410 U.S. 113, 116\n(1973), held otherwise.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "line_break_mangled-010",
+   "category": "line_break_mangled",
+   "text": "See Eta v. Theta, 200 F. Supp.\n2d 19 (S.D.N.Y. 2002).",
+   "expect": [
+    {
+     "as_written": "200 F. Supp. 2d 19",
+     "canonical": "200 F. Supp. 2d 19",
+     "registry": "us-nysd",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-001",
+   "category": "short_form_chains",
+   "text": "Roe v. Wade, 410 U.S. 113, 116 (1973), controls. Roe, 410 U.S. at 120. Id. at 121.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "410 U.S. at 120",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "short"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "id"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-002",
+   "category": "short_form_chains",
+   "text": "Varghese v. China S. Airlines Co., 925 F.3d 1339 (11th Cir. 2019). Varghese, 925 F.3d at 1345.",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "925 F.3d at 1345",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-003",
+   "category": "short_form_chains",
+   "text": "Roe v. Wade, 410 U.S. 113 (1973). Roe, supra, at 120.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "supra,",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "supra"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-004",
+   "category": "short_form_chains",
+   "text": "Smith v. Doe, 538 F.3d 1000 (9th Cir. 2008). Id. at 1005. Id.",
+   "expect": [
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "id"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "id"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-005",
+   "category": "short_form_chains",
+   "text": "Brown v. Board, 347 U.S. 483 (1954). Roe v. Wade, 410 U.S. 113 (1973). Brown, 347 U.S. at 490.",
+   "expect": [
+    {
+     "as_written": "347 U.S. 483",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "347 U.S. at 490",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-006",
+   "category": "short_form_chains",
+   "text": "Roe v. Wade, 410 U.S. 113 (1973). Id. at 116. Brown v. Board, 347 U.S. 483 (1954). Id. at 490.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "id"
+    },
+    {
+     "as_written": "347 U.S. 483",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "id"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-007",
+   "category": "short_form_chains",
+   "text": "Varghese v. China S. Airlines Co., 925 F.3d 1339 (11th Cir. 2019), guides. Varghese, supra, at 1345.",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "supra,",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "supra"
+    }
+   ]
+  },
+  {
+   "id": "short_form_chains-008",
+   "category": "short_form_chains",
+   "text": "Smith v. Doe, 538 F.3d 1000 (9th Cir. 2008). Smith, 538 F.3d at 1003. Id.",
+   "expect": [
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "538 F.3d at 1003",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "short"
+    },
+    {
+     "as_written": "Id.",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "id"
+    }
+   ]
+  },
+  {
+   "id": "orphans-001",
+   "category": "orphans",
+   "text": "Id. at 5, as previously noted.",
+   "expect": [
+    {
+     "as_written": "Id.",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "id"
+    }
+   ]
+  },
+  {
+   "id": "orphans-002",
+   "category": "orphans",
+   "text": "See 410 U.S. at 120 for the discussion.",
+   "expect": [
+    {
+     "as_written": "410 U.S. at 120",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "orphans-003",
+   "category": "orphans",
+   "text": "Nu, supra, at 10, settles it.",
+   "expect": [
+    {
+     "as_written": "supra,",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "supra"
+    }
+   ]
+  },
+  {
+   "id": "orphans-004",
+   "category": "orphans",
+   "text": "925 F.3d at 1345 is the page cited.",
+   "expect": [
+    {
+     "as_written": "925 F.3d at 1345",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "orphans-005",
+   "category": "orphans",
+   "text": "The brief opens with Id. at 3, then cites Roe v. Wade, 410 U.S. 113 (1973).",
+   "expect": [
+    {
+     "as_written": "Id.",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "id"
+    },
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parallel_citations-001",
+   "category": "parallel_citations",
+   "text": "Citizens United v. FEC, 558 U.S. 310, 130 S. Ct. 876, 175 L. Ed. 2d 753 (2010).",
+   "expect": [
+    {
+     "as_written": "558 U.S. 310",
+     "canonical": "558 U.S. 310",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "130 S. Ct. 876",
+     "canonical": "130 S. Ct. 876",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "175 L. Ed. 2d 753",
+     "canonical": "175 L. Ed. 2d 753",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parallel_citations-002",
+   "category": "parallel_citations",
+   "text": "Milkovich v. Lorain Journal Co., 494 U.S. 472, 110 S.Ct. 1249, 108 L.Ed.2d 400 (1990).",
+   "expect": [
+    {
+     "as_written": "494 U.S. 472",
+     "canonical": "494 U.S. 472",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "110 S.Ct. 1249",
+     "canonical": "110 S. Ct. 1249",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "108 L.Ed.2d 400",
+     "canonical": "108 L. Ed. 2d 400",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parallel_citations-003",
+   "category": "parallel_citations",
+   "text": "New York Times Co. v. Sullivan, 376 U.S. 254, 84 S. Ct. 710 (1964).",
+   "expect": [
+    {
+     "as_written": "376 U.S. 254",
+     "canonical": "376 U.S. 254",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "84 S. Ct. 710",
+     "canonical": "84 S. Ct. 710",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parallel_citations-004",
+   "category": "parallel_citations",
+   "text": "Gertz v. Robert Welch, Inc., 418 U.S. 323, 339-40, 94 S. Ct. 2997, 41 L. Ed. 2d 789 (1974).",
+   "expect": [
+    {
+     "as_written": "418 U.S. 323",
+     "canonical": "418 U.S. 323",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "94 S. Ct. 2997",
+     "canonical": "94 S. Ct. 2997",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "41 L. Ed. 2d 789",
+     "canonical": "41 L. Ed. 2d 789",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "early_scotus-001",
+   "category": "early_scotus",
+   "text": "Omicron v. Pi, 5 U.S. (1 Cranch) 137 (1850).",
+   "expect": [
+    {
+     "as_written": "5 U.S. (1 Cranch) 137",
+     "canonical": "5 U.S. 137",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "early_scotus-002",
+   "category": "early_scotus",
+   "text": "Omicron v. Pi, 17 U.S. (4 Wheat.) 316 (1850).",
+   "expect": [
+    {
+     "as_written": "17 U.S. (4 Wheat.) 316",
+     "canonical": "17 U.S. 316",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "early_scotus-003",
+   "category": "early_scotus",
+   "text": "Omicron v. Pi, 60 U.S. (19 How.) 393 (1850).",
+   "expect": [
+    {
+     "as_written": "60 U.S. (19 How.) 393",
+     "canonical": "60 U.S. 393",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "early_scotus-004",
+   "category": "early_scotus",
+   "text": "Omicron v. Pi, 2 U.S. (2 Dall.) 419 (1850).",
+   "expect": [
+    {
+     "as_written": "2 U.S. (2 Dall.) 419",
+     "canonical": "2 U.S. 419",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "early_scotus-005",
+   "category": "early_scotus",
+   "text": "Omicron v. Pi, 33 U.S. (8 Pet.) 591 (1850).",
+   "expect": [
+    {
+     "as_written": "33 U.S. (8 Pet.) 591",
+     "canonical": "33 U.S. 591",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-001",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 123 So. 2d 456 (Fla. 1960).",
+   "expect": [
+    {
+     "as_written": "123 So. 2d 456",
+     "canonical": "123 So. 2d 456",
+     "registry": "us-fla",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-002",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 456 P.2d 789 (Cal. 1969).",
+   "expect": [
+    {
+     "as_written": "456 P.2d 789",
+     "canonical": "456 P.2d 789",
+     "registry": "us-cal",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-003",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 250 N.E.2d 200 (N.Y. 1969).",
+   "expect": [
+    {
+     "as_written": "250 N.E.2d 200",
+     "canonical": "250 N.E.2d 200",
+     "registry": "us-ny",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-004",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 300 S.W.2d 100 (Tex. 1957).",
+   "expect": [
+    {
+     "as_written": "300 S.W.2d 100",
+     "canonical": "300 S.W.2d 100",
+     "registry": "us-tex",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-005",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 150 A.2d 50 (Pa. 1959).",
+   "expect": [
+    {
+     "as_written": "150 A.2d 50",
+     "canonical": "150 A.2d 50",
+     "registry": "us-pa",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-006",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 88 So. 3d 90 (Fla. 2012).",
+   "expect": [
+    {
+     "as_written": "88 So. 3d 90",
+     "canonical": "88 So. 3d 90",
+     "registry": "us-fla",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-007",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 710 N.W.2d 44 (Minn. 2006).",
+   "expect": [
+    {
+     "as_written": "710 N.W.2d 44",
+     "canonical": "710 N.W.2d 44",
+     "registry": "us-minn",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-008",
+   "category": "state_reporters",
+   "text": "Rho v. Sigma, 950 P.3d 11 (Cal. 2024).",
+   "expect": [
+    {
+     "as_written": "950 P.3d 11",
+     "canonical": "950 P.3d 11",
+     "registry": "us-cal",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-009",
+   "category": "state_reporters",
+   "text": "Tau v. Upsilon, 123 So. 2d 456.",
+   "expect": [
+    {
+     "as_written": "123 So. 2d 456",
+     "canonical": "123 So. 2d 456",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-010",
+   "category": "state_reporters",
+   "text": "Tau v. Upsilon, 456 P.2d 789.",
+   "expect": [
+    {
+     "as_written": "456 P.2d 789",
+     "canonical": "456 P.2d 789",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_reporters-011",
+   "category": "state_reporters",
+   "text": "Tau v. Upsilon, 250 N.E.2d 200.",
+   "expect": [
+    {
+     "as_written": "250 N.E.2d 200",
+     "canonical": "250 N.E.2d 200",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "non_case_excluded-001",
+   "category": "non_case_excluded",
+   "text": "The claim arises under 42 U.S.C. § 1983 and 28 U.S.C. § 1331.",
+   "expect": []
+  },
+  {
+   "id": "non_case_excluded-002",
+   "category": "non_case_excluded",
+   "text": "See 29 C.F.R. § 1604.11.",
+   "expect": []
+  },
+  {
+   "id": "non_case_excluded-003",
+   "category": "non_case_excluded",
+   "text": "See Charles A. Wright, Law of Federal Courts, 103 Harv. L. Rev. 405 (1989).",
+   "expect": []
+  },
+  {
+   "id": "non_case_excluded-004",
+   "category": "non_case_excluded",
+   "text": "The claim arises under 42 U.S.C. § 1983. Id.",
+   "expect": []
+  },
+  {
+   "id": "non_case_excluded-005",
+   "category": "non_case_excluded",
+   "text": "Pub. L. No. 110-325, 122 Stat. 3553 (2008).",
+   "expect": []
+  },
+  {
+   "id": "non_case_excluded-006",
+   "category": "non_case_excluded",
+   "text": "Under 42 U.S.C. § 1983 and Monroe v. Pape, 365 U.S. 167 (1961).",
+   "expect": [
+    {
+     "as_written": "365 U.S. 167",
+     "canonical": "365 U.S. 167",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-001",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 116 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-002",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 116-17 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-003",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 113 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-004",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 159 n.4 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-005",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 116, 118 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-006",
+   "category": "first_page_rule",
+   "text": "Roe v. Wade, 410 U.S. 113, 152-53 & n.7 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "first_page_rule-007",
+   "category": "first_page_rule",
+   "text": "(quoting Roe v. Wade, 410 U.S. 113, 116 (1973)).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "unicode_whitespace-001",
+   "category": "unicode_whitespace",
+   "text": "See Phi v. Chi, 410 U.S. 113 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "unicode_whitespace-002",
+   "category": "unicode_whitespace",
+   "text": "Psi v. Omega, 789 F. App’x 12 (11th Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "789 F. App’x 12",
+     "canonical": "789 F. App'x 12",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "unicode_whitespace-003",
+   "category": "unicode_whitespace",
+   "text": "Alpha v. Beta, 410 U.S. 113 (1973), with non-breaking spaces.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "unicode_whitespace-004",
+   "category": "unicode_whitespace",
+   "text": "Gamma v. Delta, 410 U.S. 113, 116–17 (1973), en-dash pin range.",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "unicode_whitespace-005",
+   "category": "unicode_whitespace",
+   "text": "“Quoted matter.” Roe v. Wade, 410 U.S. 113 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "pending_publication-001",
+   "category": "pending_publication",
+   "text": "Recent v. Pending, 596 U.S. ___ (2022), changes nothing here.",
+   "expect": []
+  },
+  {
+   "id": "pending_publication-002",
+   "category": "pending_publication",
+   "text": "Newest v. Slip, 600 U.S. ____, ____ (2023).",
+   "expect": []
+  },
+  {
+   "id": "noise_robustness-001",
+   "category": "noise_robustness",
+   "text": "compare Roe v. Wade, 410 U.S. 113 (1973), with Doe v. Bolton, 410 U.S. 179 (1973).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "410 U.S. 179",
+     "canonical": "410 U.S. 179",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "noise_robustness-002",
+   "category": "noise_robustness",
+   "text": "footnote 12: Varghese v. China S. Airlines Co., 925 F.3d 1339, 1345 (11th Cir. 2019); accord Smith v. Doe, 538 F.3d 1000, 1002 (9th Cir. 2008).",
+   "expect": [
+    {
+     "as_written": "925 F.3d 1339",
+     "canonical": "925 F.3d 1339",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "noise_robustness-003",
+   "category": "noise_robustness",
+   "text": "No citations live in this sentence about page 113 and volume 410.",
+   "expect": []
+  },
+  {
+   "id": "noise_robustness-004",
+   "category": "noise_robustness",
+   "text": "",
+   "expect": []
+  },
+  {
+   "id": "noise_robustness-005",
+   "category": "noise_robustness",
+   "text": "   \n\n   ",
+   "expect": []
+  },
+  {
+   "id": "noise_robustness-006",
+   "category": "noise_robustness",
+   "text": "See, e.g., Roe v. Wade, 410 U.S. 113 (1973); Brown v. Board, 347 U.S. 483 (1954); Smith v. Doe, 538 F.3d 1000 (9th Cir. 2008).",
+   "expect": [
+    {
+     "as_written": "410 U.S. 113",
+     "canonical": "410 U.S. 113",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "347 U.S. 483",
+     "canonical": "347 U.S. 483",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "538 F.3d 1000",
+     "canonical": "538 F.3d 1000",
+     "registry": "us-ca9",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "noise_robustness-007",
+   "category": "noise_robustness",
+   "text": "Affirmed. Sigma v. Tau, 412 F.3d 88, 90 (2d Cir. 2005) (per curiam) (collecting cases).",
+   "expect": [
+    {
+     "as_written": "412 F.3d 88",
+     "canonical": "412 F.3d 88",
+     "registry": "us-ca2",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  }
+ ]
+}

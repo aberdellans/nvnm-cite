@@ -164,7 +164,13 @@ def normalize(text: str, *, clean_steps: tuple[str, ...] = CLEAN_STEPS) -> Norma
             if canonical is None:
                 registry, disposition = None, Disposition.UNRESOLVED
             else:
-                registry, ambiguity = map_citation(anchor)
+                # Window after the anchor's span feeds the mapper's
+                # circuit-parenthetical fallback; 64 chars spans pin-cite
+                # runs but a guard regex stops at any intervening citation.
+                anchor_end = anchor.span()[1]
+                registry, ambiguity = map_citation(
+                    anchor, cleaned[anchor_end : anchor_end + 64]
+                )
                 if registry is None:
                     disposition, reason = Disposition.AMBIGUOUS_JURISDICTION, ambiguity
                 else:
