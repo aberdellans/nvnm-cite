@@ -26,14 +26,15 @@ What this is NOT: it never asserts a case supports a proposition, and it never a
 - Anchor precompile: `0x0000000000000000000000000000000000000A00` (same address on both networks). Vendored ABI: `src/nvnm_cite/chain/anchoring.json` (addRegistry, addRecord, records, registries, grantRole). `updateRecordStatus` exists in the chain spec but was missing from the deployed testnet binary as of May 2026.
 - `records(registry, checksum, recordId, index, pagination)` gives a keyed existence read by registry name + checksum string.
 - The precompile emits NO events (privacy by design). Indexing means paging `records()` via eth_call, never log scans.
-- Min gas price 40 gwei; the token pegs to roughly $1.
+- Measured behavior (2026-06-10, full detail in DECISIONS): keyed query misses ERROR (`collections: not found`), never empty pages. Field caps: checksum <= 64 B, uri <= 2048 B, metadata <= 2048 B; uri/checksumAlgo/metadata required non-empty and `{}` counts as empty. Registry names unique. Writes deny-by-default (creator = admin; grantRole adds editors). Duplicates create VERSIONS, never revert. Pagination is offset-based only: 200 rows/page server cap, nextKey and countTotal unreliable. Single-sender throughput ~1.1 tx/s; nonce-gapped submission rejected. The public RPC serves full archive state.
+- Gas price: 40 gwei chain floor, node suggests 45 gwei in practice; the token pegs to roughly $1.
 - WARNING: chain ID 58887 appears in older docs and plans. That testnet (manveniam-1) is RETIRED. Never use it.
 - NEVER write to mainnet from a session. Mainnet keys are not available to sessions and must never be. The testnet key lives in `.env` (`NVNM_TESTNET_KEY`); load it in code, never print it.
 
 ## Record schema (draft until Phase 1 task 1.5 locks it)
 
 - Per-case record: `checksum` = canonical citation string in plaintext (e.g. `410 U.S. 113`), `checksumAlgo` = `cite-canonical-v1`, `uri` = CourtListener cluster URL, `metadata` = compact JSON {name, year, cluster}, `status` = `Active`.
-- Receipt record (registry `receipts-v1`): `checksum` = document SHA-256 hex, `checksumAlgo` = `sha256`, `metadata` = full receipt JSON (canonical serialization: sorted keys, no whitespace).
+- Receipt record (registry `receipts-v1`): `checksum` = document SHA-256 hex (exactly fills the 64 B cap), `checksumAlgo` = `sha256`, `metadata` = receipt JSON only when it fits the 2048 B cap; larger receipts use the chunked design (Phase 4; see DECISIONS 2026-06-10 (b)). Canonical serialization: sorted keys, no whitespace.
 - Registry names: courts-db IDs prefixed `us-` (`us-scotus`, `us-ca11`), plus `receipts-v1`.
 
 ## Conventions
