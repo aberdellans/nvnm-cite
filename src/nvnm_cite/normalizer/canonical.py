@@ -113,6 +113,29 @@ def canonical_citation(citation: FullCaseCitation) -> tuple[str | None, str | No
     return f"{volume} {edition} {page}", None
 
 
+def canonical_from_parts(
+    volume: str | int | None, reporter: str | None, page: str | None
+) -> str | None:
+    """Canonical key from structured (volume, reporter, page) parts.
+
+    The corpus-side twin of canonical_citation(): CourtListener's citation
+    table stores the reporters-db edition string directly, so the key is
+    assembled per spec section 1 without going through eyecite. Token rules
+    match canonical_citation() exactly. Returns None when any part is
+    missing (no canonical key exists).
+    """
+    volume = "" if volume is None else str(volume).strip()
+    reporter = " ".join((reporter or "").split())
+    page = "" if page is None else str(page).strip()
+    if not volume or not reporter or not page:
+        return None
+    if volume.isdigit():
+        volume = str(int(volume))
+    if page.isdigit():
+        page = str(int(page))
+    return f"{volume} {reporter} {page}"
+
+
 def _clean_name(value: str | None) -> str | None:
     # eyecite can return '' for a party it matched but could not extract.
     value = (value or "").strip()

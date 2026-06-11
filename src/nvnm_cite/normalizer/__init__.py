@@ -15,6 +15,7 @@ from nvnm_cite.normalizer.canonical import (
     NormalizationResult,
     NormalizedCitation,
     canonical_citation,
+    canonical_from_parts,
     normalize,
 )
 from nvnm_cite.normalizer.jurisdiction import (
@@ -36,6 +37,7 @@ __all__ = [
     "REGISTRY_PREFIX",
     "SCOTUS_EDITIONS",
     "canonical_citation",
+    "canonical_from_parts",
     "map_citation",
     "normalize",
     "registry_for_court",
