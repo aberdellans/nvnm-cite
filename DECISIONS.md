@@ -66,3 +66,20 @@ No feature branches: solo project, no reviewer, and the continuity protocol depe
 
 ## 2026-06-10: Phase 1 dependencies: eyecite + reporters-db + courts-db (Free Law Project stack)
 Added via uv (pyproject lower bounds, exact pins in uv.lock): eyecite 2.7.6 (BSD-2-Clause), reporters-db 3.2.65 (BSD-2-Clause), courts-db 0.10.27 (BSD-2-Clause). Transitive: fast-diff-match-patch 2.1.0 (Apache-2.0), lxml 6.1.1 (BSD-3-Clause), pyahocorasick 2.3.1 (BSD-3-Clause + public domain), regex 2026.5.9 (Apache-2.0 + CNRI-Python). All permissive; licenses read from installed package metadata, not assumed. These are runtime deps of the normalizer only; `chain/` stays stdlib-only per the Phase 0 convention.
+
+## 2026-06-11: Normalizer behavior pinned against the eyecite stack (tasks 1.2/1.3)
+Measured against eyecite 2.7.6 and compensated for in nvnm_cite.normalizer:
+- resolve_citations silently DROPS unresolvable short forms (orphan Id./supra/short cites). The normalizer re-reports them as UNRESOLVED occurrences; a dangling Id. must stay visible to the verifier.
+- Bare U.S. and S. Ct. cites get court='scotus' from eyecite; bare L. Ed./L. Ed. 2d do NOT (court=None). The us-scotus mapping therefore uses the explicit edition set {U.S., S. Ct., L. Ed., L. Ed. 2d}. All four carry reporters-db cite_type='federal', so cite_type cannot discriminate.
+- reporters-db cite_type='scotus_early' is a grab bag (includes 'Bee', "Oliver's Forms") and 'Cranch' is also a D.C. reporter: bare early nominatives ("1 Cranch 137") return AMBIGUOUS_JURISDICTION per never-guess; "5 U.S. (1 Cranch) 137" maps to us-scotus via the U.S. edition.
+- eyecite raises on empty input (guarded in normalize()); plaintiff/defendant can come back '' (normalized to None); metadata.year can bleed between citations in tangled text (treated as informational only, never part of keys).
+- Normalizer-level dispositions: OK | AMBIGUOUS_JURISDICTION | UNRESOLVED, distinct from the verifier's five-status enum; AMBIGUOUS_JURISDICTION maps 1:1, UNRESOLVED covers occurrences with no canonical key (orphan short forms, pending-publication cites).
+
+## 2026-06-11: cite-canonical/v1 spec + record schema v1 LOCKED (tasks 1.4/1.5; reviewed by Albert in-session)
+docs/canonical-citation-spec.md and docs/record-schema.md are locked; changes now require version bumps (new checksumAlgo / schema strings), never edits. Settled in the lock, beyond the 2026-06-10 draft:
+- Receipt uri = urn:nvnm-cite:receipt:v1 (Albert's pick over a GitHub URL): the repo is private and no public host exists, so a URL written today would dangle for third-party chain readers; a URN is an honest identifier. Move to a published URL at mainnet cutover under a version bump.
+- Per-case uri = https://www.courtlistener.com/opinion/<cluster_id>/<slug>/ with the slug from bulk data; deterministic fallback https://www.courtlistener.com/api/rest/v4/clusters/<cluster_id>/ when the slug is missing. CL's bot protection (HTTP 202 challenge) blocked verifying arbitrary-slug redirects, so the schema depends only on data in hand.
+- Registry creation strings fixed (descriptions + metadata JSON incl. Free Law Project attribution) so Phase 2 never improvises them.
+- Metadata cap handling: deterministic truncation (name ellipsis at UTF-8 boundary; collision form caps names at 256 B each, then drops trailing entries adding "omitted":N). Oversize uri halts the writer; never silent truncation.
+- JSON serialization everywhere: UTF-8, ensure_ascii=false, sorted keys, no whitespace; byte budgets measured on UTF-8.
+- Submit-side tuple: timestamp="", recordId=0, index=0, isLatest=false; chain values authoritative on read.

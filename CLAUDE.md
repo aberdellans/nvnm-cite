@@ -31,11 +31,12 @@ What this is NOT: it never asserts a case supports a proposition, and it never a
 - WARNING: chain ID 58887 appears in older docs and plans. That testnet (manveniam-1) is RETIRED. Never use it.
 - NEVER write to mainnet from a session. Mainnet keys are not available to sessions and must never be. The testnet key lives in `.env` (`NVNM_TESTNET_KEY`); load it in code, never print it.
 
-## Record schema (draft until Phase 1 task 1.5 locks it)
+## Record schema (LOCKED v1 at task 1.5, 2026-06-11; full text in docs/record-schema.md)
 
-- Per-case record: `checksum` = canonical citation string in plaintext (e.g. `410 U.S. 113`), `checksumAlgo` = `cite-canonical-v1`, `uri` = CourtListener cluster URL, `metadata` = compact JSON {name, year, cluster}, `status` = `Active`.
-- Receipt record (registry `receipts-v1`): `checksum` = document SHA-256 hex (exactly fills the 64 B cap), `checksumAlgo` = `sha256`, `metadata` = receipt JSON only when it fits the 2048 B cap; larger receipts use the chunked design (Phase 4; see DECISIONS 2026-06-10 (b)). Canonical serialization: sorted keys, no whitespace.
-- Registry names: courts-db IDs prefixed `us-` (`us-scotus`, `us-ca11`), plus `receipts-v1`.
+- Per-case record: `checksum` = canonical citation string in plaintext per cite-canonical/v1 (e.g. `410 U.S. 113`; first-page keys, spec in docs/canonical-citation-spec.md), `checksumAlgo` = `cite-canonical-v1`, `uri` = CourtListener cluster URL (bulk-data slug form, API-URL fallback), `metadata` = compact JSON {"cluster","name","year"} (collision form {"cases":[...]}; deterministic truncation rules in the schema doc), `status` = `Active`.
+- Receipt record (registry `receipts-v1`): `checksum` = document SHA-256 hex (exactly fills the 64 B cap), `checksumAlgo` = `sha256`, `uri` = `urn:nvnm-cite:receipt:v1` (fixed; URL form deferred to mainnet publication under a version bump), `metadata` = receipt JSON when it fits 2048 B, else the Phase 4 chunked design. JSON rules everywhere: UTF-8, ensure_ascii=false, sorted keys, no whitespace.
+- Registry names: courts-db IDs prefixed `us-` (`us-scotus`, `us-ca11`), plus `receipts-v1`. Registry creation strings (descriptions + metadata incl. FLP attribution) are fixed in the schema doc.
+- Schema changes from here require a version bump, never an edit.
 
 ## Conventions
 
