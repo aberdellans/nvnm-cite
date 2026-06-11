@@ -63,3 +63,6 @@ Raw runs: scripts/phase0_experiments.py (quick / throughput / post) plus targete
 
 ## 2026-06-10: Git strategy: main-only with phase-N-done tags
 No feature branches: solo project, no reviewer, and the continuity protocol depends on every new session resuming from one unambiguous checkout (CLAUDE.md auto-load reads the working tree). Tags give milestone/rollback semantics read-only. Repo: github.com/aberdellans/nvnm-cite, private; can transfer to an org later if needed.
+
+## 2026-06-10: Phase 1 dependencies: eyecite + reporters-db + courts-db (Free Law Project stack)
+Added via uv (pyproject lower bounds, exact pins in uv.lock): eyecite 2.7.6 (BSD-2-Clause), reporters-db 3.2.65 (BSD-2-Clause), courts-db 0.10.27 (BSD-2-Clause). Transitive: fast-diff-match-patch 2.1.0 (Apache-2.0), lxml 6.1.1 (BSD-3-Clause), pyahocorasick 2.3.1 (BSD-3-Clause + public domain), regex 2026.5.9 (Apache-2.0 + CNRI-Python). All permissive; licenses read from installed package metadata, not assumed. These are runtime deps of the normalizer only; `chain/` stays stdlib-only per the Phase 0 convention.

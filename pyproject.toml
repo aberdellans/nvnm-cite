@@ -3,7 +3,11 @@ name = "nvnm-cite"
 version = "0.1.0"
 description = "Citation existence verification and filing receipts on NVNM Chain"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "courts-db>=0.10.27",
+    "eyecite>=2.7.6",
+    "reporters-db>=3.2.65",
+]
 
 [dependency-groups]
 dev = ["pytest>=8"]
