@@ -6,7 +6,7 @@ A per-jurisdiction registry of canonical US case citations stored in plaintext o
 
 It never asserts that a case supports a proposition or is good law. It proves the check happened, against what, and by whom. Provenance, not truth.
 
-**Status:** bootstrap complete (2026-06-10). Phase 0 (signer + precompile characterization) is next. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+**Status:** Phases 0-1 complete (2026-06-11, tags phase-0-done / phase-1-done). Phase 2 (corpus pipeline + testnet bulk load) is next; the load is gated on a ~2,000 wmantraUSD testnet top-up. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Working on this project (the multi-session protocol)
 
