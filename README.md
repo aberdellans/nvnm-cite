@@ -6,7 +6,7 @@ A per-jurisdiction registry of canonical US case citations stored in plaintext o
 
 It never asserts that a case supports a proposition or is good law. It proves the check happened, against what, and by whom. Provenance, not truth.
 
-**Status:** Phases 0-1 complete (2026-06-11, tags phase-0-done / phase-1-done). Phase 2 (corpus pipeline + testnet bulk load) is next; the load is gated on a ~2,000 wmantraUSD testnet top-up. See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+**Status:** Phases 0-1 complete (tags phase-0-done / phase-1-done). Phase 2 in progress: registries `us-scotus` (737) and `us-ca11` (738) live on testnet, tranche-1 bulk load (260,763 records) draining as a detached process. A browser demo (check / anchor / verify / decode) exists out-of-band: see [docs/web-demo.md](docs/web-demo.md). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Working on this project (the multi-session protocol)
 
@@ -34,6 +34,14 @@ Two phases deserve an extra line pasted after the kickoff prompt: Phase 0 (paste
 2. Copy `.env.example` to `.env` and fill in the values yourself. Never paste keys into chat; never commit `.env`.
 3. All development runs against NVNM **testnet** (chain id 787111). Mainnet is never written from a session.
 
+## Web demo
+
+`uv run python -m nvnm_cite.webapp` serves a lawyer-facing page at
+http://127.0.0.1:8787 — check a brief's citations (local, nothing leaves the
+machine), anchor a filing receipt with your own wallet, verify a document
+hash for free, and decode anchoring transactions to readable plaintext.
+Details and the privacy model: [docs/web-demo.md](docs/web-demo.md).
+
 ## Data attribution
 
 Case data comes from [CourtListener](https://www.courtlistener.com), a project of the [Free Law Project](https://free.law). Citation parsing builds on Free Law Project's eyecite, reporters-db, and courts-db.
@@ -41,6 +49,6 @@ Case data comes from [CourtListener](https://www.courtlistener.com), a project o
 ## Layout
 
 - `src/nvnm_cite/chain/anchoring.json`: vendored NVNM anchoring precompile ABI (5 methods, from the NVNM_MCP_Server project)
-- `src/nvnm_cite/`: the package (`chain/`, `normalizer/`, `loader/`, `verifier/`, `receipts/` land phase by phase)
+- `src/nvnm_cite/`: the package (`chain/`, `normalizer/`, `loader/`, `webapp/`; `verifier/`, `receipts/` land phase by phase)
 - `tests/`: pytest suites; `tests/golden/` holds the signer and normalizer contracts
 - `docs/`: `canonical-citation-spec.md` and `record-schema.md` (Phase 1); `docs/ARCHIVE/` for superseded plans

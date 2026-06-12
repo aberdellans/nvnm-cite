@@ -4,6 +4,7 @@
 - Current phase: Phase 2 IN PROGRESS (2.1-2.5 done; 2.6 tranche-1 load RUNNING detached since 2026-06-11, single key per DECISIONS, ~2.1 tx/s after the mid-flight optimization, ETA ~35 h; PID in data/load.pid, log data/load_tranche1_run2.log)
 - Last completed: census (gates PASSED: Varghese absent, ca11 2019 F.3d = 246); registries created us-scotus=737 us-ca11=738; 260,763 records prepared and loading
 - Next up: `bulk_load status` then indexer sync + reconcile (task 2.6 close-out) once the load drains; then 2.7 incremental updater. Do NOT re-run prepare/launch blindly: the checkpoint DB (data/load_state.sqlite) is the idempotency guard; `run` resumes safely.
+- Out-of-band (2026-06-12): web demo frontend at `src/nvnm_cite/webapp` (`uv run python -m nvnm_cite.webapp`; docs/web-demo.md). Previews Phase 3 statuses + a Phase 4 receipt DRAFT (`nvnm-cite-receipt/v1-draft`) without ticking those tasks; Phase 6 demo can build on it.
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 

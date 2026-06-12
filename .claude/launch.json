@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "webapp",
+      "runtimeExecutable": "uv",
+      "runtimeArgs": ["run", "python", "-m", "nvnm_cite.webapp", "--port", "8787"],
+      "port": 8787
+    }
+  ]
+}
