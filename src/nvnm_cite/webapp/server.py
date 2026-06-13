@@ -36,11 +36,13 @@ _STATIC_TYPES = {
     ".css": "text/css; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
     ".svg": "image/svg+xml",
+    ".woff2": "font/woff2",
+    ".txt": "text/plain; charset=utf-8",  # vendored font licenses
 }
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; "
-    "img-src 'self' data:; connect-src 'self'; form-action 'none'; "
-    "base-uri 'none'; frame-ancestors 'none'"
+    "img-src 'self' data:; font-src 'self'; connect-src 'self'; "
+    "form-action 'none'; base-uri 'none'; frame-ancestors 'none'"
 )
 
 
@@ -52,7 +54,7 @@ class Services:
         self.check = CheckService(index)
         self.receipt = ReceiptService(gateway)
         self.tx = TxService(gateway)
-        self.status = StatusService(gateway, index, data_dir)
+        self.status = StatusService(gateway, index, data_dir, rpc_url=rpc_url)
 
 
 class Handler(BaseHTTPRequestHandler):

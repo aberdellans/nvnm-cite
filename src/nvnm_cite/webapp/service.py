@@ -770,6 +770,10 @@ class TxService:
             return {"hash": tx_hash, "found": False}
         data = bytes.fromhex(tx.get("input", "0x")[2:] or "")
         decoded = decode_call(data) if data else None
+        input_preview = None
+        if decoded is not None and not decoded.get("function"):
+            raw = tx.get("input", "")
+            input_preview = raw[:200] + ("…" if len(raw) > 200 else "")
         block_time = None
         if block and block.get("timestamp"):
             block_time = datetime.fromtimestamp(
@@ -788,6 +792,7 @@ class TxService:
             "gas_price_gwei": round(int(tx["gasPrice"], 16) / 1e9, 3) if tx.get("gasPrice") else None,
             "is_anchoring_precompile": (tx.get("to") or "").lower() == pc.PRECOMPILE_ADDRESS.lower(),
             "decoded": decoded,
+            "input_preview": input_preview,
             "explorer": f"{TESTNET_EXPLORER}/tx/{tx_hash}",
         }
 
@@ -798,10 +803,13 @@ class TxService:
 
 
 class StatusService:
-    def __init__(self, gateway: ChainGateway, index: LocalIndex, data_dir: Path):
+    def __init__(
+        self, gateway: ChainGateway, index: LocalIndex, data_dir: Path, rpc_url: str = ""
+    ):
         self.gateway = gateway
         self.index = index
         self.data_dir = Path(data_dir)
+        self.rpc_url = rpc_url
         self._cache: tuple[float, dict] | None = None
 
     def status(self) -> dict:
@@ -842,6 +850,7 @@ class StatusService:
                 "precompile": pc.PRECOMPILE_ADDRESS,
                 "chain_id": TESTNET_CHAIN_ID,
                 "explorer": TESTNET_EXPLORER,
+                "rpc_url": self.rpc_url,
                 "receipts_registry": RECEIPTS_REGISTRY,
                 "receipt_uri": RECEIPT_URI,
             },

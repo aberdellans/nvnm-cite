@@ -84,6 +84,15 @@ record tab offers that one-time transaction with the creation strings
 rendered verbatim from the locked schema doc §2 (creator becomes admin,
 measured Phase 0 (d)).
 
+## Design
+
+The UI follows the 2026-06-12 Claude Design handoff (law report × premium
+fintech; Source Serif 4 / Public Sans / IBM Plex Mono, self-hosted latin
+woff2 subsets with OFL licenses vendored at `static/fonts-OFL.txt`). The
+designer's notes — AA contrast table, aria wiring, print behavior — are
+vendored at [design-handoff.md](design-handoff.md); the original brief is
+[design-prompt.md](design-prompt.md).
+
 ## Honest limits
 
 - The `name_check` here is a conservative heuristic preview of task 3.3:
