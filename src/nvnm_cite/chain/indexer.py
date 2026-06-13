@@ -204,7 +204,21 @@ def main(argv: list[str] | None = None) -> int:
     from nvnm_cite.config import load_dotenv, testnet_rpc
 
     load_dotenv()
-    rpc = EvmRpc(args.rpc or testnet_rpc())
+    # A full pull is ~1,300+ sequential eth_calls through Cloudflare; a
+    # mid-stream truncation or timeout on any one of them must NOT abort the
+    # whole sync (it did, on the first task-2.6 run: IncompleteRead at
+    # ~113k/260k rows). Opt into aggressive transport retry; the sync is
+    # resumable, so worst case we re-page from the last committed offset.
+    rpc = EvmRpc(
+        args.rpc or testnet_rpc(),
+        max_attempts=8,
+        backoff_base=1.0,
+        backoff_cap=30.0,
+        on_retry=lambda method, attempt, exc: print(
+            f"  transient {type(exc).__name__} on {method} (attempt {attempt}); retrying",
+            flush=True,
+        ),
+    )
     head = rpc.block_number()
     block_tag = hex(head)
     fetch = rpc_fetch_page(rpc, block_tag)

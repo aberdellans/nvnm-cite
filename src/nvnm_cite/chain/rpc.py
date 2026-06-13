@@ -6,10 +6,19 @@ are Python ints; hex conversion happens at the boundary.
 
 from __future__ import annotations
 
+import http.client
 import json
 import time
 import urllib.request
 from typing import Any
+
+# Transient TRANSPORT failures: the request never produced a JSON-RPC reply.
+# All are safe to retry because eth_call/reads are idempotent and a resent
+# raw tx keeps the same hash. urllib.error.URLError subclasses OSError;
+# socket timeouts surface as OSError; a response truncated mid-stream raises
+# http.client.IncompleteRead (an HTTPException). A JSON-RPC RpcError is NOT
+# in here: it means the node answered, so it is never retried.
+_TRANSPORT_ERRORS = (OSError, http.client.HTTPException)
 
 
 class RpcError(RuntimeError):
@@ -28,9 +37,35 @@ def _to_int(hex_value: str) -> int:
 
 
 class EvmRpc:
-    def __init__(self, url: str, timeout: float = 30.0):
+    """JSON-RPC client with OPT-IN transport-level retry.
+
+    Retry lives in the client (not scattered across callers) so the bulk
+    pullers -- the indexer, the loader, and any third party running
+    rebuild-index -- can ride out the public RPC's Cloudflare truncations
+    and timeouts over a quarter-million-row pull. But it is OPT-IN: the
+    default is a single attempt (fail fast), because interactive callers
+    (the webapp, the Phase 3 verifier's receipt read) must surface a dead
+    or slow RPC immediately rather than stall through 30s of backoff. Long-
+    running consumers pass max_attempts explicitly. A JSON-RPC RpcError is
+    never retried at any setting -- it means the node answered.
+    """
+
+    def __init__(
+        self,
+        url: str,
+        timeout: float = 30.0,
+        max_attempts: int = 1,
+        backoff_base: float = 1.0,
+        backoff_cap: float = 30.0,
+        on_retry: Any = None,
+    ):
         self.url = url
         self.timeout = timeout
+        self.max_attempts = max_attempts
+        self.backoff_base = backoff_base
+        self.backoff_cap = backoff_cap
+        # Optional callback(method, attempt, exc) for progress visibility.
+        self.on_retry = on_retry
         self._next_id = 1
 
     def call(self, method: str, params: list[Any] | None = None) -> Any:
@@ -51,8 +86,17 @@ class EvmRpc:
                 "User-Agent": "nvnm-cite/0.1.0",
             },
         )
-        with urllib.request.urlopen(request, timeout=self.timeout) as response:
-            body = json.loads(response.read().decode("utf-8"))
+        for attempt in range(1, self.max_attempts + 1):
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    body = json.loads(response.read().decode("utf-8"))
+                break
+            except _TRANSPORT_ERRORS as err:
+                if attempt >= self.max_attempts:
+                    raise
+                if self.on_retry is not None:
+                    self.on_retry(method, attempt, err)
+                time.sleep(min(self.backoff_base * 2 ** (attempt - 1), self.backoff_cap))
         if "error" in body:
             err = body["error"]
             raise RpcError(method, err.get("code", 0), err.get("message", ""), err.get("data"))
