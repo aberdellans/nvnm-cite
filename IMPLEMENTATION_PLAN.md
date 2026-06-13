@@ -3,7 +3,7 @@
 ## Status
 - Current phase: Phase 2 COMPLETE (2026-06-13, tag phase-2-done). 260,763 records on testnet (us-scotus=737, us-ca11=738), reconcile CLEAN; daily updater built + live-validated. 436 tests green.
 - Last completed: task 2.7 `loader/update.py` (date_modified cursor, append-only, --dry-run; live dry-run exercised CL API incl. 429 backoff, 0 new keys = correct given late-arriving cites).
-- Next up: Phase 3 (Verifier) in a fresh session - `nvnm-cite check brief.pdf` against the local index, local-only by default. Tranche 2 (SCOTUS memoranda) stays gated by choice; budget no longer a constraint.
+- Next up: Phase 3 (Verifier), RE-SCOPED by the 2026-06-13 frontend merge — `nvnm-cite check` reads the chain LIVE (item 0; invariant 3 amended), via a shared verifier core also used by the existing webapp. Then slimmed Phase 4 (minimal non-enumerating receipts; per-firm-per-case registries) + new Phase 4.5 (web app). Tranche 2 stays gated by choice. See DECISIONS 2026-06-13 + docs/webapp-revision-notes.md.
 - Out-of-band (2026-06-12): web demo frontend at `src/nvnm_cite/webapp` (`uv run python -m nvnm_cite.webapp`; docs/web-demo.md). Previews Phase 3 statuses + a Phase 4 receipt DRAFT (`nvnm-cite-receipt/v1-draft`) without ticking those tasks; Phase 6 demo can build on it.
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
@@ -79,13 +79,13 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 
 ## Phase 3: Verifier (1 session; may merge into Phase 4)
 
-**Goal:** `nvnm-cite check brief.pdf` produces honest per-citation statuses from chain-backed data, local-only by default, no chain trace.
+**Goal:** `nvnm-cite check brief.pdf` produces honest per-citation statuses by reading the chain LIVE (item 0). A shared verifier core (extract → normalize → map → live keyed lookup → 5 statuses + name_check) is called by BOTH the CLI and the webapp, so eyecite stays the one reference normalizer (invariant 5). NOTE: much of this already exists in `src/nvnm_cite/webapp/` (extract.py, CheckService, ChainGateway.keyed_record) — Phase 3 factors it into a shared core and adopts the live-read default.
 
 **Depends on:** Phases 1 and 2.
 
 **Tasks:**
 - [ ] 3.1 `verifier/extract.py`: PDF (pdfplumber), DOCX (python-docx), plain text. Text cleanup before eyecite (line-break-mangled citations are the main recall killer in real PDFs). Extraction recall measured against the RECAP fixtures and committed alongside the goldens.
-- [ ] 3.2 `verifier/check.py`: extract, normalize, map, look up. Drafting-time default: local `chain_index.sqlite` only (no RPC, no trace; the strategy-leak rationale from CLAUDE.md invariant 3 gets a docs paragraph). Receipt path: a direct `records(registry, checksum)` eth_call for every result that will enter a receipt, so the receipt claims a chain read at a stated block. NOT_FOUND comes from catching the keyed-miss RpcError ("collections: not found"), never from an empty page; transport/RPC failures must NOT be classified as NOT_FOUND; status and name_check read the isLatest version (per 0.7 (a)/(g)).
+- [ ] 3.2 `verifier/check.py`: extract, normalize, map, look up. Drafting-time default is now a LIVE keyed `records(registry, checksum)` eth_call against the NVNM-operated RPC (item 0; reverses the old local-only rule, amended invariant 3). NOT_FOUND comes from catching the keyed-miss RpcError ("collections: not found"), never an empty page; transport/RPC failures must NOT be classified as NOT_FOUND; status and name_check read the isLatest version. The local `chain_index.sqlite` is an optional cache + the `rebuild-index` audit tool, never the authority. Surface the exact query for replay (non-repudiation).
 - [ ] 3.3 Statuses (locked in DECISIONS.md): VERIFIED / NOT_FOUND / NOT_COVERED / AMBIGUOUS_JURISDICTION / UNPARSEABLE, plus the per-result `name_check: match | mismatch | unknown` field (fuzzy compare of the brief's party names against registry metadata).
 
 **Exit criteria:** end-to-end run on the RECAP fixtures plus a synthetic brief that exercises all five statuses and a name_check mismatch.
@@ -94,18 +94,37 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 
 ## Phase 4: Receipts + anchoring (1-2 sessions)
 
-**Goal:** Filing-time receipts anchored to `receipts-v1` on testnet, verifiable by a third party.
+**Goal:** Filing-time receipts anchored to a PER-FIRM-PER-CASE registry on testnet, verifiable by a cold third party via the registry link on the filing (item 3).
 
 **Depends on:** Phase 3, plus Phase 0 experiments (b) and (h).
 
 **Tasks:**
-- [ ] 4.1 `receipts/schema.py`: receipt v1 object: {schema: "nvnm-cite-receipt/v1", chain_id, document_sha256, checked_at_block, normalizer_version, registries: [{id, head_block}], results: [{as_written, canonical, registry, status, name_check, cluster}], agent: {kya_id, address}, timestamp}. Canonical serialization: sorted keys, no whitespace, UTF-8.
-- [ ] 4.2 `receipts/anchor.py`: addRecord to `receipts-v1` (checksum = document SHA-256 hex, which exactly fills the 64 B checksum cap; checksumAlgo = "sha256"; metadata = the receipt JSON when it fits the 2048 B cap, else the chunked form from 4.3; uri = the defined receipts uri from the locked schema). Anchoring happens only with an explicit `--anchor` flag.
-- [ ] 4.3 Chunked receipt design, now REQUIRED (0.7 (b) measured the 2048 B metadata cap; even compact serialization exceeds it for realistic briefs): design and lock in DECISIONS.md a scheme binding N chunk records to the document's manifest record. Constraint: a bare sha256 hex leaves zero checksum room for "#part-i" suffixes, so use the base64 digest form (44 chars) for suffixed chunk keys, or chunk-content hashes listed in the manifest record's metadata. Apply compact "v1c" serialization first (single-char statuses, indexed registry table, omit as_written when identical to canonical, omit unknown name_checks). Citations stay plaintext: compaction is encoding, never hashing. Demo receipts (6.2) must stay Blockscout-readable across chunks.
-- [ ] 4.4 `receipts/verify.py`: tx hash + original file in: fetch the tx calldata (calldata is permanent and needs no archive node), recompute the document SHA-256, re-run the check pinned to checked_at_block (archive eth_call is the PRIMARY path: 0.7 (h) confirmed full archive state on the default public RPC; rebuild-to-height stays as documented resilience; keyed-miss errors handled as in 3.2), report match or mismatch field by field. This is the artifact a court or insurer consumes.
+- [ ] 4.1 `receipts/schema.py`: LOCK the MINIMAL receipt v1: {schema: "nvnm-cite-receipt/v1", chain_id, document_sha256, checked_at_block, normalizer_version, registries: [{id, name, head_block}], summary: {checked, verified, not_found, not_covered, ...}, agent: {address}, timestamp}. NO per-case results array and NO kya_id (identity = wallet, item 2). The SHA-256 binds the document so verdicts are reproducible; the tally is non-identifying (item 2b). Canonical serialization: sorted keys, no whitespace, UTF-8. ~480 B, always under the 2048 B cap.
+- [ ] 4.2 `receipts/anchor.py`: addRecord to the filing party's PER-FIRM-PER-CASE registry (checksum = document SHA-256 hex; checksumAlgo = "sha256"; metadata = the minimal receipt JSON, always fits; uri = the defined receipts uri). Includes one-time registry creation/onboarding for a (firm, case) — the creating wallet becomes admin (self-sovereign, no NVNM gatekeeper). Anchoring happens only with an explicit `--anchor` flag.
+- [x] 4.3 Chunked receipt design — DROPPED, no longer needed (DECISIONS 2026-06-13 item 2b). With no per-case enumeration a receipt is ~480 B and always fits the 2048 B cap, so there is nothing to chunk; the webapp's compaction ladder is removed too. (Re-instate only if a future receipt variant ever enumerates.)
+- [ ] 4.4 `receipts/verify.py`: (registry + original file) in — the registry comes from the filing's "Citation verifications" link (item 3); hash the file locally, do a keyed `records(registry, hash)` lookup, recompute the document SHA-256, re-run the check pinned to checked_at_block (archive eth_call primary; 0.7 (h) confirmed full archive state; rebuild-to-height as resilience), report match or mismatch. Takes (registry + file), NOT a bare hash. This is the artifact a court or insurer consumes.
 - [ ] 4.5 `cli.py`: `nvnm-cite check | anchor | verify | sync | rebuild-index | reconcile | stats | load`. `stats` (and Phase 5's registry_stats/coverage) derive figures from chain_index.sqlite with its sync head stated, never from the precompile's countTotal (unreliable per 0.7 (g)).
 
-**Exit criteria:** anchor + verify round-trip on testnet against a real RECAP brief; the receipt calldata is human-readable on Blockscout; verify catches a one-byte tamper of the document.
+- [ ] 4.6 RPC query telemetry: aggregate case-frequency analytics from the live `records()` lookups (item 0), keyed BY CITATION and decoupled from document hash + client identity; internal use; disclosed in the privacy copy (item 2b).
+
+**Exit criteria:** anchor + verify round-trip on testnet against a real RECAP brief; the receipt is human-readable on the registry view; a cold third party, given only the filing's registry link + the file, finds and verifies the receipt; verify catches a one-byte tamper of the document.
+
+---
+
+## Phase 4.5: Web app — merge the frontend workstream, harden, host (1-2 sessions)
+
+**Goal:** The existing web demo (`src/nvnm_cite/webapp/`, already on main: commits 2200e32, 41e00c3) becomes the primary product surface — adopting item 0, the minimal receipt, and the per-firm-per-case registry model — honest and usable when hosted (not just on localhost). This phase MERGES the parallel frontend workstream into the plan; the architecture decisions are DECISIONS 2026-06-13 and the prepared copy is docs/webapp-revision-notes.md.
+
+**Depends on:** the re-scoped Phase 3 (shared verifier core) and Phase 4 (receipt v1 lock + registry model).
+
+**Tasks:**
+- [ ] 4.5a Wire item 0 into `CheckService`: resolve via the live keyed read (drop the local-index lookup; promote the existing `ChainGateway.keyed_record` path); surface the replayable `eth_call` query in the Check result.
+- [ ] 4.5b Hosting model + honest copy: document uploaded → parsed in memory server-side (eyecite, the one normalizer) → discarded with the response; never persisted, never on chain. Rewrite the Check-tab privacy copy (item 1); add the "we keep aggregate lookup stats as RPC operator" disclosure (item 2b).
+- [ ] 4.5c Receipt + registry UX: drop the kya_id input (show "Attesting as 0x…"); remove the compaction ladder (minimal receipt); per-firm-per-case registry create/onboarding flow; the Verify tab takes (registry link + file), not a bare hash; a CLEAR, clerk-legible registry view (item 3 forward requirement — our surface is the filing link's target, since we don't control Blockscout's UI).
+- [ ] 4.5d Copy rewrites: Inspect (drop jargon — item 5); About + lawyer FAQ (newcomer-friendly, figures rendered live from `/api/status`, never hard-coded — item 6); Verify copy stays as-is (item 4).
+- [ ] 4.5e `StatusService` fast-fail: short RPC timeout / lazy-cached probe so a slow or down RPC does not block server startup (the ~30 s stall observed 2026-06-13).
+
+**Exit criteria:** hosted-mode copy is accurate; a check reads the chain live and shows the replay query; a receipt anchors to a per-firm-per-case registry and a cold third party verifies it from the filing's registry link + the file; the registry view is legible to a non-technical reader.
 
 ---
 

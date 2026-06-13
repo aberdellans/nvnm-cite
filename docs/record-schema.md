@@ -95,6 +95,8 @@ Deterministic truncation, applied in order until the serialized form fits:
 
 ## 4. Record type 2: filing receipt
 
+> **AMENDED 2026-06-13** (DECISIONS 2026-06-13, items 2/2b/3; re-locks at Phase 4 task 4.1). The receipt model below is SUPERSEDED: receipts now live in a **per-firm-per-case registry owned by the filing party** (not the global `receipts-v1`); the `agent` object is `{address}` only (no `kya_id`); `metadata` is a **minimal receipt** — document SHA-256 + provenance + a non-identifying status tally, with **no case enumeration**, so it is always well under the 2048 B cap and the chunked design is **dropped**. Discovery is the registry link printed on the filing. The tables below describe the original single-`receipts-v1` model and stand only until task 4.1 re-locks this section.
+
 | Field | Value |
 |---|---|
 | `registry` | `receipts-v1` |
