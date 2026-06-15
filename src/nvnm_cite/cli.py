@@ -39,6 +39,7 @@ from nvnm_cite.verifier.check import (
     check_document,
 )
 from nvnm_cite.verifier.resolver import ChainResolver
+from nvnm_cite.verifier.telemetry import SqliteTelemetry
 
 # Terminal labels for the locked statuses (the report keeps the enum values).
 _STATUS_LABEL = {
@@ -151,7 +152,8 @@ def cmd_check(args: argparse.Namespace) -> int:
 
     load_dotenv()
     rpc_url = args.rpc or testnet_rpc()
-    resolver = ChainResolver(lambda: EvmRpc(rpc_url), block=args.block)
+    telemetry = SqliteTelemetry(args.telemetry) if args.telemetry else None
+    resolver = ChainResolver(lambda: EvmRpc(rpc_url), block=args.block, telemetry=telemetry)
 
     try:
         report = check_document(data, path.name, resolver)
@@ -169,6 +171,9 @@ def cmd_check(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 2
+    finally:
+        if telemetry is not None:
+            telemetry.close()
 
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
@@ -455,6 +460,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="block tag for the reads (default: latest)",
     )
     check.add_argument("--json", action="store_true", help="emit the full JSON report")
+    check.add_argument(
+        "--telemetry",
+        default=None,
+        help="opt-in: record aggregate citation-lookup counts (by citation only, no document/identity) to this SQLite path",
+    )
     check.set_defaults(func=cmd_check)
 
     anchor = sub.add_parser(

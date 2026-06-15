@@ -22,6 +22,7 @@ from typing import Callable, Protocol
 
 from nvnm_cite.chain import precompile as pc
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
+from nvnm_cite.verifier.telemetry import NullTelemetry, TelemetrySink
 
 
 @dataclass(frozen=True)
@@ -57,9 +58,16 @@ class ChainResolver:
     immediately, not stall through retry backoff (DECISIONS 2026-06-13).
     """
 
-    def __init__(self, rpc_factory: Callable[[], EvmRpc], block: str = "latest"):
+    def __init__(
+        self,
+        rpc_factory: Callable[[], EvmRpc],
+        block: str = "latest",
+        telemetry: TelemetrySink | None = None,
+    ):
         self._rpc_factory = rpc_factory
         self.block = block
+        # Opt-in aggregate analytics (task 4.6); off unless an operator attaches a sink.
+        self.telemetry = telemetry or NullTelemetry()
 
     def resolve(self, registry: str, checksum: str) -> Resolution:
         data, replay = records_query(registry, checksum, self.block)
@@ -67,7 +75,10 @@ class ChainResolver:
             raw = self._rpc_factory().eth_call(pc.PRECOMPILE_ADDRESS, data, block=self.block)
         except RpcError as err:
             if pc.is_keyed_miss(err):
+                self.telemetry.record(registry, checksum, False)
                 return Resolution(record=None, query=replay)
-            raise  # transport / non-miss RPC error: NOT a NOT_FOUND signal
+            raise  # transport / non-miss RPC error: NOT a NOT_FOUND signal, and not telemetry
         records, _ = pc.decode_records_result(raw)
-        return Resolution(record=records[0] if records else None, query=replay)
+        record = records[0] if records else None
+        self.telemetry.record(registry, checksum, record is not None)
+        return Resolution(record=record, query=replay)
