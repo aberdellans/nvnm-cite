@@ -23,7 +23,6 @@ const CHAIN_PARAMS = {
 let EXPLORER = "https://explorer.evm.testnet.nvnmchain.io";
 let RPC_URL = CHAIN_PARAMS.rpcUrls[0];
 
-const STATUS_WORD = { V: "VERIFIED", N: "NOT_FOUND", C: "NOT_COVERED", A: "AMBIGUOUS_JURISDICTION", U: "UNPARSEABLE" };
 const STATUS_ORDER = ["VERIFIED", "NOT_FOUND", "NOT_COVERED", "AMBIGUOUS_JURISDICTION", "UNPARSEABLE"];
 const CHIP_LABEL = {
   VERIFIED: "Verified",
@@ -38,6 +37,11 @@ const SUM_LABEL = {
   NOT_COVERED: "not covered",
   AMBIGUOUS_JURISDICTION: "ambiguous",
   UNPARSEABLE: "unparseable",
+};
+// Receipt summary tally keys ↔ the five statuses (receipts/schema.py TALLY_KEYS).
+const TALLY_STATUS = {
+  VERIFIED: "verified", NOT_FOUND: "not_found", NOT_COVERED: "not_covered",
+  AMBIGUOUS_JURISDICTION: "ambiguous", UNPARSEABLE: "unparseable",
 };
 
 /* ---------- tiny DOM + format helpers ---------- */
@@ -86,6 +90,31 @@ function nameMark(kind) {
   return el("span", "name-u", "—");
 }
 
+/* Non-identifying status tally → summary chips (shared by the receipt
+   preview and the verify view). `summary` is the locked receipt tally. */
+function renderTally(box, summary) {
+  clear(box);
+  const total = el("div", "sum-chip");
+  total.appendChild(el("span", "n", String(summary.checked)));
+  total.appendChild(el("span", "l", "checked"));
+  box.appendChild(total);
+  STATUS_ORDER.forEach((s) => {
+    const n = summary[TALLY_STATUS[s]] || 0;
+    if (!n && s !== "VERIFIED" && s !== "NOT_FOUND") return;
+    const c = el("div", `sum-chip sum-${s}`);
+    c.appendChild(el("span", "n", String(n)));
+    c.appendChild(el("span", "l", SUM_LABEL[s]));
+    box.appendChild(c);
+  });
+  if (summary.name_mismatches) {
+    const c = el("div", "sum-chip sum-NOT_FOUND");
+    c.appendChild(el("span", "n", String(summary.name_mismatches)));
+    c.appendChild(el("span", "l", "name mismatch"));
+    box.appendChild(c);
+  }
+  return box;
+}
+
 function fmtBytes(n) {
   return n.toLocaleString("en-US") + " bytes";
 }
@@ -121,7 +150,9 @@ function banner(tone, iconRef, title, subText) {
   head.appendChild(icon(iconRef));
   head.appendChild(el("span", "rb-title", title));
   b.appendChild(head);
-  if (subText) b.appendChild(el("p", "rb-sub", subText));
+  // Always create .rb-sub (empty when no subText): several callers build a
+  // banner with no subText, then append rich content into .rb-sub.
+  b.appendChild(el("p", "rb-sub", subText || ""));
   return b;
 }
 
@@ -153,20 +184,14 @@ async function apiGet(path) {
   return data;
 }
 
-async function apiPostBytes(path, bytes, filename) {
+async function apiPostBytes(path, bytes, filename, extraHeaders) {
   const res = await fetch(path, {
     method: "POST",
-    headers: { "Content-Type": "application/octet-stream", "X-Filename": encodeURIComponent(filename || "upload") },
+    headers: Object.assign(
+      { "Content-Type": "application/octet-stream", "X-Filename": encodeURIComponent(filename || "upload") },
+      extraHeaders || {},
+    ),
     body: bytes,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `request failed (${res.status})`);
-  return data;
-}
-
-async function apiPostJson(path, obj) {
-  const res = await fetch(path, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `request failed (${res.status})`);
@@ -176,6 +201,7 @@ async function apiPostJson(path, obj) {
 /* ---------- state ---------- */
 
 let lastReport = null;   // last /api/check report (page memory only)
+let lastFile = null;     // {bytes, name} of the last checked file (re-sent to prepare a receipt)
 let prepared = null;     // last /api/receipt/prepare response
 let wallet = { address: null, chainOk: false };
 
@@ -227,13 +253,22 @@ async function loadStatus() {
   const bannerBox = $("global-banner");
   const notes = [];
   if (st.loader && st.loader.bulk_load_running) {
-    notes.push("Registry bulk load in progress: the on-chain registries are still filling, so a live chain re-check may show NOT_FOUND for real citations until it completes. Local checks are unaffected.");
-  }
-  if (st.registries && st.registries["receipts-v1"] && !st.registries["receipts-v1"].exists) {
-    notes.push("The receipts-v1 registry has not been created on chain yet — the record step will offer the one-time setup transaction.");
+    notes.push("Registry bulk load in progress: the on-chain registries are still filling, so a live check may show NOT FOUND for a real citation until it completes.");
   }
   if (notes.length) { bannerBox.textContent = notes.join("  ·  "); bannerBox.classList.remove("hidden"); }
   else { bannerBox.classList.add("hidden"); }
+
+  // Telemetry disclosure (item 2b): shown in the Check privacy callout only when
+  // the operator has turned it on (off by default).
+  const telNote = $("check-telemetry-note");
+  if (telNote) {
+    if (st.telemetry && st.telemetry.enabled) {
+      telNote.textContent = "As the RPC operator we also keep aggregate, by-citation lookup counts — to see which cases are checked most. These counts are never tied to your document or to who asked.";
+      telNote.classList.remove("hidden");
+    } else {
+      telNote.classList.add("hidden");
+    }
+  }
 
   // About panel: live status
   const box = clear($("about-status"));
@@ -262,11 +297,16 @@ async function loadStatus() {
     kvRow(vbox, "Normalizer", st.versions.normalizer, { mono: true });
     kvRow(vbox, "Citation spec", st.versions.citation_spec, { mono: true });
     kvRow(vbox, "Record schema", st.versions.record_schema, { mono: true });
-    kvRow(vbox, "Receipt schema", st.versions.receipt_schema, { mono: true, hint: "draft until Phase 4 locks v1" });
+    kvRow(vbox, "Receipt schema", st.versions.receipt_schema, { mono: true });
   }
 
+  const rows = st.index && st.index.registries ? st.index.registries : [];
   const tbody = clear($("coverage-table").querySelector("tbody"));
-  (st.index && st.index.registries ? st.index.registries : []).forEach((r) => {
+  let totalRecords = 0;
+  let snapshot = "";
+  rows.forEach((r) => {
+    totalRecords += r.records || 0;
+    if (r.snapshot) snapshot = r.snapshot;
     const tr = el("tr");
     const t1 = el("td"); t1.appendChild(el("span", "cite-canon", r.registry)); tr.appendChild(t1);
     tr.appendChild(el("td", null, r.source === "chain-index" ? "chain index" : `corpus snapshot ${r.snapshot || ""}`));
@@ -277,16 +317,20 @@ async function loadStatus() {
     tr.appendChild(el("td", null, detail));
     tbody.appendChild(tr);
   });
-  const receipts = st.registries && st.registries["receipts-v1"];
-  if (receipts) {
-    const tr = el("tr");
-    const t1 = el("td"); t1.appendChild(el("span", "cite-canon", "receipts-v1")); tr.appendChild(t1);
-    tr.appendChild(el("td", null, "live chain"));
-    tr.appendChild(el("td", "num", "—"));
-    tr.appendChild(el("td", null, receipts.exists
-      ? `filing receipts · registry id ${receipts.id}`
-      : "filing receipts · not created yet (one-time setup in the record step)"));
-    tbody.appendChild(tr);
+
+  // Live coverage figure for the About explainer (never hard-coded — item 6).
+  const lede = $("about-coverage-lede");
+  if (lede) {
+    if (totalRecords > 0) {
+      const courts = rows.map((r) => r.registry).join(", ");
+      lede.textContent =
+        `NVNM Cite currently covers ${totalRecords.toLocaleString("en-US")} citation keys across ` +
+        `${rows.length} ${rows.length === 1 ? "registry" : "registries"} (${courts})` +
+        (snapshot ? `, from CourtListener public bulk data (snapshot ${snapshot})` : "") +
+        ". Citations to courts not yet covered are reported honestly as “not covered” rather than guessed at.";
+    } else {
+      lede.textContent = "Coverage is loading from the live registry…";
+    }
   }
 }
 
@@ -387,6 +431,27 @@ function renderCheck(report) {
     tbody.appendChild(tr);
   });
 
+  // Replay affordance (item 0 / 4.5a): each keyed citation carries the exact
+  // eth_call, so the verdict is non-repudiable — anyone re-runs it.
+  const replayList = clear($("check-replay-list"));
+  const replayable = report.citations.filter((c) => c.query);
+  if (replayable.length) {
+    replayable.forEach((c) => {
+      const item = el("div", "replay-item");
+      const lbl = el("div");
+      lbl.appendChild(el("span", "cite-canon", c.canonical || c.as_written));
+      if (c.registry) lbl.appendChild(el("span", "cite-sub", c.registry));
+      item.appendChild(lbl);
+      const pre = el("pre", "codeblock");
+      pre.appendChild(el("code", null, JSON.stringify({ method: c.query.method, params: c.query.params })));
+      item.appendChild(pre);
+      replayList.appendChild(item);
+    });
+    $("check-replay").classList.remove("hidden");
+  } else {
+    $("check-replay").classList.add("hidden");
+  }
+
   hide("check-busy", "check-error");
   show("check-result");
   syncRecordPanel();
@@ -396,7 +461,9 @@ async function runCheck(bytes, filename) {
   hide("check-result", "check-error");
   show("check-busy");
   try {
-    renderCheck(await apiPostBytes("/api/check", bytes, filename));
+    const report = await apiPostBytes("/api/check", bytes, filename);
+    lastFile = { bytes, name: filename };  // retained in page memory to prepare a receipt
+    renderCheck(report);
   } catch (err) {
     hide("check-busy");
     showError("check-error", err);
@@ -487,8 +554,26 @@ function initWallet() {
 
 /* ---------- 2 · record ---------- */
 
+function slugify(s) {
+  return (s || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function updateRegistryPreview() {
+  const prev = $("registry-preview");
+  if (!prev) return;
+  const firm = slugify($("firm-input").value), c = slugify($("case-input").value);
+  if (firm && c) {
+    clear(prev);
+    prev.appendChild(document.createTextNode("Receipts for this matter live in registry "));
+    prev.appendChild(el("span", "mono", `${firm}--${c}`));
+    prev.appendChild(document.createTextNode(", owned by your wallet — put a link to it on the filing so a clerk can find the receipt."));
+  } else {
+    prev.textContent = "Receipts for this matter live in their own registry, owned by your wallet and named from the filer and case above — you put a link to it on the filing so a clerk can find the receipt later.";
+  }
+}
+
 function syncRecordPanel() {
-  const haveDoc = !!lastReport;
+  const haveDoc = !!(lastReport && lastFile);
   const rs = $("step-report-state");
   rs.textContent = haveDoc ? "done" : "not yet";
   rs.classList.toggle("ok", haveDoc);
@@ -499,26 +584,33 @@ function syncRecordPanel() {
   $("record-nodoc").classList.toggle("hidden", haveDoc);
   $("record-main").classList.toggle("hidden", !haveDoc);
   if (haveDoc) docCard($("record-doc"), lastReport.document);
-}
-
-function receiptEntriesFromReport(report) {
-  return report.citations.map((c) => ({
-    registry: c.registry, canonical: c.canonical, as_written: c.as_written,
-    occurrences: c.occurrences, plaintiff: c.plaintiff, defendant: c.defendant, status: c.status,
-  }));
+  const agentEl = $("record-agent");
+  if (agentEl) agentEl.textContent = wallet.address ? wallet.address : "— connect a wallet —";
 }
 
 async function prepareReceipt() {
-  if (!lastReport) return;
-  if (!wallet.address) { showError("prepare-error", new Error("Connect a wallet first — the receipt records the attesting address.")); return; }
+  if (!lastReport || !lastFile) {
+    showError("prepare-error", new Error("Check a document file first — a receipt anchors the exact bytes you will file."));
+    return;
+  }
+  if (!wallet.address) {
+    showError("prepare-error", new Error("Connect a wallet first — the receipt records the attesting address."));
+    return;
+  }
+  const firm = $("firm-input").value.trim();
+  const matter = $("case-input").value.trim();
+  if (!firm || !matter) {
+    showError("prepare-error", new Error("Enter the filer/firm and the case/matter — together they name the receipt registry."));
+    return;
+  }
   hide("prepare-result", "prepare-error");
   clear($("anchor-status"));
   show("prepare-busy");
   try {
-    prepared = await apiPostJson("/api/receipt/prepare", {
-      document_sha256: lastReport.document.sha256,
-      results: receiptEntriesFromReport(lastReport),
-      agent: { address: wallet.address, kya_id: $("kya-id").value.trim() || undefined },
+    prepared = await apiPostBytes("/api/receipt/prepare", lastFile.bytes, lastFile.name, {
+      "X-Firm": encodeURIComponent(firm),
+      "X-Case": encodeURIComponent(matter),
+      "X-Agent": encodeURIComponent(wallet.address),
     });
     renderPrepared(prepared);
   } catch (err) {
@@ -530,63 +622,44 @@ async function prepareReceipt() {
 
 function renderPrepared(p) {
   const meta = clear($("prepare-meta"));
-  kvRow(meta, "Checked at block", p.chain.checked_at_block.toLocaleString("en-US"), { mono: true });
-  kvRow(meta, "Registries", p.chain.registries.map((r) => `${r.name} (id ${r.id})`).join(" · "), { mono: true });
-  kvRow(meta, "Schema", p.receipt.schema, { mono: true, hint: "draft until Phase 4 locks v1" });
-  kvRow(meta, "Timestamp", p.receipt.timestamp, { mono: true, hint: "server clock; the chain time at anchoring is the authoritative timestamp" });
-
-  const tbody = clear($("prepare-table").querySelector("tbody"));
-  p.results.forEach((r) => {
-    const differs = r.chain_status !== r.local_status;
-    const tr = el("tr", differs ? "diff" : null);
-    const tdC = el("td");
-    tdC.appendChild(el("span", "cite-canon", r.canonical || r.as_written || "—"));
-    if (r.registry) tdC.appendChild(el("span", "cite-sub", r.registry));
-    tr.appendChild(tdC);
-    const tdL = el("td"); tdL.appendChild(chipFor(r.local_status)); tr.appendChild(tdL);
-    const tdK = el("td"); tdK.appendChild(chipFor(r.chain_status)); tr.appendChild(tdK);
-    const tdN = el("td"); tdN.appendChild(nameMark(r.name_check)); tr.appendChild(tdN);
-    const tdNote = el("td");
-    if (differs) tdNote.appendChild(el("span", "diff-note", "differs from the local check — on-chain registry state is what the receipt records"));
-    else tdNote.appendChild(el("span", "cell-empty", "—"));
-    tr.appendChild(tdNote);
-    tbody.appendChild(tr);
+  const regV = el("span");
+  regV.appendChild(el("span", "mono", p.registry));
+  kvRow(meta, "Receipt registry", regV, {
+    copy: p.registry,
+    hint: p.registry_exists ? "exists on chain — your wallet writes the receipt" : "will be created — your wallet becomes its admin",
   });
+  kvRow(meta, "Attesting as", p.agent.address, { mono: true, copy: p.agent.address });
+  kvRow(meta, "Checked at block", p.checked_at_block.toLocaleString("en-US"), { mono: true });
+  kvRow(meta, "Registries read", (p.registries_read || []).map((r) => `${r.name} (id ${r.id})`).join(" · ") || "—", { mono: true });
+  kvRow(meta, "Schema", p.receipt.schema, { mono: true });
+  kvRow(meta, "Timestamp", p.receipt.timestamp, { mono: true, hint: "server clock; the chain time at anchoring is authoritative" });
+  if (p.already_anchored) {
+    meta.appendChild(el("p", "hint", "A receipt for this exact document already exists in this registry. Anchoring again records a new version; the prior one stays."));
+  }
+
+  renderTally($("prepare-tally"), p.receipt.summary);
 
   $("receipt-json").querySelector("code").textContent = p.receipt.json;
-
-  const meter = $("size-meter");
-  const pct = Math.min(100, (p.receipt.bytes / p.receipt.cap) * 100);
-  meter.querySelector(".size-value").textContent =
-    `${p.receipt.bytes.toLocaleString("en-US")} of ${p.receipt.cap.toLocaleString("en-US")} bytes`;
-  const fill = meter.querySelector(".size-fill");
-  fill.style.width = `${pct}%`; /* sanctioned CSSOM exception */
-  const tight = p.receipt.bytes > p.receipt.cap * 0.85;
-  fill.classList.toggle("tight", tight);
-  const note = meter.querySelector(".size-note");
-  note.className = "hint size-note" + (tight ? " tight-note" : "");
-  const compaction = p.receipt.compactions.length ? `Compaction applied: ${p.receipt.compactions.join("; ")}.` : "";
-  note.textContent = tight
-    ? `Near the ${p.receipt.cap.toLocaleString("en-US")}-byte anchoring limit. ${compaction}`.trim()
-    : compaction;
+  $("receipt-size").textContent =
+    `Receipt size: ${p.receipt.bytes.toLocaleString("en-US")} of ${p.receipt.cap.toLocaleString("en-US")} bytes — minimal and non-enumerating, always well within the on-chain limit.`;
 
   const setupBox = $("setup-box");
   const probeBox = clear($("probe-box"));
   const anchorBtn = $("anchor-btn");
   anchorBtn.disabled = true;
 
-  if (!p.receipts_registry.exists) {
+  if (p.setup) {
     setupBox.classList.remove("hidden");
     const code = setupBox.querySelector("pre code");
     if (code) {
       code.textContent =
-        `addRegistry("${p.setup.registry}",\n  ${JSON.stringify(p.setup.description)},\n  '${p.setup.metadata}')`;
+        `addRegistry("${p.setup.name}",\n  ${JSON.stringify(p.setup.description)},\n  '${p.setup.metadata}')`;
     }
     const oldBtn = setupBox.querySelector("button");
     if (oldBtn) {
       const btn = oldBtn.cloneNode(true); // drops stale listeners
       oldBtn.replaceWith(btn);
-      btn.addEventListener("click", createReceiptsRegistry);
+      btn.addEventListener("click", createReceiptRegistry);
     }
     const inner = setupBox.querySelector("div");
     const oldNote = inner.querySelector(".setup-probe-note");
@@ -602,7 +675,7 @@ function renderPrepared(p) {
       const box = el("div", "probe-ok");
       box.appendChild(icon("i-shield"));
       const d = el("div");
-      d.appendChild(el("strong", null, "This wallet may write to receipts-v1."));
+      d.appendChild(el("strong", null, `This wallet may write to ${p.registry}.`));
       const para = el("p", null, "Simulation passed. Estimated cost: ");
       para.appendChild(el("span", "mono", `~${probe.gas.toLocaleString("en-US")} gas ≈ ${(probe.gas * 45e-9).toFixed(4)} wmantraUSD`));
       para.appendChild(document.createTextNode(" at 45 gwei."));
@@ -614,12 +687,8 @@ function renderPrepared(p) {
       const box = el("div", "probe-bad");
       box.appendChild(icon("i-alert"));
       const d = el("div");
-      d.appendChild(el("strong", null, "No editor rights on receipts-v1."));
-      const para = el("p", null, "Chain writes are deny-by-default: this wallet cannot write to the receipts registry. Its admin (on this pilot, the wallet that created the registry) must run ");
-      const regId = p.receipts_registry.id != null ? p.receipts_registry.id : "<registryId>";
-      para.appendChild(el("span", "mono", `grantRole(${regId}, ${shortHex(wallet.address || "0x…", 5)}, "editor")`));
-      para.appendChild(document.createTextNode(" once before anchoring."));
-      d.appendChild(para);
+      d.appendChild(el("strong", null, `No write rights on ${p.registry}.`));
+      d.appendChild(el("p", null, "This registry exists but is owned by another wallet. Receipts are written by the registry's owner (or an editor it grants); use the wallet that created this matter's registry."));
       box.appendChild(d);
       probeBox.appendChild(box);
     } else {
@@ -678,11 +747,11 @@ async function sendTx(tx, statusBoxId, onMined) {
   msg.appendChild(document.createTextNode(`Still pending after 150 s — track it at ${EXPLORER}/tx/${hash}`));
 }
 
-async function createReceiptsRegistry() {
+async function createReceiptRegistry() {
   if (!prepared || !prepared.setup) return;
   await sendTx(prepared.setup.tx, "anchor-status", (box, info) => {
     if (info.success) {
-      const b = banner("ok", "i-seal", "receipts-v1 created",
+      const b = banner("ok", "i-seal", `Registry ${prepared.registry} created`,
         `Confirmed in block ${info.block.toLocaleString("en-US")} at ${info.block_time}. Re-preparing the receipt…`);
       box.appendChild(b);
       setTimeout(prepareReceipt, 1200);
@@ -705,16 +774,31 @@ function anchorReceipt() {
       box.appendChild(b);
       return;
     }
+    const sha = prepared.document_sha256;
+    const registry = prepared.registry;
     const b = banner("ok", "i-seal", "Verification recorded on NVNM Chain",
       "The receipt below is now immutable and publicly verifiable.");
     const kv = el("div", "kv");
+    kvRow(kv, "Receipt registry", registry, { mono: true, copy: registry });
     kvRow(kv, "Transaction", hash, { mono: true, copy: hash });
     kvRow(kv, "Block · time", `${info.block.toLocaleString("en-US")} · ${info.block_time}`, { mono: true, hint: "the immutable timestamp" });
-    kvRow(kv, "Document SHA-256", lastReport ? lastReport.document.sha256 : "", { mono: true, copy: lastReport ? lastReport.document.sha256 : "" });
+    kvRow(kv, "Document SHA-256", sha, { mono: true, copy: sha });
     if (info.gas_used) {
       kvRow(kv, "Gas", `${info.gas_used.toLocaleString("en-US")} @ ${info.gas_price_gwei} gwei (≈ ${(info.gas_used * info.gas_price_gwei * 1e-9).toFixed(4)} wmantraUSD)`, { mono: true });
     }
     b.appendChild(kv);
+
+    // Discovery (item 3): the registry LINK goes on the filing, not the tx.
+    const disc = el("div", "callout");
+    disc.appendChild(icon("i-info"));
+    const dd = el("div");
+    dd.appendChild(el("strong", null, "Put this on your filing"));
+    const dp = el("p", null, "So anyone can find the receipt, add a line citing the registry: ");
+    dp.appendChild(el("span", "mono", `Citation verifications: NVNM Chain registry ${registry}`));
+    dd.appendChild(dp);
+    disc.appendChild(dd);
+    b.appendChild(disc);
+
     const actions = el("div", "rb-actions");
     const a1 = el("a", "btn btn-outline", "View on Blockscout ");
     a1.href = `${EXPLORER}/tx/${hash}`; a1.target = "_blank"; a1.rel = "noopener";
@@ -723,8 +807,9 @@ function anchorReceipt() {
     const a2 = el("button", "btn btn-outline", "Verify it now (free lookup)"); a2.type = "button";
     a2.addEventListener("click", () => {
       activateTab("verify");
-      $("hash-input").value = lastReport.document.sha256;
-      lookupHash(lastReport.document.sha256);
+      $("verify-registry").value = registry;
+      $("hash-input").value = sha;
+      lookupHash(registry, sha);
     });
     actions.appendChild(a2);
     const a3 = el("button", "btn btn-outline", "Decode the transaction"); a3.type = "button";
@@ -739,6 +824,8 @@ function initRecord() {
   $("record-gocheck").addEventListener("click", () => activateTab("check"));
   $("prepare-btn").addEventListener("click", prepareReceipt);
   $("anchor-btn").addEventListener("click", anchorReceipt);
+  $("firm-input").addEventListener("input", updateRegistryPreview);
+  $("case-input").addEventListener("input", updateRegistryPreview);
 }
 
 /* ---------- verify (free lookup) ---------- */
@@ -758,72 +845,22 @@ function receiptCard(v, latestIndex, total) {
   const r = v.receipt;
   const kv = el("div", "kv");
   if (r && typeof r === "object") {
-    if (r.agent && r.agent.address) {
-      const att = el("span");
-      att.appendChild(el("span", "mono", r.agent.address));
-      if (r.agent.kya_id) {
-        att.appendChild(document.createTextNode("  ·  KYA "));
-        att.appendChild(el("span", "mono", r.agent.kya_id));
-      }
-      kvRow(kv, "Attested by", att);
-    }
+    if (r.agent && r.agent.address) kvRow(kv, "Attested by", r.agent.address, { mono: true, copy: r.agent.address });
+    if (r.document_sha256) kvRow(kv, "Document SHA-256", r.document_sha256, { mono: true, copy: r.document_sha256 });
     if (r.checked_at_block) kvRow(kv, "Checked at block", r.checked_at_block.toLocaleString("en-US"), { mono: true });
+    if (Array.isArray(r.registries) && r.registries.length) {
+      kvRow(kv, "Registries read", r.registries.map((g) => `${g.name} (id ${g.id})`).join(" · "), { mono: true });
+    }
     if (r.normalizer_version) kvRow(kv, "Normalizer", r.normalizer_version, { mono: true });
     if (r.schema) kvRow(kv, "Schema", r.schema, { mono: true });
     card.appendChild(kv);
 
-    if (Array.isArray(r.results)) {
-      const counts = {};
-      r.results.forEach((e) => { const w = STATUS_WORD[e.s] || "UNPARSEABLE"; counts[w] = (counts[w] || 0) + 1; });
-      if (r.verified_omitted) counts.VERIFIED = (counts.VERIFIED || 0) + r.verified_omitted;
-      const chips = el("div", "summary-chips");
-      STATUS_ORDER.forEach((s) => {
-        if (!counts[s]) return;
-        const c = el("div", `sum-chip sum-${s}`);
-        c.appendChild(el("span", "n", String(counts[s])));
-        c.appendChild(el("span", "l", SUM_LABEL[s]));
-        chips.appendChild(c);
-      });
-      card.appendChild(chips);
-
-      const scroll = el("div", "table-scroll");
-      const table = el("table", "cite-table");
-      const thead = el("thead");
-      const hr = el("tr");
-      ["Status", "Citation", "Names", "Seen"].forEach((h, i) => {
-        const th = el("th", i === 3 ? "num" : null, h);
-        th.scope = "col";
-        hr.appendChild(th);
-      });
-      thead.appendChild(hr); table.appendChild(thead);
-      const tbody = el("tbody");
-      r.results.forEach((e) => {
-        const tr = el("tr");
-        const tdS = el("td"); tdS.appendChild(chipFor(STATUS_WORD[e.s] || "UNPARSEABLE")); tr.appendChild(tdS);
-        const tdC = el("td");
-        tdC.appendChild(el("span", "cite-canon", e.c || e.w || "—"));
-        if (e.w && e.c && e.w !== e.c) tdC.appendChild(el("span", "cite-sub", `${e.w} (as written)`));
-        const regName = typeof e.g === "number" && r.registries && r.registries[e.g]
-          ? r.registries[e.g].name : (typeof e.g === "string" ? e.g : null);
-        if (regName) tdC.appendChild(el("span", "cite-sub", regName));
-        if (e.k) tdC.appendChild(el("span", "cite-sub", `CourtListener cluster ${e.k}`));
-        tr.appendChild(tdC);
-        const tdN = el("td"); tdN.appendChild(nameMark(e.n)); tr.appendChild(tdN);
-        tr.appendChild(el("td", "num", `${e.o || 1}×`));
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-      scroll.appendChild(table);
-      card.appendChild(scroll);
-
-      const mismatches = r.results.filter((e) => e.n === "x").length;
-      if (mismatches) {
-        card.appendChild(el("p", "hint", `${mismatches} result(s) were flagged as a party-name MISMATCH at check time.`));
-      }
-      if (r.verified_omitted) {
-        card.appendChild(el("p", "hint", `${r.verified_omitted} VERIFIED results were collapsed into a count in the on-chain record to fit the byte budget.`));
-      }
+    if (r.summary && typeof r.summary === "object") {
+      card.appendChild(renderTally(el("div", "summary-chips"), r.summary));
     }
+    card.appendChild(el("p", "hint",
+      "This receipt records the tally above and the document's fingerprint — not the list of cited cases. " +
+      "Anyone with the exact file can reproduce every verdict by re-running the check at the recorded block."));
   } else {
     kvRow(kv, "Metadata", "did not parse as a receipt; raw payload below");
     card.appendChild(kv);
@@ -842,8 +879,8 @@ function renderLookup(res) {
   const box = clear($("verify-result"));
 
   if (!res.registry_exists) {
-    const b = banner("warn", "i-info", "The receipts registry has not been created yet",
-      "No receipts-v1 registry exists on this chain, so no receipts can exist for any document. This is expected early in the pilot; the record step offers the one-time setup.");
+    const b = banner("warn", "i-info", "No such registry on this chain",
+      `No registry named “${res.registry}” exists on NVNM Chain, so no receipt can be found there. Check the citation-verification link printed on the filing.`);
     box.appendChild(b);
   } else if (res.found) {
     const latestIndex = Math.max(...res.versions.map((v) => v.index));
@@ -852,16 +889,18 @@ function renderLookup(res) {
     sub.appendChild(document.createTextNode("Document "));
     sub.appendChild(el("span", "mono", `${res.sha256.slice(0, 12)}…${res.sha256.slice(-8)}`));
     sub.appendChild(document.createTextNode(
-      ` has ${latestIndex} recorded citation-check receipt${latestIndex > 1 ? " versions" : ""} on NVNM Chain` +
-      ` (chain head ${res.head_block.toLocaleString("en-US")} at lookup).`));
+      ` has ${latestIndex} recorded citation-check receipt${latestIndex > 1 ? " versions" : ""} in registry `));
+    sub.appendChild(el("span", "mono", res.registry));
+    sub.appendChild(document.createTextNode(` (chain head ${res.head_block.toLocaleString("en-US")} at lookup).`));
     box.appendChild(b);
     [...res.versions].sort((a, c) => c.index - a.index).forEach((v) => box.appendChild(receiptCard(v, latestIndex, res.versions.length)));
     box.appendChild(el("p", "honesty-line",
       "A receipt proves this exact document was citation-checked at a point in time — existence, not good law. Whether each authority still stands is the reader’s judgment."));
   } else {
     const b = banner("bad", "i-alert", "No receipt for this fingerprint",
-      "No citation-check receipt exists on NVNM Chain for this exact file. Note: a one-byte change — re-saving, stamping, flattening — produces a different fingerprint and breaks the match. If you expected a receipt, confirm you have the file as filed.");
+      `No citation-check receipt exists in registry “${res.registry}” for this exact file. A one-byte change — re-saving, stamping, flattening — produces a different fingerprint and breaks the match. If you expected a receipt, confirm you have the file as filed and the correct registry.`);
     const kv = el("div", "kv");
+    kvRow(kv, "Registry", res.registry, { mono: true });
     kvRow(kv, "Fingerprint", res.sha256, { mono: true, copy: res.sha256 });
     kvRow(kv, "Chain head at lookup", res.head_block.toLocaleString("en-US"), { mono: true });
     b.appendChild(kv);
@@ -876,11 +915,11 @@ function renderLookup(res) {
   show("verify-result");
 }
 
-async function lookupHash(sha) {
+async function lookupHash(registry, sha) {
   hide("verify-result", "verify-error");
   show("verify-busy");
   try {
-    renderLookup(await apiGet(`/api/receipt/lookup?sha256=${encodeURIComponent(sha)}`));
+    renderLookup(await apiGet(`/api/receipt/lookup?registry=${encodeURIComponent(registry)}&sha256=${encodeURIComponent(sha)}`));
   } catch (err) {
     showError("verify-error", err);
   } finally {
@@ -888,14 +927,25 @@ async function lookupHash(sha) {
   }
 }
 
+function verifyRegistryOrError() {
+  const registry = $("verify-registry").value.trim().toLowerCase();
+  if (!registry) {
+    showError("verify-error", new Error("Enter the citation-verification registry from the filing first."));
+    return null;
+  }
+  return registry;
+}
+
 function initVerify() {
   wireDropzone("verify-drop", "verify-file", async (f) => {
+    const registry = verifyRegistryOrError();
+    if (!registry) return;
     hide("verify-result", "verify-error");
     show("verify-busy");
     try {
       const sha = await sha256HexOf(await f.arrayBuffer());
       $("hash-input").value = sha;
-      await lookupHash(sha);
+      await lookupHash(registry, sha);
     } catch (err) {
       hide("verify-busy");
       showError("verify-error", err);
@@ -903,8 +953,10 @@ function initVerify() {
   });
   $("hash-toggle").addEventListener("click", () => $("hash-area").classList.toggle("hidden"));
   $("hash-lookup").addEventListener("click", () => {
+    const registry = verifyRegistryOrError();
+    if (!registry) return;
     const sha = $("hash-input").value.trim().toLowerCase();
-    if (/^[0-9a-f]{64}$/.test(sha)) lookupHash(sha);
+    if (/^[0-9a-f]{64}$/.test(sha)) lookupHash(registry, sha);
     else showError("verify-error", new Error("That is not a 64-character hex SHA-256."));
   });
   $("hash-input").addEventListener("keydown", (e) => { if (e.key === "Enter") $("hash-lookup").click(); });
@@ -1006,8 +1058,8 @@ function renderInspect(info) {
   const c2 = el("div", "callout");
   c2.appendChild(icon("i-info"));
   const d2 = el("div");
-  d2.appendChild(el("strong", null, "Why block explorers show garbled text"));
-  d2.appendChild(el("p", null, "The record is plaintext, but it travels inside ABI encoding — length prefixes and 32-byte padding. A generic explorer’s UTF-8 view renders that framing as noise. This decoder strips the framing; what remains is exactly the text above."));
+  d2.appendChild(el("strong", null, "Stored as plain text"));
+  d2.appendChild(el("p", null, "This record is stored as plain, readable text on the chain; the panel above shows its full contents."));
   c2.appendChild(d2);
   box.appendChild(c2);
 

@@ -21,18 +21,20 @@ import pytest
 from nvnm_cite.chain import abi
 from nvnm_cite.chain import precompile as pc
 from nvnm_cite.loader.records import compact_json
+from nvnm_cite.normalizer import NORMALIZER_VERSION
+from nvnm_cite.receipts.anchor import AnchorPlan
+from nvnm_cite.receipts.schema import RECEIPT_SCHEMA, RECEIPT_URI, receipt_registry_strings
+from nvnm_cite.verifier.check import name_check
 from nvnm_cite.verifier.extract import ExtractError, extract_text
 from nvnm_cite.verifier.resolver import Resolution, records_query
+from nvnm_cite.webapp import service as service_mod
 from nvnm_cite.webapp.localindex import LocalIndex
 from nvnm_cite.webapp.service import (
     CheckService,
     ReceiptService,
-    ReceiptTooLarge,
     TxService,
     WebAppError,
-    build_receipt,
     decode_call,
-    name_check,
 )
 
 
@@ -291,21 +293,52 @@ def test_check_canonicalizes_spacing_variant():
 # ---------------------------------------------------------------- receipts
 
 
+FIRM = "Inveniam"
+CASE = "Mata v. Avianca"
+REG = "inveniam--mata-v-avianca"
+DOC_SHA = "a" * 64
+AGENT_ADDR = "0x" + "ab" * 20
+
+
 def fake_record(registry: str, checksum: str, metadata: str, index: int = 1, latest: bool = True) -> pc.Record:
     return pc.Record(
-        registry=registry, uri="urn:nvnm-cite:receipt:v1" if registry == "receipts-v1" else "https://example",
-        checksum=checksum, checksum_algo="sha256" if registry == "receipts-v1" else "cite-canonical-v1",
-        metadata=metadata, timestamp="2026-06-12 15:00:00.000000001 +0000 UTC",
+        registry=registry, uri=RECEIPT_URI, checksum=checksum, checksum_algo="sha256",
+        metadata=metadata, timestamp="2026-06-15 15:00:00.000000001 +0000 UTC",
         status="Active", record_id=41, index=index, is_latest=latest,
     )
 
 
-class FakeGateway:
-    """Duck-typed ChainGateway: canned registries and keyed records."""
+def minimal_receipt(sha: str, *, block: int = 1700, summary: dict | None = None) -> dict:
+    """A locked v1 receipt object (non-enumerating)."""
+    return {
+        "agent": {"address": AGENT_ADDR},
+        "chain_id": 787111,
+        "checked_at_block": block,
+        "document_sha256": sha,
+        "normalizer_version": NORMALIZER_VERSION,
+        "registries": [{"head_block": block, "id": 737, "name": "us-scotus"}],
+        "schema": RECEIPT_SCHEMA,
+        "summary": summary
+        or {"checked": 3, "verified": 1, "not_found": 1, "not_covered": 1,
+            "ambiguous": 0, "unparseable": 0, "name_mismatches": 0},
+        "timestamp": "2026-06-15T00:00:00Z",
+    }
 
-    def __init__(self, receipts_exists: bool = True, receipt_versions: dict | None = None):
-        self.receipts_exists = receipts_exists
-        self.receipt_versions = receipt_versions or {}
+
+class FakeGateway:
+    """Duck-typed ChainGateway: canned registries and keyed records, no network.
+
+    ``prepare_anchor`` is monkeypatched in the prepare tests, so the gateway is
+    used only for the write-probe estimate and for the lookup path's reads.
+    """
+
+    def __init__(self, registries: dict | None = None, receipt_versions: dict | None = None,
+                 estimate_result: dict | None = None):
+        # registries: {name: id}. Default = the two court registries; there is
+        # NO global receipts registry in the per-firm-per-case model.
+        self._registries = registries if registries is not None else {"us-scotus": 737, "us-ca11": 738}
+        self.receipt_versions = receipt_versions or {}  # {(registry, checksum): latest pc.Record}
+        self.estimate_result = estimate_result or {"ok": True, "gas": 123456}
         self.estimates: list[bytes] = []
 
     def head_block(self) -> int:
@@ -315,164 +348,153 @@ class FakeGateway:
         return 787111
 
     def registry(self, name: str, max_age: float = 30.0):
-        table = {"us-scotus": 737, "us-ca11": 738, "receipts-v1": 900}
-        if name == "receipts-v1" and not self.receipts_exists:
+        if name not in self._registries:
             return None
-        if name not in table:
-            return None
-        return {"id": table[name], "name": name, "creator": "nvnm1fake", "created_at": "t", "description": "", "metadata": ""}
+        return {"id": self._registries[name], "name": name, "creator": "nvnm1fake",
+                "created_at": "2026-06-15", "description": "", "metadata": ""}
 
     def keyed_record(self, registry: str, checksum: str, block: str = "latest", index: int = 0):
-        if registry == "us-scotus" and checksum == "410 U.S. 113":
-            return fake_record(registry, checksum, '{"cluster":108713,"name":"Roe v. Wade","year":1973}')
-        if registry == "receipts-v1" and checksum in self.receipt_versions:
-            latest = self.receipt_versions[checksum]
-            if index == 0:
-                return latest
-            if 1 <= index < latest.index:
-                return fake_record(registry, checksum, latest.metadata, index=index, latest=False)
+        latest = self.receipt_versions.get((registry, checksum))
+        if latest is None:
+            return None
+        if index == 0:
+            return latest
+        if 1 <= index < latest.index:
+            return fake_record(registry, checksum, latest.metadata, index=index, latest=False)
         return None
 
     def estimate(self, from_addr: str, calldata: bytes) -> dict:
         self.estimates.append(calldata)
-        return {"ok": True, "gas": 123456}
+        return self.estimate_result
+
+    @property
+    def rpc_factory(self):
+        return lambda: None  # prepare_anchor is monkeypatched, so this is never called
 
 
-DOC_SHA = "a" * 64
-AGENT = {"address": "0x" + "ab" * 20, "kya_id": "kya:test-agent"}
+def make_plan(*, registry_exists: bool = True, already_anchored: bool = False, create: bool = False) -> AnchorPlan:
+    receipt = minimal_receipt(DOC_SHA, block=1_700_000)
+    receipt_json = compact_json(receipt)
+    record_calldata = pc.build_add_record(
+        registry=REG, uri=RECEIPT_URI, checksum=DOC_SHA, checksum_algo="sha256", metadata=receipt_json,
+    )
+    create_registry = create_calldata = None
+    if create:
+        name, description, metadata = receipt_registry_strings(FIRM, CASE)
+        create_registry = {"name": name, "description": description, "metadata": metadata}
+        create_calldata = pc.build_add_registry(name, description, metadata)
+    return AnchorPlan(
+        registry=REG, registry_exists=registry_exists, document_sha256=DOC_SHA,
+        checked_at_block=1_700_000, registries_read=receipt["registries"],
+        receipt=receipt, receipt_json=receipt_json, record_calldata=record_calldata,
+        create_registry=create_registry, create_calldata=create_calldata,
+        already_anchored=already_anchored, report={},
+    )
 
 
-def prepare_payload() -> dict:
-    return {
-        "document_sha256": DOC_SHA,
-        "agent": AGENT,
-        "results": [
-            {"registry": "us-scotus", "canonical": "410 U.S. 113", "as_written": "410 U. S. 113",
-             "occurrences": 3, "plaintiff": "Roe", "defendant": "Wade", "status": "VERIFIED"},
-            {"registry": "us-ca11", "canonical": "925 F.3d 1339", "as_written": "925 F.3d 1339",
-             "occurrences": 1, "plaintiff": "Varghese", "defendant": "China Southern Airlines",
-             "status": "VERIFIED"},  # client lies; the chain re-check must override
-            {"registry": "us-ca2", "canonical": "100 F.3d 200", "as_written": "100 F.3d 200",
-             "occurrences": 1, "status": "NOT_COVERED"},
-            {"registry": None, "canonical": "12 F.3d 34", "as_written": "12 F.3d 34",
-             "occurrences": 1, "status": "AMBIGUOUS_JURISDICTION"},
-            {"registry": None, "canonical": None, "as_written": "Id.", "occurrences": 2,
-             "status": "UNPARSEABLE"},
-        ],
-    }
+def test_receipt_prepare_builds_minimal_v1(monkeypatch):
+    monkeypatch.setattr(service_mod, "prepare_anchor", lambda *a, **k: make_plan())
+    gw = FakeGateway()
+    out = ReceiptService(gw).prepare(b"%PDF-fake", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
 
-
-def test_receipt_prepare_rechecks_against_chain():
-    service = ReceiptService(FakeGateway())
-    out = service.prepare(prepare_payload())
+    assert out["registry"] == REG
+    assert out["registry_exists"] is True
+    assert out["agent"] == {"address": AGENT_ADDR}
 
     receipt = json.loads(out["receipt"]["json"])
-    assert receipt["schema"] == "nvnm-cite-receipt/v1-draft"
+    assert receipt["schema"] == "nvnm-cite-receipt/v1"  # LOCKED, not -draft
     assert receipt["document_sha256"] == DOC_SHA
-    assert receipt["checked_at_block"] == 1_700_000
-    assert receipt["agent"] == {"address": AGENT["address"], "kya_id": "kya:test-agent"}
-    names = [r["name"] for r in receipt["registries"]]
-    assert names == ["us-scotus", "us-ca11"]
-
-    by_c = {r.get("c", r.get("w")): r for r in receipt["results"]}
-    roe = by_c["410 U.S. 113"]
-    assert roe["s"] == "V" and roe["k"] == 108713 and roe["n"] == "m" and roe["o"] == 3
-    assert roe["g"] == 0 and roe["w"] == "410 U. S. 113"
-    assert by_c["925 F.3d 1339"]["s"] == "N", "client-claimed VERIFIED must not survive a chain miss"
-    assert by_c["100 F.3d 200"]["g"] == "us-ca2" and by_c["100 F.3d 200"]["s"] == "C"
-    assert by_c["12 F.3d 34"]["s"] == "A"
-    assert by_c["Id."]["s"] == "U"
-
-    # canonical serialization: sorted keys, no whitespace
+    assert receipt["agent"] == {"address": AGENT_ADDR}
+    # NON-ENUMERATING: no per-case list, and no kya_id anywhere
+    assert "results" not in receipt
+    assert "kya_id" not in out["receipt"]["json"]
+    assert set(receipt["summary"]) == {
+        "checked", "verified", "not_found", "not_covered", "ambiguous", "unparseable", "name_mismatches"
+    }
+    # canonical serialization + fits the cap with room to spare
     assert out["receipt"]["json"] == compact_json(receipt)
     assert out["receipt"]["bytes"] <= out["receipt"]["cap"]
 
-    # the prepared calldata must decode straight back to the schema fields
-    data = bytes.fromhex(out["tx"]["data"][2:])
-    decoded = decode_call(data)
+    # the record calldata decodes straight back to the locked schema fields
+    decoded = decode_call(bytes.fromhex(out["tx"]["data"][2:]))
     record = decoded["args"]["record"]
     assert decoded["function"] == "addRecord"
-    assert record["registry"] == "receipts-v1"
+    assert record["registry"] == REG
     assert record["checksum"] == DOC_SHA
     assert record["checksumAlgo"] == "sha256"
-    assert record["uri"] == "urn:nvnm-cite:receipt:v1"
+    assert record["uri"] == RECEIPT_URI
     assert record["metadata"] == out["receipt"]["json"]
-    assert record["status"] == "Active"
     assert out["write_probe"]["ok"] is True
+    assert "setup" not in out
 
 
-def test_receipt_prepare_offers_setup_when_registry_missing():
-    service = ReceiptService(FakeGateway(receipts_exists=False))
-    out = service.prepare(prepare_payload())
-    assert out["receipts_registry"]["exists"] is False
+def test_receipt_prepare_offers_setup_when_registry_missing(monkeypatch):
+    monkeypatch.setattr(service_mod, "prepare_anchor", lambda *a, **k: make_plan(registry_exists=False, create=True))
+    out = ReceiptService(FakeGateway()).prepare(b"%PDF", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
+
+    assert out["registry_exists"] is False
+    assert "write_probe" not in out
     setup = out["setup"]
-    assert setup["registry"] == "receipts-v1"
-    assert setup["metadata"] == '{"schema":"nvnm-cite-receipt/v1","spec":"cite-canonical-v1"}'
+    assert setup["name"] == REG
     decoded = decode_call(bytes.fromhex(setup["tx"]["data"][2:]))
     assert decoded["function"] == "addRegistry"
-    assert decoded["args"]["name"] == "receipts-v1"
+    assert decoded["args"]["name"] == REG
     assert "filing receipts" in decoded["args"]["description"]
+    assert setup["probe"]["ok"] is True
 
 
-def test_receipt_prepare_rejects_bad_input():
-    service = ReceiptService(FakeGateway())
-    with pytest.raises(WebAppError):
-        service.prepare({"document_sha256": "xyz", "agent": AGENT, "results": [{}]})
-    with pytest.raises(WebAppError):
-        service.prepare({"document_sha256": DOC_SHA, "agent": {"address": "nope"}, "results": [{}]})
-    with pytest.raises(WebAppError):
-        service.prepare({"document_sha256": DOC_SHA, "agent": AGENT, "results": []})
+def test_receipt_prepare_validates_input():
+    svc = ReceiptService(FakeGateway())
+    with pytest.raises(WebAppError):  # bad agent address
+        svc.prepare(b"x", "f.pdf", firm=FIRM, case=CASE, agent_address="nope")
+    with pytest.raises(WebAppError):  # missing firm
+        svc.prepare(b"x", "f.pdf", firm="", case=CASE, agent_address=AGENT_ADDR)
+    with pytest.raises(WebAppError):  # missing case
+        svc.prepare(b"x", "f.pdf", firm=FIRM, case="", agent_address=AGENT_ADDR)
 
 
-def test_receipt_compaction_ladder_and_overflow():
-    registries = [{"head_block": 1, "id": 737, "name": "us-scotus"}]
-    verified = [
-        {"c": f"{v} U.S. {v}", "g": 0, "k": v, "n": "m", "s": "V", "w": f"{v} U. S. {v}"}
-        for v in range(100, 160)
-    ]
-    receipt_json, compactions = build_receipt(
-        document_sha256=DOC_SHA, checked_at_block=1, registries=registries,
-        results=verified, agent={"address": "0x" + "ab" * 20}, timestamp="2026-06-12T00:00:00Z",
-    )
-    assert compactions, "sixty verified entries cannot fit uncompacted"
-    parsed = json.loads(receipt_json)
-    assert parsed["verified_omitted"] == 60
-    assert len(receipt_json.encode()) <= 2048
+def test_receipt_prepare_maps_receipt_errors(monkeypatch):
+    # A ReceiptError from the locked layer (e.g. un-sluggable firm/case) → a 422.
+    from nvnm_cite.receipts.schema import ReceiptError
 
-    # NOT_FOUND entries are never collapsed: overflow must raise, not lie
-    not_found = [{"c": f"{v} F.3d {v}", "g": 0, "s": "N"} for v in range(100, 200)]
-    with pytest.raises(ReceiptTooLarge):
-        build_receipt(
-            document_sha256=DOC_SHA, checked_at_block=1, registries=registries,
-            results=not_found, agent={"address": "0x" + "ab" * 20}, timestamp="2026-06-12T00:00:00Z",
-        )
+    def boom(*a, **k):
+        raise ReceiptError("firm and case must each contain alphanumeric characters")
+
+    monkeypatch.setattr(service_mod, "prepare_anchor", boom)
+    with pytest.raises(WebAppError) as ei:
+        ReceiptService(FakeGateway()).prepare(b"x", "f.pdf", firm="!!!", case="???", agent_address=AGENT_ADDR)
+    assert ei.value.http_status == 422
 
 
-def test_receipt_lookup_versions_and_missing_registry():
+def test_receipt_lookup_found_versions_and_missing():
     sha = "b" * 64
-    receipt_meta = compact_json(
-        {"schema": "nvnm-cite-receipt/v1-draft", "document_sha256": sha,
-         "checked_at_block": 5, "results": [{"c": "410 U.S. 113", "g": 0, "s": "V"}],
-         "registries": [{"head_block": 5, "id": 737, "name": "us-scotus"}],
-         "agent": {"address": "0x" + "ab" * 20}, "chain_id": 787111,
-         "normalizer_version": "1.0.0", "timestamp": "t"}
+    receipt_meta = compact_json(minimal_receipt(sha, block=5))
+    gw = FakeGateway(
+        registries={"us-scotus": 737, "us-ca11": 738, REG: 901},
+        receipt_versions={(REG, sha): fake_record(REG, sha, receipt_meta, index=2)},
     )
-    gw = FakeGateway(receipt_versions={sha: fake_record("receipts-v1", sha, receipt_meta, index=2)})
-    service = ReceiptService(gw)
-    out = service.lookup(sha.upper())  # case-insensitive input
+    out = ReceiptService(gw).lookup(REG.upper(), sha.upper())  # (registry + hash), case-insensitive
+    assert out["registry"] == REG
     assert out["found"] is True and out["registry_exists"] is True
+    assert out["registry_id"] == 901 and out["registry_owner"] == "nvnm1fake"
     assert [v["index"] for v in out["versions"]] == [1, 2]
-    assert out["versions"][-1]["receipt"]["schema"] == "nvnm-cite-receipt/v1-draft"
+    assert out["versions"][-1]["receipt"]["schema"] == "nvnm-cite-receipt/v1"
+    assert "results" not in out["versions"][-1]["receipt"]  # non-enumerating
     assert out["proof"]["request"]["method"] == "eth_call"
 
-    missing = ReceiptService(FakeGateway()).lookup("c" * 64)
-    assert missing["found"] is False and missing["registry_exists"] is True
+    # registry exists but no receipt for this document → found False (the tamper signal)
+    no_doc = ReceiptService(FakeGateway(registries={REG: 901})).lookup(REG, "c" * 64)
+    assert no_doc["registry_exists"] is True and no_doc["found"] is False
 
-    no_registry = ReceiptService(FakeGateway(receipts_exists=False)).lookup("c" * 64)
-    assert no_registry["found"] is False and no_registry["registry_exists"] is False
+    # registry itself absent → registry_exists False (bad/unknown discovery link)
+    no_reg = ReceiptService(FakeGateway(registries={})).lookup(REG, "c" * 64)
+    assert no_reg["registry_exists"] is False and no_reg["found"] is False
 
+    # bad inputs
     with pytest.raises(WebAppError):
-        service.lookup("not-a-hash")
+        ReceiptService(gw).lookup(REG, "not-a-hash")
+    with pytest.raises(WebAppError):
+        ReceiptService(gw).lookup("Bad Registry Name!!", sha)
 
 
 # ---------------------------------------------------------------- decode
@@ -542,10 +564,30 @@ def test_server_check_surfaces_dead_rpc(live_server):
 
 
 def test_server_validation_errors(live_server):
-    res, data = _request(live_server, "GET", "/api/receipt/lookup?sha256=zzz")
+    # lookup now needs a valid registry AND a 64-hex sha (registry + file, item 3)
+    res, data = _request(live_server, "GET", "/api/receipt/lookup?registry=firm--case&sha256=zzz")
     assert res.status == 422 and b"SHA-256" in data
+    res, data = _request(live_server, "GET", "/api/receipt/lookup?registry=Bad%20Name&sha256=" + "a" * 64)
+    assert res.status == 422 and b"registry" in data
     res, data = _request(live_server, "GET", "/api/tx?hash=nope")
     assert res.status == 422
-    res, _ = _request(live_server, "POST", "/api/receipt/prepare", body=b"{not json",
-                      headers={"Content-Length": "9"})
-    assert res.status == 400
+    # prepare takes a file + headers now; missing wallet/firm/case → 422 before any RPC
+    res, _ = _request(live_server, "POST", "/api/receipt/prepare", body=b"hello",
+                      headers={"Content-Length": "5"})
+    assert res.status == 422
+
+
+def test_server_status_fast_fails_on_dead_rpc(live_server):
+    # The status probe runs through a SHORT-timeout gateway (task 4.5e): with an
+    # unroutable RPC it must return promptly with rpc_ok False, not stall.
+    import time as _time
+
+    start = _time.monotonic()
+    res, data = _request(live_server, "GET", "/api/status")
+    elapsed = _time.monotonic() - start
+    assert res.status == 200
+    payload = json.loads(data)
+    assert payload["chain"]["rpc_ok"] is False
+    assert payload["telemetry"]["enabled"] is False
+    assert "receipts-v1" not in data.decode()  # no global receipts registry anymore
+    assert elapsed < 12, f"status probe stalled {elapsed:.1f}s — fast-fail timeout not applied"

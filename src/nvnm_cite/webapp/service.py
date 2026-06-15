@@ -7,23 +7,22 @@ Trust boundaries, restated where the code lives:
   keyed ``records()`` reads (item 0, DECISIONS 2026-06-13). It never
   persists the document; bytes live in this call frame and are garbage the
   moment the report is returned. The same core powers ``nvnm-cite check``.
-- ``ReceiptService`` (filing time): re-verifies every keyed citation via
-  ``records()`` eth_calls pinned to one block, so the anchored receipt
-  claims chain state at a stated height (plan task 3.2 semantics). The
-  server prepares calldata with the golden-tested codec but signs
-  nothing; the user's wallet does.
-- Receipt object: the receipt schema locks at Phase 4 task 4.1. Until
-  then this module writes schema string ``nvnm-cite-receipt/v1-draft``
-  (a deliberate marker: testnet demo receipts must not masquerade as
-  the locked v1). Field sketch follows plan 4.1; compaction follows the
-  4.3 hints (single-char statuses, registry index table, omit
-  ``as_written`` when redundant, omit unknown name_checks).
+- ``ReceiptService`` (filing time): delegates to the LOCKED receipts layer
+  (``nvnm_cite.receipts``) — ``prepare_anchor`` pins the check to one block
+  and assembles the minimal receipt + exact calldata, so the webapp receipt
+  is byte-identical to the ``nvnm-cite anchor`` CLI's. The server prepares
+  calldata with the golden-tested codec but signs nothing; the user's
+  wallet does. Lookup is a keyed ``records(registry, hash)`` read.
+- Receipt object: the LOCKED receipt v1 (``nvnm-cite-receipt/v1``,
+  DECISIONS 2026-06-15) — MINIMAL and NON-ENUMERATING (document SHA-256 +
+  provenance + a non-identifying status tally, never the list of cited
+  cases; items 2/2b). ~480 B, always under the 2048 B cap, so there is no
+  compaction ladder and no chunking. Receipts live in a PER-FIRM-PER-CASE
+  registry owned by the filing party's wallet (item 3), not a global one.
 
 Status vocabulary is the locked five-status enum (DECISIONS 2026-06-10):
 VERIFIED / NOT_FOUND / NOT_COVERED / AMBIGUOUS_JURISDICTION /
-UNPARSEABLE, plus the orthogonal name_check field. The normalizer's
-UNRESOLVED disposition (orphan short forms) reports as UNPARSEABLE with
-the normalizer's reason carried through.
+UNPARSEABLE, plus the orthogonal name_check field.
 """
 
 from __future__ import annotations
@@ -40,46 +39,31 @@ from nvnm_cite.chain import abi
 from nvnm_cite.chain import precompile as pc
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
 from nvnm_cite.config import TESTNET_CHAIN_ID, TESTNET_EXPLORER
-from nvnm_cite.loader.records import METADATA_CAP, compact_json
+from nvnm_cite.loader.records import METADATA_CAP
 from nvnm_cite.normalizer import CANONICAL_SPEC, NORMALIZER_VERSION
-from nvnm_cite.verifier.check import (
-    AMBIGUOUS,
-    COVERED_REGISTRIES,
-    NOT_COVERED,
-    NOT_FOUND,
-    STATUS_CHARS,
-    UNPARSEABLE,
-    VERIFIED,
-    CheckError,
-    check_document,
-    name_check,
-    record_cluster,
-    record_names,
+from nvnm_cite.receipts.anchor import prepare_anchor
+from nvnm_cite.receipts.schema import (
+    RECEIPT_SCHEMA,
+    RECEIPT_URI,
+    ReceiptError,
 )
+from nvnm_cite.verifier.check import COVERED_REGISTRIES, CheckError, check_document
 from nvnm_cite.verifier.resolver import Resolver
 from nvnm_cite.webapp.localindex import LocalIndex
 
 WEBAPP_VERSION = "0.1.0"
-RECEIPT_SCHEMA = "nvnm-cite-receipt/v1-draft"
-RECEIPT_URI = "urn:nvnm-cite:receipt:v1"
-RECEIPTS_REGISTRY = "receipts-v1"
-# Locked creation strings, docs/record-schema.md section 2 (rendered, not improvised).
-RECEIPTS_REGISTRY_DESCRIPTION = (
-    "nvnm-cite filing receipts: SHA-256-keyed records of citation checks "
-    "performed against the us-* registries. nvnm-cite."
-)
-RECEIPTS_REGISTRY_METADATA = compact_json(
-    {"schema": "nvnm-cite-receipt/v1", "spec": "cite-canonical-v1"}
-)
 
-# Receipts read the same covered registries the verifier core defines.
+# Receipts re-check against the same covered court registries the verifier
+# core defines; the receipt registry itself is per-firm-per-case (item 3).
 COURT_REGISTRIES = COVERED_REGISTRIES
-
-MAX_RECEIPT_ENTRIES = 500
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 _ADDRESS_RE = re.compile(r"^0x[0-9a-fA-F]{40}$")
 _TXHASH_RE = re.compile(r"^0x[0-9a-f]{64}$")
+# Receipt registry names are <firm-slug>--<case-slug>, lowercase [a-z0-9-],
+# <=64 B (receipts/schema.py::receipt_registry_name). Court ids (us-scotus)
+# match too, which is harmless for a read-only lookup.
+_REGISTRY_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
 
 
 class WebAppError(ValueError):
@@ -88,17 +72,6 @@ class WebAppError(ValueError):
     def __init__(self, message: str, http_status: int = 422):
         super().__init__(message)
         self.http_status = http_status
-
-
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _clean_str(value: Any, cap: int) -> str | None:
-    if not isinstance(value, str):
-        return None
-    cleaned = "".join(ch for ch in value if ch >= " " or ch == "\t").strip()
-    return cleaned[:cap] if cleaned else None
 
 
 # =====================================================================
@@ -138,6 +111,12 @@ class ChainGateway:
     @property
     def rpc(self) -> EvmRpc:
         return self._rpc_factory()
+
+    @property
+    def rpc_factory(self) -> Callable[[], EvmRpc]:
+        """The underlying factory, for handing to the receipts layer
+        (``prepare_anchor`` builds its own reader/resolver from it)."""
+        return self._rpc_factory
 
     def head_block(self) -> int:
         return self.rpc.block_number()
@@ -271,255 +250,118 @@ def _try_json(raw: Any) -> Any:
 # =====================================================================
 
 
-class ReceiptTooLarge(WebAppError):
-    pass
-
-
-def build_receipt(
-    *,
-    document_sha256: str,
-    checked_at_block: int,
-    registries: list[dict],
-    results: list[dict],
-    agent: dict,
-    timestamp: str,
-    chain_id: int = TESTNET_CHAIN_ID,
-) -> tuple[str, list[str]]:
-    """Serialize the draft receipt, applying the deterministic compaction
-    ladder until it fits the measured 2048 B metadata cap.
-
-    Result entry keys (compact by design, documented in docs/web-demo.md):
-    c=canonical, w=as_written (omitted when equal to c), g=registry (int =
-    index into the receipt's registries table; string = registry outside
-    pilot coverage), s=status char (V/N/C/A/U), n=name_check (m/x; unknown
-    omitted), k=cluster id, o=occurrence count (omitted when 1).
-
-    Ladder: (1) drop w everywhere; (2) collapse VERIFIED+match entries
-    into a top-level verified_omitted count; (3) give up (chunked receipts
-    are Phase 4 task 4.3).
-    """
-    compactions: list[str] = []
-
-    def serialize(entries: list[dict], verified_omitted: int) -> str:
-        obj: dict[str, Any] = {
-            "agent": agent,
-            "chain_id": chain_id,
-            "checked_at_block": checked_at_block,
-            "document_sha256": document_sha256,
-            "normalizer_version": NORMALIZER_VERSION,
-            "registries": registries,
-            "results": entries,
-            "schema": RECEIPT_SCHEMA,
-            "timestamp": timestamp,
-        }
-        if verified_omitted:
-            obj["verified_omitted"] = verified_omitted
-        return compact_json(obj)
-
-    entries = [dict(e) for e in results]
-    serialized = serialize(entries, 0)
-    if len(serialized.encode("utf-8")) <= METADATA_CAP:
-        return serialized, compactions
-
-    compactions.append("dropped as-written variants (w)")
-    for e in entries:
-        e.pop("w", None)
-    serialized = serialize(entries, 0)
-    if len(serialized.encode("utf-8")) <= METADATA_CAP:
-        return serialized, compactions
-
-    keep = [e for e in entries if not (e["s"] == "V" and e.get("n") != "x")]
-    omitted = len(entries) - len(keep)
-    compactions.append(f"collapsed {omitted} verified results into verified_omitted")
-    serialized = serialize(keep, omitted)
-    if len(serialized.encode("utf-8")) <= METADATA_CAP:
-        return serialized, compactions
-
-    raise ReceiptTooLarge(
-        "the receipt does not fit the 2048-byte on-chain metadata cap even "
-        "after compaction; chunked receipts arrive with Phase 4"
-    )
-
-
 class ReceiptService:
+    """Filing-time receipts, delegating to the LOCKED receipts layer.
+
+    ``prepare`` re-checks the uploaded document pinned to one block and
+    assembles the minimal, non-enumerating receipt + exact calldata via
+    ``receipts.anchor.prepare_anchor`` — so the webapp receipt is
+    byte-identical to ``nvnm-cite anchor``'s. The receipt lives in a
+    PER-FIRM-PER-CASE registry named ``<firm>--<case>`` and owned by the
+    filing wallet (item 3); there is no global receipts registry. ``lookup``
+    is a keyed ``records(registry, hash)`` read against the registry named on
+    the filing. The server signs nothing; the user's wallet does.
+    """
+
     def __init__(self, gateway: ChainGateway):
         self.gateway = gateway
 
-    # --- prepare ---
+    # --- prepare (read-only: pins a re-check, builds calldata, sends nothing) ---
 
-    def prepare(self, payload: dict) -> dict:
-        sha = str(payload.get("document_sha256", "")).lower()
-        if not _SHA256_RE.match(sha):
-            raise WebAppError("document_sha256 must be 64 lowercase hex characters")
-        agent_addr = payload.get("agent", {}).get("address", "")
-        if not _ADDRESS_RE.match(agent_addr or ""):
-            raise WebAppError("agent.address must be a 0x-prefixed 20-byte address")
-        agent: dict[str, Any] = {"address": agent_addr.lower()}
-        kya = _clean_str(payload.get("agent", {}).get("kya_id"), 120)
-        if kya:
-            agent["kya_id"] = kya
+    def prepare(self, data: bytes, filename: str, *, firm: str, case: str, agent_address: str) -> dict:
+        if not _ADDRESS_RE.match(agent_address or ""):
+            raise WebAppError(
+                "connect a wallet first — the receipt records the attesting 0x address"
+            )
+        firm = (firm or "").strip()
+        case = (case or "").strip()
+        if not firm or not case:
+            raise WebAppError(
+                "name the filer/firm and the case/matter — together they name the "
+                "per-case receipt registry your wallet will own"
+            )
+        try:
+            plan = prepare_anchor(
+                data,
+                filename,
+                firm=firm,
+                case=case,
+                agent_address=agent_address,
+                rpc_factory=self.gateway.rpc_factory,
+            )
+        except ReceiptError as exc:
+            raise WebAppError(str(exc)) from exc
+        except CheckError as exc:
+            raise WebAppError(str(exc), exc.http_status) from exc
 
-        raw_entries = payload.get("results")
-        if not isinstance(raw_entries, list) or not raw_entries:
-            raise WebAppError("results must be a non-empty list (run a check first)")
-        if len(raw_entries) > MAX_RECEIPT_ENTRIES:
-            raise WebAppError(f"too many results (max {MAX_RECEIPT_ENTRIES})")
-
-        registries_table: list[dict] = []
-        registry_index: dict[str, int] = {}
-        head = self.gateway.head_block()
-        block_tag = hex(head)
-        for name in COURT_REGISTRIES:
-            reg = self.gateway.registry(name)
-            if reg is not None:
-                registry_index[name] = len(registries_table)
-                registries_table.append({"head_block": head, "id": reg["id"], "name": name})
-
-        results: list[dict] = []
-        detail: list[dict] = []
-        for raw in raw_entries:
-            if not isinstance(raw, dict):
-                raise WebAppError("each result must be an object")
-            registry = _clean_str(raw.get("registry"), 64)
-            canonical = _clean_str(raw.get("canonical"), 64)
-            as_written = _clean_str(raw.get("as_written"), 200)
-            plaintiff = _clean_str(raw.get("plaintiff"), 200)
-            defendant = _clean_str(raw.get("defendant"), 200)
-            occurrences = raw.get("occurrences")
-            occurrences = occurrences if isinstance(occurrences, int) and 1 <= occurrences <= 10000 else 1
-            claimed = str(raw.get("status", ""))
-
-            entry: dict[str, Any] = {}
-            row: dict[str, Any] = {
-                "registry": registry,
-                "canonical": canonical,
-                "as_written": as_written,
-                "local_status": claimed,
-            }
-            if canonical and registry in registry_index:
-                # The receipt path: a live keyed read pinned at `head`.
-                record = self.gateway.keyed_record(registry, canonical, block=block_tag)
-                if record is not None:
-                    status = VERIFIED
-                    names = record_names(record.metadata)
-                    check = name_check(plaintiff, defendant, names)
-                    cluster = record_cluster(record.metadata)
-                    if cluster is not None:
-                        entry["k"] = cluster
-                    if check == "match":
-                        entry["n"] = "m"
-                    elif check == "mismatch":
-                        entry["n"] = "x"
-                    row["name_check"] = check
-                else:
-                    status = NOT_FOUND
-                entry["g"] = registry_index[registry]
-                entry["c"] = canonical
-            elif canonical and registry:
-                status = NOT_COVERED
-                entry["g"] = registry
-                entry["c"] = canonical
-            elif claimed == AMBIGUOUS and (canonical or as_written):
-                status = AMBIGUOUS
-                if canonical:
-                    entry["c"] = canonical
-            else:
-                status = UNPARSEABLE
-            entry["s"] = STATUS_CHARS[status]
-            if as_written and as_written != canonical:
-                entry["w"] = as_written
-            if occurrences > 1:
-                entry["o"] = occurrences
-            results.append(entry)
-            row["chain_status"] = status
-            detail.append(row)
-
-        timestamp = _utc_now()
-        receipt_json, compactions = build_receipt(
-            document_sha256=sha,
-            checked_at_block=head,
-            registries=registries_table,
-            results=results,
-            agent=agent,
-            timestamp=timestamp,
-        )
-
-        calldata = pc.build_add_record(
-            registry=RECEIPTS_REGISTRY,
-            uri=RECEIPT_URI,
-            checksum=sha,
-            checksum_algo="sha256",
-            metadata=receipt_json,
-        )
-        receipts_reg = self.gateway.registry(RECEIPTS_REGISTRY)
+        record_tx = {"to": pc.PRECOMPILE_ADDRESS, "data": "0x" + plan.record_calldata.hex(), "value": "0x0"}
         response: dict[str, Any] = {
+            "registry": plan.registry,
+            "registry_exists": plan.registry_exists,
+            "already_anchored": plan.already_anchored,
+            "agent": {"address": agent_address.lower()},
+            "document_sha256": plan.document_sha256,
+            "checked_at_block": plan.checked_at_block,
+            "registries_read": plan.registries_read,
             "receipt": {
                 "schema": RECEIPT_SCHEMA,
-                "json": receipt_json,
-                "bytes": len(receipt_json.encode("utf-8")),
+                "json": plan.receipt_json,
+                "object": plan.receipt,
+                "summary": plan.receipt["summary"],
+                "timestamp": plan.receipt["timestamp"],
+                "bytes": len(plan.receipt_json.encode("utf-8")),
                 "cap": METADATA_CAP,
-                "compactions": compactions,
-                "timestamp": timestamp,
             },
-            "chain": {
-                "chain_id": TESTNET_CHAIN_ID,
-                "checked_at_block": head,
-                "registries": registries_table,
-            },
-            "results": detail,
-            "tx": {
-                "to": pc.PRECOMPILE_ADDRESS,
-                "data": "0x" + calldata.hex(),
-                "value": "0x0",
-            },
-            "receipts_registry": {"exists": receipts_reg is not None}
-            | ({"id": receipts_reg["id"], "creator": receipts_reg["creator"]} if receipts_reg else {}),
+            "chain": {"chain_id": TESTNET_CHAIN_ID, "checked_at_block": plan.checked_at_block},
+            "tx": record_tx,
+            "writes": plan.writes,
         }
-        if receipts_reg is not None:
-            response["write_probe"] = self.gateway.estimate(agent_addr, calldata)
+        if plan.create_registry is not None and plan.create_calldata is not None:
+            response["setup"] = dict(
+                plan.create_registry,
+                tx={"to": pc.PRECOMPILE_ADDRESS, "data": "0x" + plan.create_calldata.hex(), "value": "0x0"},
+                note=(
+                    f"the {plan.registry} registry does not exist on this chain yet. "
+                    "Creating it is a one-time setup transaction; the creating wallet "
+                    "becomes its admin — self-sovereign, no NVNM gatekeeper."
+                ),
+                probe=self.gateway.estimate(agent_address, plan.create_calldata),
+            )
         else:
-            response["setup"] = self.registry_setup(agent_addr)
+            response["write_probe"] = self.gateway.estimate(agent_address, plan.record_calldata)
         return response
 
-    def registry_setup(self, from_addr: str | None = None) -> dict:
-        """Everything a wallet needs to create receipts-v1 with the LOCKED
-        creation strings (schema doc section 2): shown only while the
-        registry does not exist; the creator becomes its admin."""
-        calldata = pc.build_add_registry(
-            RECEIPTS_REGISTRY, RECEIPTS_REGISTRY_DESCRIPTION, RECEIPTS_REGISTRY_METADATA
-        )
-        setup = {
-            "registry": RECEIPTS_REGISTRY,
-            "description": RECEIPTS_REGISTRY_DESCRIPTION,
-            "metadata": RECEIPTS_REGISTRY_METADATA,
-            "tx": {"to": pc.PRECOMPILE_ADDRESS, "data": "0x" + calldata.hex(), "value": "0x0"},
-            "note": (
-                "receipts-v1 does not exist on this chain yet. Creating it is a "
-                "one-time setup transaction; the creating wallet becomes its admin."
-            ),
-        }
-        if from_addr and _ADDRESS_RE.match(from_addr):
-            setup["probe"] = self.gateway.estimate(from_addr, calldata)
-        return setup
+    # --- lookup (free, read-only; registry + hash) ---
 
-    # --- lookup (free, read-only) ---
-
-    def lookup(self, sha256: str) -> dict:
+    def lookup(self, registry: str, sha256: str) -> dict:
+        """Keyed ``records(registry, hash)`` read. The registry comes from the
+        filing's discovery link; the hash is computed in the visitor's browser
+        (item 4), so the document itself never reaches us here."""
+        reg_name = (registry or "").strip().lower()
+        if not _REGISTRY_NAME_RE.match(reg_name):
+            raise WebAppError(
+                "expected the receipt registry name from the filing's discovery link "
+                "(lowercase letters, digits and hyphens, e.g. firm--case)"
+            )
         sha = sha256.strip().lower()
         if not _SHA256_RE.match(sha):
             raise WebAppError("expected a 64-character hex SHA-256")
-        registry = self.gateway.registry(RECEIPTS_REGISTRY)
+        facts = self.gateway.registry(reg_name)
         head = self.gateway.head_block()
-        if registry is None:
+        if facts is None:
             return {
+                "registry": reg_name,
                 "sha256": sha,
                 "registry_exists": False,
                 "found": False,
                 "head_block": head,
-                "note": "the receipts-v1 registry has not been created on this chain yet",
+                "note": (
+                    f"no registry named {reg_name!r} exists on this chain — check the "
+                    "registry link printed on the filing"
+                ),
             }
-        query = pc.build_records_query(registry=RECEIPTS_REGISTRY, checksum=sha)
-        record = self.gateway.keyed_record(RECEIPTS_REGISTRY, sha)
+        query = pc.build_records_query(registry=reg_name, checksum=sha)
+        record = self.gateway.keyed_record(reg_name, sha)
         versions: list[dict] = []
         if record is not None:
             versions.append(_render_receipt_record(record))
@@ -527,16 +369,18 @@ class ReceiptService:
                 if len(versions) >= 10:
                     break
                 try:
-                    earlier = self.gateway.keyed_record(RECEIPTS_REGISTRY, sha, index=index)
+                    earlier = self.gateway.keyed_record(reg_name, sha, index=index)
                 except RpcError:
                     break
                 if earlier is not None:
                     versions.append(_render_receipt_record(earlier))
             versions.sort(key=lambda v: v["index"])
         return {
+            "registry": reg_name,
+            "registry_id": facts["id"],
+            "registry_owner": facts["creator"],
             "sha256": sha,
             "registry_exists": True,
-            "registry": {"id": registry["id"], "creator": registry["creator"]},
             "found": record is not None,
             "head_block": head,
             "versions": versions,
@@ -619,13 +463,24 @@ class TxService:
 
 
 class StatusService:
+    """Live status for the header + About panel. The probe is lazy (only on
+    the first ``/api/status`` after the 10 s cache lapses) and runs through a
+    SHORT-timeout gateway (wired in server.py), so a slow or dead RPC fails
+    fast and never stalls the page (task 4.5e)."""
+
     def __init__(
-        self, gateway: ChainGateway, index: LocalIndex, data_dir: Path, rpc_url: str = ""
+        self,
+        gateway: ChainGateway,
+        index: LocalIndex,
+        data_dir: Path,
+        rpc_url: str = "",
+        telemetry_enabled: bool = False,
     ):
         self.gateway = gateway
         self.index = index
         self.data_dir = Path(data_dir)
         self.rpc_url = rpc_url
+        self.telemetry_enabled = telemetry_enabled
         self._cache: tuple[float, dict] | None = None
 
     def status(self) -> dict:
@@ -641,7 +496,9 @@ class StatusService:
                 "head_block": self.gateway.head_block(),
             }
             chain["chain_id_ok"] = chain["chain_id"] == TESTNET_CHAIN_ID
-            for name in (*COURT_REGISTRIES, RECEIPTS_REGISTRY):
+            # Only the court registries are global; receipt registries are
+            # per-firm-per-case and discovered via the filing link, never probed.
+            for name in COURT_REGISTRIES:
                 reg = self.gateway.registry(name)
                 registries[name] = (
                     {"exists": True, "id": reg["id"], "created_at": reg["created_at"]}
@@ -656,6 +513,9 @@ class StatusService:
             "registries": registries,
             "index": {"registries": self.index.coverage()},
             "loader": {"bulk_load_running": self._loader_running()},
+            # Opt-in aggregate, by-citation lookup analytics (item 2b). When on,
+            # the privacy copy discloses it; never tied to a document or identity.
+            "telemetry": {"enabled": self.telemetry_enabled},
             "versions": {
                 "normalizer": NORMALIZER_VERSION,
                 "citation_spec": CANONICAL_SPEC,
@@ -667,7 +527,6 @@ class StatusService:
                 "chain_id": TESTNET_CHAIN_ID,
                 "explorer": TESTNET_EXPLORER,
                 "rpc_url": self.rpc_url,
-                "receipts_registry": RECEIPTS_REGISTRY,
                 "receipt_uri": RECEIPT_URI,
             },
             "attribution": (

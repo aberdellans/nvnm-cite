@@ -3,6 +3,7 @@
   "configurations": [
     {
       "name": "webapp",
+      "cwd": "/Users/albertberdellans/Desktop/Claude/nvnm-cite",
       "runtimeExecutable": "uv",
       "runtimeArgs": ["run", "python", "-m", "nvnm_cite.webapp", "--port", "8787"],
       "port": 8787

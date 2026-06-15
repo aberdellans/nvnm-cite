@@ -19,6 +19,7 @@ from pathlib import Path
 
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
 from nvnm_cite.verifier.resolver import ChainResolver
+from nvnm_cite.verifier.telemetry import SqliteTelemetry
 from nvnm_cite.webapp.localindex import LocalIndex
 from nvnm_cite.webapp.service import (
     ChainGateway,
@@ -31,6 +32,9 @@ from nvnm_cite.webapp.service import (
 
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 MAX_JSON_BYTES = 1 * 1024 * 1024
+# The status panel must fail fast on a dead/slow RPC (task 4.5e): a short
+# timeout, distinct from the 30 s default the check/receipt paths use.
+STATUS_RPC_TIMEOUT = 4.0
 
 _STATIC_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -48,16 +52,28 @@ _CSP = (
 
 
 class Services:
-    def __init__(self, rpc_url: str, data_dir: Path):
+    def __init__(self, rpc_url: str, data_dir: Path, telemetry_path: Path | None = None):
         self.rpc_url = rpc_url
         index = LocalIndex(data_dir)  # status panel only; not the check authority
         gateway = ChainGateway(lambda: EvmRpc(rpc_url))
+        # Opt-in aggregate, by-citation lookup telemetry (item 2b): off unless
+        # the operator passes --telemetry. One shared sink (thread-safe) feeds
+        # the drafting-time check resolver; disclosed in the privacy copy.
+        self.telemetry = SqliteTelemetry(telemetry_path) if telemetry_path else None
         # Drafting checks read the chain LIVE (item 0): a fresh EvmRpc per call
         # keeps the resolver safe under the threaded server.
-        self.check = CheckService(ChainResolver(lambda: EvmRpc(rpc_url)))
+        self.check = CheckService(
+            ChainResolver(lambda: EvmRpc(rpc_url), telemetry=self.telemetry)
+        )
         self.receipt = ReceiptService(gateway)
         self.tx = TxService(gateway)
-        self.status = StatusService(gateway, index, data_dir, rpc_url=rpc_url)
+        # The status panel probes through a SHORT-timeout gateway so a dead or
+        # slow RPC fails fast instead of stalling page load (task 4.5e).
+        status_gateway = ChainGateway(lambda: EvmRpc(rpc_url, timeout=STATUS_RPC_TIMEOUT))
+        self.status = StatusService(
+            status_gateway, index, data_dir, rpc_url=rpc_url,
+            telemetry_enabled=telemetry_path is not None,
+        )
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -152,8 +168,9 @@ class Handler(BaseHTTPRequestHandler):
         if route == "/api/status":
             self._send_json(self.services.status.status())
         elif route == "/api/receipt/lookup":
+            registry = (query.get("registry") or [""])[0]
             sha = (query.get("sha256") or [""])[0]
-            self._send_json(self.services.receipt.lookup(sha))
+            self._send_json(self.services.receipt.lookup(registry, sha))
         elif route == "/api/tx":
             tx_hash = (query.get("hash") or [""])[0]
             self._send_json(self.services.tx.inspect(tx_hash))
@@ -170,15 +187,23 @@ class Handler(BaseHTTPRequestHandler):
                 filename = urllib.parse.unquote(self.headers.get("X-Filename", "upload"))
                 self._send_json(self.services.check.check(body, filename))
             elif route == "/api/receipt/prepare":
-                body = self._read_body(MAX_JSON_BYTES)
+                # The receipt re-checks the EXACT bytes pinned to a block, so
+                # the document is re-uploaded here (parsed in memory, discarded
+                # with the response — same posture as /api/check). The filer/
+                # case labels name the per-firm-per-case registry; the agent is
+                # the connected wallet. All travel as headers alongside the body.
+                body = self._read_body(MAX_UPLOAD_BYTES)
                 if body is None:
                     return
-                try:
-                    payload = json.loads(body.decode("utf-8"))
-                except (UnicodeDecodeError, json.JSONDecodeError):
-                    self._send_error_json("invalid JSON body", 400)
-                    return
-                self._send_json(self.services.receipt.prepare(payload))
+                filename = urllib.parse.unquote(self.headers.get("X-Filename", "upload"))
+                firm = urllib.parse.unquote(self.headers.get("X-Firm", ""))
+                case = urllib.parse.unquote(self.headers.get("X-Case", ""))
+                agent = urllib.parse.unquote(self.headers.get("X-Agent", ""))
+                self._send_json(
+                    self.services.receipt.prepare(
+                        body, filename, firm=firm, case=case, agent_address=agent
+                    )
+                )
             else:
                 self._send_error_json("not found", 404)
         except WebAppError as err:
@@ -196,8 +221,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json("internal error", 500)
 
 
-def build_server(host: str, port: int, rpc_url: str, data_dir: Path) -> ThreadingHTTPServer:
-    services = Services(rpc_url, data_dir)
+def build_server(
+    host: str, port: int, rpc_url: str, data_dir: Path, telemetry_path: Path | None = None
+) -> ThreadingHTTPServer:
+    services = Services(rpc_url, data_dir, telemetry_path=telemetry_path)
     handler = type("BoundHandler", (Handler,), {"services": services})
     server = ThreadingHTTPServer((host, port), handler)
     server.daemon_threads = True

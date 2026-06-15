@@ -70,6 +70,7 @@
         NVNM&nbsp;Chain directly, so the verdict is the chain's answer, not ours, and anyone can
         re-run the same lookup. Nothing about your document goes on chain unless you choose to
         record a receipt.</p>
+        <p class="hint hidden" id="check-telemetry-note"></p>
       </div>
     </div>
 
@@ -105,6 +106,13 @@
           <tbody></tbody>
         </table>
       </div>
+      <details class="json-details" id="check-replay">
+        <summary>Replay these lookups against any node</summary>
+        <p class="hint">Each checked citation is one keyed <span class="mono">records()</span> read against
+        NVNM&nbsp;Chain. This page does not invent the answers — re-run any of these against an independent
+        NVNM&nbsp;RPC and you get the same record, or the same “not found.”</p>
+        <div id="check-replay-list"></div>
+      </details>
       <div class="legend">
         <h3 class="overline">Reading the results</h3>
         <dl>
@@ -149,15 +157,31 @@
     <div id="record-main" class="hidden">
       <div id="record-doc" class="doc-card"></div>
 
-      <div class="field-row">
-        <label for="kya-id">Agent identifier <span class="field-opt">(KYA id, optional)</span></label>
-        <input type="text" id="kya-id" class="mono" maxlength="120" placeholder="kya:your-agent-id" spellcheck="false">
+      <div class="callout">
+        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
+        <div>
+          <strong>Attesting as <span id="record-agent" class="mono">— connect a wallet —</span></strong>
+          <p>The receipt names your signing wallet as the attester. On NVNM&nbsp;Chain the identity
+          <em>is</em> the wallet address — there is no separate identifier to enter.</p>
+        </div>
       </div>
+
+      <div class="field-row">
+        <label for="firm-input">Filer / firm</label>
+        <input type="text" id="firm-input" maxlength="120" placeholder="e.g. Inveniam" spellcheck="false">
+      </div>
+      <div class="field-row">
+        <label for="case-input">Case / matter</label>
+        <input type="text" id="case-input" maxlength="160" placeholder="e.g. Mata v. Avianca" spellcheck="false">
+      </div>
+      <p class="hint" id="registry-preview">Receipts for this matter live in their own registry, owned by
+      your wallet and named from the filer and case above — you put a link to it on the filing so a clerk
+      can find the receipt later.</p>
 
       <div class="action-row">
         <button id="prepare-btn" class="btn btn-primary" type="button">Prepare receipt — live chain re-check</button>
-        <p class="hint">This is the first network interaction, and it is read-only: the registries are consulted
-        at the current head block. Nothing is written.</p>
+        <p class="hint">This re-checks the exact file against NVNM&nbsp;Chain at the current head block and
+        builds the receipt. It is read-only — nothing is written until you sign.</p>
       </div>
 
       <div id="prepare-busy" class="busy hidden" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Re-checking against the live chain…</span></div>
@@ -166,40 +190,30 @@
       <div id="prepare-result" class="hidden">
         <div id="prepare-meta" class="kv"></div>
 
-        <h3 class="overline">Local check vs. live chain</h3>
-        <div class="table-scroll">
-          <table class="cite-table" id="prepare-table">
-            <thead>
-              <tr><th scope="col">Citation</th><th scope="col">Local</th><th scope="col">Chain</th><th scope="col">Names</th><th scope="col">Note</th></tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <h3 class="overline">What the receipt records</h3>
+        <div id="prepare-tally" class="summary-chips"></div>
+        <p class="hint">The receipt records this <em>tally</em> and the document's fingerprint — never the list of
+        cited cases. The fingerprint binds the exact file, so anyone with it can reproduce every verdict; the
+        authorities in your brief stay off the public chain. The full per-citation results are on the Check tab.</p>
 
         <details class="json-details" id="receipt-json">
           <summary>Receipt JSON — this exact text is what gets anchored</summary>
           <pre class="codeblock"><code></code></pre>
         </details>
 
-        <div id="size-meter" class="size-meter">
-          <div class="size-meter-row"><span class="size-label">Receipt size</span><span class="size-value mono"></span></div>
-          <div class="size-bar"><div class="size-fill"></div></div>
-          <p class="hint size-note"></p>
-        </div>
+        <p class="hint" id="receipt-size"></p>
 
         <div id="probe-box"></div>
 
         <div id="setup-box" class="callout callout-warn hidden">
           <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
           <div>
-            <strong>One-time setup: the receipts registry does not exist yet.</strong>
-            <p>Receipts are anchored into a dedicated <span class="mono">receipts-v1</span> registry. It has not
-            been created on this chain. Any wallet may create it (the creator becomes its admin); creation is a
-            single transaction with the creation strings fixed by the record schema:</p>
-            <pre class="codeblock"><code>addRegistry("receipts-v1",
-  "nvnm-cite filing receipts: SHA-256-keyed records of citation checks performed against the us-* registries. nvnm-cite.",
-  '{"schema":"nvnm-cite-receipt/v1","spec":"cite-canonical-v1"}')</code></pre>
-            <button class="btn btn-outline" type="button">Create receipts-v1 with wallet</button>
+            <strong>One-time setup: this matter's receipt registry does not exist yet.</strong>
+            <p>Receipts for this matter live in their own registry, named from the filer and case. It has not
+            been created on this chain yet. Creating it is a single transaction; the creating wallet becomes its
+            admin (self-sovereign — no NVNM gatekeeper):</p>
+            <pre class="codeblock"><code></code></pre>
+            <button class="btn btn-outline" type="button">Create this registry with wallet</button>
           </div>
         </div>
 
@@ -232,18 +246,25 @@
   <section class="panel" id="panel-verify" role="tabpanel" aria-labelledby="tab-verify">
     <div class="panel-head">
       <h2>Verify a receipt</h2>
-      <p class="lede">For opposing counsel, clerks of court, and judges: drop in a filed document and see
-      instantly whether a citation-check receipt exists for that exact file. Free, read-only —
-      no wallet, no account.</p>
+      <p class="lede">For opposing counsel, clerks of court, and judges: paste the citation-verification
+      registry named on the filing, drop in the filed document, and see instantly whether a receipt exists
+      for that exact file. Free, read-only — no wallet, no account.</p>
     </div>
 
     <div class="callout callout-privacy">
       <svg class="ic" aria-hidden="true"><use href="#i-fingerprint"></use></svg>
       <div>
         <strong>The document never leaves your computer.</strong>
-        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint is sent
-        to the chain for lookup.</p>
+        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint and the
+        registry name are sent for the lookup. The file itself is never uploaded.</p>
       </div>
+    </div>
+
+    <div class="field-row">
+      <label for="verify-registry">Citation-verification registry</label>
+      <input type="text" id="verify-registry" class="mono" maxlength="64" placeholder="e.g. inveniam--mata-v-avianca" spellcheck="false">
+      <p class="hint">Copy it from the “Citation verifications” link printed on the filing. It points to the
+      registry that holds the receipt.</p>
     </div>
 
     <div class="dropzone" id="verify-drop" role="button" tabindex="0" aria-label="Drop a document or press Enter to choose a file">
@@ -270,7 +291,7 @@
 
     <details class="json-details replay-details hidden" id="replay-details">
       <summary>Don’t trust this page? Replay the lookup yourself</summary>
-      <p class="hint">The receipts registry is public. This exact query — generated from your lookup —
+      <p class="hint">The registry is public. This exact query — generated from your lookup —
       returns the same record from any NVNM testnet RPC; this page adds nothing you cannot reproduce:</p>
       <pre class="codeblock"><code id="replay-curl"></code></pre>
     </details>
@@ -280,14 +301,14 @@
   <section class="panel" id="panel-inspect" role="tabpanel" aria-labelledby="tab-inspect">
     <div class="panel-head">
       <h2>Inspect a transaction</h2>
-      <p class="lede">Every record on NVNM&nbsp;Chain is stored in plaintext, but generic block explorers
-      mangle the ABI framing into mojibake. Paste any anchoring transaction hash to decode it into
-      readable text — and prove the plaintext claim yourself.</p>
+      <p class="lede">Every record NVNM&nbsp;Cite writes — each case citation and each filing receipt — is
+      stored on NVNM&nbsp;Chain as plain, readable text. Paste a transaction's reference number to see exactly
+      what it contains: the citation, the case it points to, and when it was recorded.</p>
     </div>
 
     <div class="field-row field-row-inline tx-row">
-      <label for="tx-input" class="visually-hidden">Transaction hash</label>
-      <input type="text" id="tx-input" class="mono" placeholder="0x… transaction hash (66 characters)" spellcheck="false" maxlength="66">
+      <label for="tx-input" class="visually-hidden">Transaction reference</label>
+      <input type="text" id="tx-input" class="mono" placeholder="0x… transaction reference (66 characters)" spellcheck="false" maxlength="66">
       <button id="tx-inspect" class="btn btn-primary" type="button">Decode</button>
     </div>
 
@@ -300,41 +321,62 @@
   <section class="panel" id="panel-about" role="tabpanel" aria-labelledby="tab-about">
     <div class="panel-head">
       <h2>About &amp; status</h2>
-      <p class="lede">NVNM&nbsp;Cite is a public registry of canonical US case citations and a
-      receipt system for citation checks, running on NVNM&nbsp;Chain.</p>
+      <p class="lede">NVNM&nbsp;Cite checks whether the cases cited in a legal document are real. AI tools have
+      caused lawyers to file briefs citing cases that don’t exist; NVNM&nbsp;Cite catches that before filing by
+      checking every citation against an authoritative, public record of real published decisions — and can
+      create a permanent, independently-verifiable receipt that you ran the check on a specific document at a
+      specific time.</p>
     </div>
 
     <div class="about-grid">
       <div class="about-card">
-        <svg class="ic" aria-hidden="true"><use href="#i-seal"></use></svg>
-        <h3>It proves provenance</h3>
-        <p>A receipt proves a check happened: when, against which registries, over which exact
-        document, attested by whom.</p>
+        <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
+        <h3>It checks citations are real</h3>
+        <p>Every citation in a brief is matched against a public registry of real decisions: real, not found,
+        or not yet covered. A fabricated cite has no record to find.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-scales"></use></svg>
-        <h3>It never asserts truth</h3>
-        <p>A verified citation exists in the registry. Whether it is good law, or supports an
-        argument, remains the lawyer’s judgment.</p>
+        <h3>Existence, not endorsement</h3>
+        <p>A verified citation exists as a real decision. It does <em>not</em> tell you the case is still good
+        law, hasn’t been overruled, or supports your argument. Shepardizing / KeyCite is still your job.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
-        <h3>Drafting stays private</h3>
-        <p>Citation checks run on your machine and make zero chain or internet requests. Only a
-        fingerprint ever leaves it — and only if you choose to record.</p>
+        <h3>Private to draft</h3>
+        <p>Your brief is parsed in memory and discarded with the report — never stored, never put on chain.
+        Citations are checked by reading the chain directly; the verdict is the chain’s answer, not ours, and
+        anyone can replay the same lookup.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg>
-        <h3>Anyone can audit</h3>
-        <p>Registries and receipts are plaintext on a public chain. Verification is free and
-        requires no wallet, no account, and no trust in this page.</p>
+        <h3>Free to verify</h3>
+        <p>Anyone — opposing counsel, a clerk, a judge — can confirm a receipt exists for a document. Checking
+        and verifying need no cryptocurrency, no wallet, and no account; only recording uses a wallet.</p>
       </div>
     </div>
+
+    <h3 class="overline">How it works</h3>
+    <ol class="how-steps">
+      <li><strong>Check</strong> — upload a brief; each citation comes back real, not found, not covered,
+      ambiguous, or unparseable.</li>
+      <li><strong>Record</strong> — optionally save a tamper-proof, timestamped receipt that this exact
+      document was checked, signed by your wallet, into a registry you own for the matter.</li>
+      <li><strong>Verify</strong> — anyone with the filed document and the registry link can confirm, for free,
+      that a receipt exists for that exact file.</li>
+    </ol>
+
+    <h3 class="overline">Who it’s for</h3>
+    <p class="about-who">Drafting attorneys and their AI tools (catch fabrications pre-filing); opposing counsel
+    and courts (confirm a filing was checked); malpractice insurers and legal-ops (proof-of-process). Checking
+    and verifying need no wallet or account; recording a receipt uses a wallet, normally handled by the firm’s
+    tool or agent.</p>
 
     <h3 class="overline">Live status</h3>
     <div id="about-status" class="kv"></div>
 
-    <h3 class="overline">Registry coverage</h3>
+    <h3 class="overline">Current coverage</h3>
+    <p class="about-coverage-lede" id="about-coverage-lede">Loading coverage from the live registry…</p>
     <div class="table-scroll">
       <table class="cite-table" id="coverage-table">
         <thead>
@@ -342,6 +384,35 @@
         </thead>
         <tbody></tbody>
       </table>
+    </div>
+
+    <h3 class="overline">FAQ for lawyers</h3>
+    <div class="faq">
+      <details><summary>If a citation comes back “verified,” is it safe to cite?</summary>
+        <p>It’s a real, published decision. You must still confirm it’s good law and on point — verification is
+        existence only.</p></details>
+      <details><summary>What does “not found” mean — is my citation definitely fake?</summary>
+        <p>No record matched in a covered court. It could be fabricated, mistyped, a pin-cite rather than a
+        first-page cite, or a court not yet covered. Investigate before relying on it.</p></details>
+      <details><summary>Is my document made public or stored anywhere?</summary>
+        <p>No. It’s parsed in memory to find its citations and discarded immediately — never stored, never put
+        on chain. Only a fingerprint (and, if you record, the check tally) can go on chain, and only when you
+        choose.</p></details>
+      <details><summary>What exactly does the receipt prove?</summary>
+        <p>That a citation check was performed, at a chain-stamped time, over the exact document with that
+        fingerprint, by a specific wallet. Tamper-evident proof of process — not a ruling on your brief.</p></details>
+      <details><summary>Is the timestamp legally meaningful?</summary>
+        <p>It’s an immutable, independently-verifiable record; evidentiary weight is for the court, but it
+        can’t be backdated or altered after the fact.</p></details>
+      <details><summary>What if NVNM&nbsp;Cite shuts down?</summary>
+        <p>Receipts live on the public chain and stay verifiable by anyone; the registries are public and
+        rebuildable from the chain.</p></details>
+      <details><summary>Do I need crypto to use this?</summary>
+        <p>Not to check or verify. Recording a receipt uses a wallet, typically managed for you by the firm or
+        its agent.</p></details>
+      <details><summary>How much does it cost?</summary>
+        <p>Checking and verifying are free. Recording costs a small network fee (fractions of a cent on testnet
+        today).</p></details>
     </div>
 
     <h3 class="overline">Versions</h3>

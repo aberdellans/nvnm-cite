@@ -1,5 +1,15 @@
 # Web demo: check, anchor, verify in a browser
 
+> **SUPERSEDED in part (2026-06-15, Phase 4.5).** Everything below about the
+> RECEIPT flow is the original draft and no longer matches the code: the webapp
+> now uses the LOCKED receipt v1 (`nvnm-cite-receipt/v1`) via `receipts/schema.py`
+> + `receipts/anchor.py`, with PER-FIRM-PER-CASE registries (`<firm>--<case>`),
+> NON-ENUMERATING ~526 B receipts, NO `kya_id`, NO compaction ladder, and a
+> Verify tab that takes (registry + browser-hashed file). `--telemetry <path>`
+> opts into by-citation analytics. See `docs/record-schema.md` §4 and the
+> DECISIONS entries dated 2026-06-15 for the authoritative shape. The CHECK /
+> INSPECT / status notes below are still accurate.
+
 Status: demo deliverable, built 2026-06-12 at Albert's request, out-of-band
 from the phase plan. It previews Phase 3 statuses and a Phase 4 receipt
 *draft* without locking either; see "Receipt draft semantics" below.

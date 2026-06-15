@@ -1403,3 +1403,27 @@ tr.diff:hover td { background: var(--warn-tint); }
   .lede, .hint { color: #222; }
   .footer { border-top: 1px solid #000; }
 }
+
+/* ── Phase 4.5 additions: how-it-works, FAQ, coverage lede, replay list ── */
+.how-steps { margin: 14px 0 8px; padding-left: 22px; max-width: 72ch; }
+.how-steps li { font-size: 14px; color: var(--ink-2); margin: 7px 0; text-wrap: pretty; }
+.how-steps strong { color: var(--ink); }
+
+.about-who { font-size: 14px; color: var(--ink-2); max-width: 72ch; text-wrap: pretty; }
+.about-coverage-lede {
+  font-size: 14px; color: var(--ink); max-width: 72ch; margin: 6px 0 14px; text-wrap: pretty;
+}
+
+.faq { max-width: 78ch; margin: 6px 0; }
+.faq details { border-bottom: 1px solid var(--hairline); padding: 2px 0; }
+.faq summary {
+  cursor: pointer; padding: 10px 2px; font-weight: 600; font-size: 13.5px; color: var(--navy);
+}
+.faq summary:hover { color: var(--navy-deep); }
+.faq details[open] summary { color: var(--ink); }
+.faq details p { margin: 0 2px 12px; font-size: 13.5px; color: var(--ink-2); text-wrap: pretty; }
+
+.replay-item { margin: 10px 0; }
+.replay-item .cite-canon { font-weight: 600; }
+.replay-item .cite-sub { color: var(--ink-3); margin-left: 8px; }
+.replay-item .codeblock { margin-top: 4px; word-break: break-all; }
