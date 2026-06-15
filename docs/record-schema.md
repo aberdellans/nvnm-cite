@@ -34,14 +34,13 @@ The PLAINTEXT invariant: citation identifiers are stored and checked in plaintex
 | Registry | Contents |
 |---|---|
 | `us-<courts-db id>` (`us-scotus`, `us-ca11`) | per-case citation records for that court |
-| `receipts-v1` | filing receipts |
+| `<firm>--<case>` (filer-chosen, e.g. `inveniam--mata-v-avianca`) | filing receipts for one (firm, case), owned by the filing party's wallet |
 
-Registry names are unique on chain (experiment (c)); creation is idempotent via the estimate-probe. `addRegistry(name, description, metadata)` values, fixed here so Phase 2 does not improvise:
+Registry names are unique on chain (experiment (c)); creation is idempotent via the estimate-probe. `addRegistry(name, description, metadata)` values, fixed here so the loader/anchorer do not improvise:
 
 - Court registry description: `Canonical US case citations for <court name> (courts-db: <id>). Existence registry: a record means this citation string denotes a published decision. nvnm-cite.`
 - Court registry metadata (compact JSON, rules of section 3.2): `{"court":"<courts-db id>","schema":"nvnm-cite-record/v1","source":"CourtListener bulk data, Free Law Project (courtlistener.com)","spec":"cite-canonical-v1"}`
-- `receipts-v1` description: `nvnm-cite filing receipts: SHA-256-keyed records of citation checks performed against the us-* registries. nvnm-cite.`
-- `receipts-v1` metadata: `{"schema":"nvnm-cite-receipt/v1","spec":"cite-canonical-v1"}`
+- Receipt registry (per-firm-per-case, re-locked at Phase 4 task 4.1; supersedes the global `receipts-v1`): name = `<firm-slug>--<case-slug>`, filer-chosen, lowercase `[a-z0-9-]`, `--` separating firm from case, <= 64 B (`receipts/schema.py::receipt_registry_name`). Description: `nvnm-cite filing receipts for <firm> — <case>. SHA-256-keyed records of citation checks against the us-* registries; owned by the filing party. nvnm-cite.` Metadata: `{"case":"<case>","firm":"<firm>","kind":"receipts","schema":"nvnm-cite-receipt/v1","spec":"cite-canonical-v1"}`. The creating wallet becomes admin — self-sovereign writes, no global gatekeeper (invariant 4).
 
 CourtListener / Free Law Project attribution lives in the registry metadata (here), README, and demos.
 
@@ -95,16 +94,33 @@ Deterministic truncation, applied in order until the serialized form fits:
 
 ## 4. Record type 2: filing receipt
 
-> **AMENDED 2026-06-13** (DECISIONS 2026-06-13, items 2/2b/3; re-locks at Phase 4 task 4.1). The receipt model below is SUPERSEDED: receipts now live in a **per-firm-per-case registry owned by the filing party** (not the global `receipts-v1`); the `agent` object is `{address}` only (no `kya_id`); `metadata` is a **minimal receipt** — document SHA-256 + provenance + a non-identifying status tally, with **no case enumeration**, so it is always well under the 2048 B cap and the chunked design is **dropped**. Discovery is the registry link printed on the filing. The tables below describe the original single-`receipts-v1` model and stand only until task 4.1 re-locks this section.
+> **RE-LOCKED 2026-06-15 (Phase 4 task 4.1)**, superseding the original global-`receipts-v1` model per DECISIONS 2026-06-13 items 2/2b/3. A receipt is MINIMAL and NON-ENUMERATING, and lives in a per-firm-per-case registry owned by the filing party. Reference implementation: `src/nvnm_cite/receipts/schema.py`.
+
+A receipt record anchors that one exact document was citation-checked — by whom, when, against which court registries, with what tally — and NOTHING about which cases it cites.
 
 | Field | Value |
 |---|---|
-| `registry` | `receipts-v1` |
-| `checksum` | lowercase hex SHA-256 of the checked document's bytes. Exactly 64 bytes: fills the cap with zero room for suffixes. |
+| `registry` | the filing party's `<firm>--<case>` receipt registry (section 2) |
+| `checksum` | lowercase hex SHA-256 of the checked document's bytes. Exactly 64 bytes. |
 | `checksumAlgo` | `sha256` |
 | `uri` | `urn:nvnm-cite:receipt:v1` (fixed; see note) |
-| `metadata` | the receipt object (`nvnm-cite-receipt/v1`, locked at Phase 4 task 4.1) serialized per 3.2 when it fits 2048 bytes; otherwise the chunked form designed and locked at Phase 4 task 4.3 (manifest record + chunk records; chunk keys use the 44-char base64 digest form precisely because the hex form leaves no checksum room for part suffixes). |
+| `metadata` | the receipt object (`nvnm-cite-receipt/v1`), serialized per 3.2. ~480–700 B, always under the 2048 B cap, so there is NO chunking (task 4.3 dropped). |
 | `status` | `Active` |
+
+### 4.1 Receipt object (`nvnm-cite-receipt/v1`)
+
+```json
+{"agent":{"address":"0x…"},"chain_id":787111,"checked_at_block":1670739,"document_sha256":"<64 hex>","normalizer_version":"1.0.0","registries":[{"head_block":1670739,"id":737,"name":"us-scotus"},{"head_block":1670739,"id":738,"name":"us-ca11"}],"schema":"nvnm-cite-receipt/v1","summary":{"ambiguous":1,"checked":6,"name_mismatches":1,"not_covered":1,"not_found":1,"unparseable":1,"verified":2},"timestamp":"2026-06-15T12:00:00Z"}
+```
+
+- `agent.address`: the attesting wallet. Identity IS the wallet; there is no `kya_id`.
+- `registries`: the court registries READ during the check, each `{id, name, head_block}`.
+- `summary`: a non-identifying status tally — `checked` (distinct citations) + the five status counts + `name_mismatches`. NO per-case list: the document SHA-256 binds the exact file, so every verdict is reproducible by re-running the check pinned to `checked_at_block`, without publishing the brief's authorities on a permanent public chain.
+- Serialization per 3.2 (UTF-8, sorted keys, no whitespace).
+
+### 4.2 Discovery and verification
+
+Discovery is the registry LINK printed on the filing ("Citation verifications: `<firm>--<case>`"), a stable pointer fixed when the matter opens — never the receipt/tx, which is circular (the receipt is keyed by the final document hash, so citing it would change the bytes). A verifier follows the link, hashes the file locally, does a keyed `records(registry, sha256)` read, and re-runs the check pinned to `checked_at_block`.
 
 Note on the receipt `uri`: the chain requires non-empty, and improvising at anchor time is forbidden, so v1 fixes a URN rather than a URL. Rationale: the repo is private during the pilot and the project controls no public web host, so any URL written today would dangle for a third-party reader; a URN is honest about being an identifier, not a dereference. When the spec is published at mainnet cutover (task 6.4 preconditions), receipts can move to the published URL under a schema version bump.
 
