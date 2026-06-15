@@ -8,6 +8,7 @@ for the right exit code and message.
 from __future__ import annotations
 
 import json
+import sqlite3
 
 import pytest
 
@@ -155,3 +156,64 @@ def test_verify_exit_code_not_found(brief_file, monkeypatch, capsys):
     rc = cli.main(["verify", str(brief_file), "--registry", "inveniam--mata-v-avianca"])
     assert rc == 1  # nonzero when not cleanly verified
     assert "NO RECEIPT" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------- stats / delegation
+
+
+def _seed_index(path):
+    conn = sqlite3.connect(path)
+    conn.executescript(
+        """
+        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+        CREATE TABLE records (registry TEXT, checksum TEXT, record_id INTEGER, idx INTEGER,
+            is_latest INTEGER, uri TEXT, checksum_algo TEXT, metadata TEXT, timestamp TEXT, status TEXT);
+        CREATE TABLE sync_state (registry TEXT PRIMARY KEY, row_offset INTEGER, head_block INTEGER, synced_at TEXT);
+        """
+    )
+    conn.execute("INSERT INTO records VALUES ('us-scotus','410 U.S. 113',1,1,1,'u','cite-canonical-v1','{}','t','Active')")
+    conn.execute("INSERT INTO records VALUES ('us-ca11','950 F.3d 1000',2,1,1,'u','cite-canonical-v1','{}','t','Active')")
+    conn.execute("INSERT INTO sync_state VALUES ('us-scotus',1,1693000,'2026-06-13T00:00:00Z')")
+    conn.execute("INSERT INTO sync_state VALUES ('us-ca11',1,1693000,'2026-06-13T00:00:00Z')")
+    conn.commit()
+    conn.close()
+
+
+def test_stats_reads_local_index(tmp_path, capsys):
+    db = tmp_path / "chain_index.sqlite"
+    _seed_index(db)
+    rc = cli.main(["stats", "--db", str(db)])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "us-scotus" in out and "us-ca11" in out
+    assert "1,693,000" in out and "Total: 2 records" in out
+
+
+def test_stats_missing_db(tmp_path, capsys):
+    rc = cli.main(["stats", "--db", str(tmp_path / "nope.sqlite")])
+    assert rc == 2
+    assert "no chain index" in capsys.readouterr().err
+
+
+def test_delegated_commands_route_to_module_mains(monkeypatch):
+    import nvnm_cite.chain.indexer as indexer
+    import nvnm_cite.loader.bulk_load as bulk_load
+    import nvnm_cite.loader.reconcile as reconcile
+    import nvnm_cite.loader.update as update
+
+    calls: dict[str, list] = {}
+    monkeypatch.setattr(indexer, "main", lambda argv: (calls.update(indexer=argv) or 0))
+    monkeypatch.setattr(reconcile, "main", lambda argv: (calls.update(reconcile=argv) or 0))
+    monkeypatch.setattr(bulk_load, "main", lambda argv: (calls.update(bulk_load=argv) or 0))
+    monkeypatch.setattr(update, "main", lambda argv: (calls.update(update=argv) or 0))
+
+    assert cli.main(["sync", "--registries", "us-scotus"]) == 0
+    assert calls["indexer"] == ["sync", "--registries", "us-scotus"]
+    assert cli.main(["rebuild-index", "--registries", "us-ca11"]) == 0
+    assert calls["indexer"] == ["rebuild-index", "--registries", "us-ca11"]
+    assert cli.main(["reconcile", "--registries", "us-scotus"]) == 0
+    assert calls["reconcile"] == ["--registries", "us-scotus"]
+    assert cli.main(["load", "status", "--offline"]) == 0
+    assert calls["bulk_load"] == ["status", "--offline"]
+    assert cli.main(["update", "--dry-run"]) == 0
+    assert calls["update"] == ["--dry-run"]

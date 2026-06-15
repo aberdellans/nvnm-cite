@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import json
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -335,10 +336,101 @@ def cmd_verify(args: argparse.Namespace) -> int:
     return 0 if result.verdict == VERIFY_OK else 1
 
 
+def _render_stats(payload: dict) -> str:
+    lines = [f"nvnm-cite stats — {payload['db']}", f"  Source: {payload['source']}", ""]
+    regs = payload["registries"]
+    if not regs:
+        lines.append("  (no synced registries yet — run sync or rebuild-index)")
+        return "\n".join(lines)
+    rows = [
+        (reg, f"{d['records']:,}", f"{d['synced_block']:,}", d["synced_at"] or "?")
+        for reg, d in regs.items()
+    ]
+    headers = ("REGISTRY", "RECORDS", "SYNCED BLOCK", "SYNCED AT")
+    widths = [max(len(headers[i]), max(len(r[i]) for r in rows)) for i in range(4)]
+    fmt = "  " + "  ".join(f"{{:<{w}}}" for w in widths)
+    lines.append(fmt.format(*headers))
+    lines.append("  " + "─" * (sum(widths) + 6))
+    for r in rows:
+        lines.append(fmt.format(*r))
+    lines.append("")
+    lines.append(f"  Total: {payload['total_records']:,} records across {len(regs)} registries.")
+    lines.append("  Counts are from the local index at the stated sync head, not the chain's countTotal (unreliable).")
+    return "\n".join(lines)
+
+
+def cmd_stats(args: argparse.Namespace) -> int:
+    from nvnm_cite.chain.indexer import index_stats
+
+    db = Path(args.db)
+    if not db.is_file():
+        print(
+            f"error: no chain index at {db}; run 'nvnm-cite sync --registries …' or "
+            "'nvnm-cite rebuild-index --registries …' first",
+            file=sys.stderr,
+        )
+        return 2
+    conn = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    try:
+        stats = index_stats(conn)
+        synced_at = dict(conn.execute("SELECT registry, synced_at FROM sync_state"))
+    finally:
+        conn.close()
+    payload = {
+        "db": str(db),
+        "source": "local chain index (rebuildable audit cache via rebuild-index)",
+        "registries": {
+            reg: {"records": latest, "versions": total, "synced_block": head, "synced_at": synced_at.get(reg)}
+            for reg, (latest, total, head) in sorted(stats.items())
+        },
+        "total_records": sum(latest for latest, _, _ in stats.values()),
+    }
+    if args.json:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+    else:
+        print(_render_stats(payload))
+    return 0
+
+
+# Operator commands delegate to their existing module CLIs (no logic
+# duplication). They are intercepted before argparse, so `nvnm-cite sync --help`
+# shows the indexer's own flags; `nvnm-cite --help` lists them in the epilog.
+_DELEGATED = {"sync", "rebuild-index", "reconcile", "load", "update"}
+
+
+def _delegate(argv: list[str]) -> int:
+    cmd, rest = argv[0], argv[1:]
+    if cmd in ("sync", "rebuild-index"):
+        from nvnm_cite.chain import indexer
+
+        return indexer.main([cmd, *rest])
+    if cmd == "reconcile":
+        from nvnm_cite.loader import reconcile
+
+        return reconcile.main(rest)
+    if cmd == "load":
+        from nvnm_cite.loader import bulk_load
+
+        return bulk_load.main(rest)
+    if cmd == "update":
+        from nvnm_cite.loader import update
+
+        return update.main(rest)
+    raise AssertionError(cmd)  # pragma: no cover
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nvnm-cite",
         description="Citation existence verification on NVNM Chain (provenance, not truth).",
+        epilog=(
+            "operator commands (run '<cmd> --help' for flags):\n"
+            "  sync, rebuild-index   build/refresh the local chain index\n"
+            "  reconcile             diff the load state against the chain index\n"
+            "  load                  checkpointed bulk loader (prepare|run|status)\n"
+            "  update                daily incremental corpus updater"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -398,10 +490,26 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--rpc", default=None, help="EVM RPC URL (default: NVNM_TESTNET_RPC or the public testnet RPC)")
     verify.add_argument("--json", action="store_true", help="emit the full JSON result")
     verify.set_defaults(func=cmd_verify)
+
+    stats = sub.add_parser(
+        "stats",
+        help="local index coverage (records per registry at the sync head)",
+        description=(
+            "Report records per registry from the local chain index, with its sync head "
+            "stated. Read-only; counts come from the rebuildable local cache, never the "
+            "chain's countTotal (unreliable per experiment 0.7(g))."
+        ),
+    )
+    stats.add_argument("--db", default="data/chain_index.sqlite", help="chain index path")
+    stats.add_argument("--json", action="store_true", help="emit JSON")
+    stats.set_defaults(func=cmd_stats)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    argv = list(sys.argv[1:] if argv is None else argv)
+    if argv and argv[0] in _DELEGATED:
+        return _delegate(argv)
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)
