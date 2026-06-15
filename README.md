@@ -2,11 +2,11 @@
 
 Citation existence verification and filing receipts on [NVNM Chain](https://docs.nvnmchain.io).
 
-A per-jurisdiction registry of canonical US case citations stored in plaintext on NVNM Chain, plus a verifier that extracts citations from a legal brief, checks them against the registries, and anchors a verification receipt on chain at filing time. The receipt binds a document hash to the citation list, the registry state consulted, the per-citation results, and the verifying agent's identity.
+A per-jurisdiction registry of canonical US case citations stored in plaintext on NVNM Chain, plus a verifier that extracts citations from a legal brief, checks each one against the chain live, and anchors a verification receipt at filing time. The receipt binds the document's SHA-256 to the chain state consulted, a non-identifying status tally, and the attesting wallet — never the list of cited cases, so a brief's authorities are not published on chain.
 
 It never asserts that a case supports a proposition or is good law. It proves the check happened, against what, and by whom. Provenance, not truth.
 
-**Status:** Phases 0-1 complete (tags phase-0-done / phase-1-done). Phase 2 in progress: registries `us-scotus` (737) and `us-ca11` (738) live on testnet, tranche-1 bulk load (260,763 records) draining as a detached process. A browser demo (check / anchor / verify / decode) exists out-of-band: see [docs/web-demo.md](docs/web-demo.md). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
+**Status:** Phases 0-3 complete (tags `phase-0-done` … `phase-3-done`); Phase 4 core complete (receipt v1 + anchor / verify / unified CLI / query telemetry), with the web-app phase (4.5) next. Court registries `us-scotus` (737) and `us-ca11` (738) hold 260,763 tranche-1 records on testnet (reconcile clean). The `nvnm-cite` CLI does `check | anchor | verify | stats` (plus operator commands), reading the chain live; a filing receipt has been anchored and verified end-to-end on testnet (registry `inveniam--mata-v-avianca`). A browser demo (check / anchor / verify / decode) is in [docs/web-demo.md](docs/web-demo.md). See [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).
 
 ## Working on this project (the multi-session protocol)
 
