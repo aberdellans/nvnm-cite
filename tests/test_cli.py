@@ -13,6 +13,10 @@ import pytest
 
 import nvnm_cite.cli as cli
 from nvnm_cite.chain import precompile as pc
+from nvnm_cite.receipts.anchor import AnchorPlan
+from nvnm_cite.receipts.schema import RECEIPT_CHECKSUM_ALGO, RECEIPT_URI, build_receipt, summary_tally
+from nvnm_cite.receipts.verify import VerifyResult
+from nvnm_cite.verifier.check import check_document
 from nvnm_cite.verifier.resolver import Resolution, records_query
 
 
@@ -94,3 +98,60 @@ def test_check_dead_rpc_exits_nonzero(brief_file, monkeypatch, capsys):
 def test_no_subcommand_errors(capsys):
     with pytest.raises(SystemExit):
         cli.main([])
+
+
+# ---------------------------------------------------------------- anchor / verify
+
+
+def _fake_plan():
+    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(RECORDS))
+    sha = report["document"]["sha256"]
+    regs = [{"id": 737, "name": "us-scotus", "head_block": 1_700_000}]
+    receipt, rj = build_receipt(
+        document_sha256=sha, checked_at_block=1_700_000, registries=regs,
+        summary=summary_tally(report), agent_address="0x" + "ab" * 20, timestamp="t",
+    )
+    reg = "inveniam--mata-v-avianca"
+    return AnchorPlan(
+        registry=reg, registry_exists=False, document_sha256=sha, checked_at_block=1_700_000,
+        registries_read=regs, receipt=receipt, receipt_json=rj,
+        record_calldata=pc.build_add_record(reg, RECEIPT_URI, sha, RECEIPT_CHECKSUM_ALGO, rj),
+        create_registry={"name": reg}, create_calldata=pc.build_add_registry(reg, "d", '{"k":1}'),
+        already_anchored=False, report=report,
+    )
+
+
+def test_anchor_dry_run_does_not_send(brief_file, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "prepare_anchor", lambda *a, **k: _fake_plan())
+    # --agent avoids needing the signing key; no --anchor means dry run
+    rc = cli.main(["anchor", str(brief_file), "--firm", "Inveniam", "--case", "Mata v. Avianca", "--agent", "0x" + "ab" * 20])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "Dry run" in out and "Receipt to anchor" in out
+    assert "inveniam--mata-v-avianca" in out
+    assert "addRecord" in out and "VERIFIED" in out  # shows the check + the plan
+
+
+def _verify_result(verdict, found=True):
+    return VerifyResult(
+        registry="inveniam--mata-v-avianca", registry_exists=True, document_sha256="a" * 64,
+        found=found, verdict=verdict,
+        receipt={"agent": {"address": "0x" + "ab" * 20}, "summary": {"checked": 2}, "timestamp": "t"} if found else None,
+        recomputed_summary={"checked": 2} if found else None, summary_matches=(verdict == "verified") or None,
+        checked_at_block=1_700_000 if found else None, normalizer_version_receipt="1.0.0",
+        normalizer_version_now="1.0.0", notes=[], query={"method": "eth_call", "params": []},
+    )
+
+
+def test_verify_exit_code_verified(brief_file, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "verify_document", lambda *a, **k: _verify_result("verified"))
+    rc = cli.main(["verify", str(brief_file), "--registry", "inveniam--mata-v-avianca"])
+    assert rc == 0
+    assert "VERIFIED" in capsys.readouterr().out
+
+
+def test_verify_exit_code_not_found(brief_file, monkeypatch, capsys):
+    monkeypatch.setattr(cli, "verify_document", lambda *a, **k: _verify_result("not_found", found=False))
+    rc = cli.main(["verify", str(brief_file), "--registry", "inveniam--mata-v-avianca"])
+    assert rc == 1  # nonzero when not cleanly verified
+    assert "NO RECEIPT" in capsys.readouterr().out

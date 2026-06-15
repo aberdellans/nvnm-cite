@@ -14,12 +14,19 @@ chain and spends no gas.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import json
 import sys
 from pathlib import Path
 
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
-from nvnm_cite.config import load_dotenv, testnet_rpc
+from nvnm_cite.chain.secp256k1 import address_from_private_key
+from nvnm_cite.config import TESTNET_EXPLORER, load_dotenv, testnet_private_key, testnet_rpc
+from nvnm_cite.receipts.anchor import prepare_anchor
+from nvnm_cite.receipts.anchor import send as anchor_send
+from nvnm_cite.receipts.schema import ReceiptError
+from nvnm_cite.receipts.verify import VERIFIED as VERIFY_OK
+from nvnm_cite.receipts.verify import verify_document
 from nvnm_cite.verifier.check import (
     AMBIGUOUS,
     NOT_COVERED,
@@ -169,6 +176,165 @@ def cmd_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def _render_anchor_plan(plan) -> str:
+    lines = [_render(plan.report), "", "  ── Receipt to anchor ──"]
+    note = "" if plan.registry_exists else "  (will be CREATED — your wallet becomes its admin)"
+    lines.append(f"  Registry:   {plan.registry}{note}")
+    lines.append(f"  Document:   {plan.document_sha256}")
+    lines.append(f"  At block:   {plan.checked_at_block:,}")
+    lines.append(f"  Receipt:    {len(plan.receipt_json.encode('utf-8'))} bytes (cap 2048)")
+    tally = ", ".join(f"{k}={v}" for k, v in plan.receipt["summary"].items())
+    lines.append(f"  Tally:      {tally}")
+    lines.append("")
+    lines.append("  Receipt JSON (the on-chain record metadata):")
+    lines.append(f"    {plan.receipt_json}")
+    lines.append("")
+    lines.append(f"  Transactions to send ({plan.writes}):")
+    step = 1
+    if plan.create_registry:
+        lines.append(f"    {step}. addRegistry  {plan.create_registry['name']}")
+        step += 1
+    lines.append(f"    {step}. addRecord    receipt → {plan.registry}")
+    if plan.already_anchored:
+        lines.append("")
+        lines.append("  ⚠ This document is ALREADY anchored here; re-anchoring adds a version (use --force).")
+    return "\n".join(lines)
+
+
+def _render_sent(sent: list[dict]) -> str:
+    lines = ["", "  ── Anchored on NVNM Chain ──"]
+    for s in sent:
+        status = "ok" if s["ok"] else "FAILED"
+        lines.append(f"  {s['label']}: {s['tx_hash']}")
+        lines.append(f"     block {s['block']:,} · gas {s['gas_used']:,} · {status}")
+        lines.append(f"     {TESTNET_EXPLORER}/tx/{s['tx_hash']}")
+    return "\n".join(lines)
+
+
+_VERDICT_LABEL = {
+    "verified": "VERIFIED — receipt found, document unchanged, recheck reproduces the tally",
+    "summary_drift": "FOUND, BUT THE TALLY DIFFERS — investigate",
+    "found": "FOUND (could not recompute)",
+    "not_found": "NO RECEIPT — the file matches no receipt here (altered, or never anchored)",
+    "registry_not_found": "REGISTRY NOT FOUND — check the link printed on the filing",
+    "bad_receipt": "A RECORD EXISTS but it is not a valid receipt",
+}
+
+
+def _render_verify(result) -> str:
+    lines = [f"nvnm-cite verify — registry {result.registry}"]
+    lines.append(f"  Document SHA-256: {result.document_sha256}")
+    lines.append(f"  Result: {_VERDICT_LABEL.get(result.verdict, result.verdict)}")
+    if result.found and result.receipt:
+        r = result.receipt
+        lines.append(f"  Anchored by:      {r.get('agent', {}).get('address', '?')}")
+        if result.checked_at_block is not None:
+            lines.append(f"  Checked at block: {result.checked_at_block:,}  ·  receipt time {r.get('timestamp', '?')}")
+        stored = ", ".join(f"{k}={v}" for k, v in (r.get("summary") or {}).items())
+        lines.append(f"  Stored tally:     {stored}")
+        if result.recomputed_summary is not None:
+            recomputed = ", ".join(f"{k}={v}" for k, v in result.recomputed_summary.items())
+            lines.append(f"  Recomputed:       {recomputed}  ({'matches' if result.summary_matches else 'DIFFERS'})")
+    for note in result.notes:
+        lines.append(f"  • {note}")
+    lines.append("")
+    lines.append(f"  Replay: eth_call records({result.registry}, <sha256>) against any NVNM RPC (see --json).")
+    return "\n".join(lines)
+
+
+def cmd_anchor(args: argparse.Namespace) -> int:
+    path = Path(args.path)
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        print(f"error: cannot read {path}: {exc}", file=sys.stderr)
+        return 2
+
+    load_dotenv()
+    rpc_url = args.rpc or testnet_rpc()
+    rpc_factory = lambda: EvmRpc(rpc_url)  # noqa: E731
+
+    key: int | None = None
+    if args.agent:
+        agent_address = args.agent
+    else:
+        try:
+            key = testnet_private_key()
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+        agent_address = address_from_private_key(key)
+
+    try:
+        plan = prepare_anchor(
+            data, path.name, firm=args.firm, case=args.case,
+            agent_address=agent_address, rpc_factory=rpc_factory,
+        )
+    except (ReceiptError, CheckError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    except (RpcError, OSError) as exc:
+        print(f"error: could not reach NVNM Chain at {rpc_url} ({exc})", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(json.dumps(plan.to_display(), ensure_ascii=False, indent=2))
+    else:
+        print(_render_anchor_plan(plan))
+
+    if not args.anchor:
+        if not args.json:
+            print("\n  Dry run — nothing was sent. Re-run with --anchor to write to the chain.")
+        return 0
+
+    if plan.already_anchored and not args.force:
+        print("\n  Already anchored; not re-sending (use --force to add a new version).", file=sys.stderr)
+        return 0
+
+    if key is None:  # --agent was given without a matching key
+        try:
+            key = testnet_private_key()
+        except RuntimeError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
+    if address_from_private_key(key).lower() != agent_address.lower():
+        print("error: the configured signing key does not match --agent", file=sys.stderr)
+        return 2
+
+    try:
+        sent = anchor_send(plan, EvmRpc(rpc_url), key)
+    except (RpcError, OSError) as exc:
+        print(f"error: anchoring failed ({exc})", file=sys.stderr)
+        return 2
+    print(_render_sent(sent))
+    return 0 if all(s["ok"] for s in sent) else 1
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    path = Path(args.path)
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        print(f"error: cannot read {path}: {exc}", file=sys.stderr)
+        return 2
+
+    load_dotenv()
+    rpc_url = args.rpc or testnet_rpc()
+    rpc_factory = lambda: EvmRpc(rpc_url)  # noqa: E731
+
+    try:
+        result = verify_document(data, path.name, registry=args.registry, rpc_factory=rpc_factory)
+    except (RpcError, OSError) as exc:
+        print(f"error: could not reach NVNM Chain at {rpc_url} ({exc})", file=sys.stderr)
+        return 2
+
+    if args.json:
+        print(json.dumps(dataclasses.asdict(result), ensure_ascii=False, indent=2))
+    else:
+        print(_render_verify(result))
+    return 0 if result.verdict == VERIFY_OK else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="nvnm-cite",
@@ -198,6 +364,40 @@ def build_parser() -> argparse.ArgumentParser:
     )
     check.add_argument("--json", action="store_true", help="emit the full JSON report")
     check.set_defaults(func=cmd_check)
+
+    anchor = sub.add_parser(
+        "anchor",
+        help="anchor a filing receipt to a per-firm-per-case registry (WRITES to the chain)",
+        description=(
+            "Check a document, then record a minimal, non-enumerating receipt on "
+            "NVNM Chain. Without --anchor this is a dry run that only shows the plan; "
+            "with --anchor it sends the transaction(s), signing with NVNM_TESTNET_KEY."
+        ),
+    )
+    anchor.add_argument("path", help="path to the document (.pdf, .docx, .txt, .md)")
+    anchor.add_argument("--firm", required=True, help="filing firm/party label (part of the registry name)")
+    anchor.add_argument("--case", required=True, help="case/matter label (part of the registry name)")
+    anchor.add_argument("--agent", default=None, help="attesting wallet address (default: derived from NVNM_TESTNET_KEY)")
+    anchor.add_argument("--rpc", default=None, help="EVM RPC URL (default: NVNM_TESTNET_RPC or the public testnet RPC)")
+    anchor.add_argument("--anchor", action="store_true", help="actually send the transaction(s) (default: dry-run plan only)")
+    anchor.add_argument("--force", action="store_true", help="re-anchor even if this document already has a receipt (adds a version)")
+    anchor.add_argument("--json", action="store_true", help="emit the plan as JSON")
+    anchor.set_defaults(func=cmd_anchor)
+
+    verify = sub.add_parser(
+        "verify",
+        help="verify a filing receipt from (registry + file), read-only",
+        description=(
+            "Given the original file and the receipt registry from a filing's "
+            "verification link, confirm a receipt exists for this exact document and "
+            "re-run the check pinned to the receipt's block. Read-only."
+        ),
+    )
+    verify.add_argument("path", help="path to the original document")
+    verify.add_argument("--registry", required=True, help="receipt registry name from the filing's verification link")
+    verify.add_argument("--rpc", default=None, help="EVM RPC URL (default: NVNM_TESTNET_RPC or the public testnet RPC)")
+    verify.add_argument("--json", action="store_true", help="emit the full JSON result")
+    verify.set_defaults(func=cmd_verify)
     return parser
 
 
