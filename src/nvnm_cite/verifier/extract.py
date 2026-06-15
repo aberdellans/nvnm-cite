@@ -1,9 +1,12 @@
-"""Document text extraction for the web demo: bytes in, text out, in memory.
+"""Document text extraction for the verifier: bytes in, text out, in memory.
 
 Formats: plain text / markdown, DOCX (stdlib zipfile + XML, including
 footnotes and endnotes, where briefs put half their citations), and PDF
-via pdfplumber when it is importable (a dev-group dependency today;
-Phase 3 decides the runtime extraction stack). Nothing here touches the
+via pdfplumber. pdfplumber is a runtime dependency (DECISIONS 2026-06-14):
+a legal brief is almost always a PDF, so ``nvnm-cite check brief.pdf`` must
+work out of the box. The import stays guarded so the package still loads if
+pdfplumber is somehow absent (the caller then gets an honest "upload .docx
+or .txt" error rather than an ImportError). Nothing here touches the
 filesystem: the caller hands bytes, gets text, and both go out of scope
 together.
 """
@@ -16,9 +19,9 @@ import zipfile
 from dataclasses import dataclass
 from xml.etree import ElementTree
 
-try:  # dev-group dependency; the demo degrades honestly without it
+try:  # runtime dependency; the verifier degrades honestly if it is missing
     import pdfplumber
-except ImportError:  # pragma: no cover - exercised only in non-dev installs
+except ImportError:  # pragma: no cover - exercised only in broken installs
     pdfplumber = None
 
 PDF_PAGE_CAP = 400
@@ -93,7 +96,7 @@ def _extract_docx(data: bytes) -> Extraction:
 def _extract_pdf(data: bytes) -> Extraction:
     if pdfplumber is None:
         raise ExtractError(
-            "PDF support is not installed on this server; upload the brief "
+            "PDF support is not installed on this machine; upload the brief "
             "as .docx or .txt, or paste its text"
         )
     warning = None
@@ -120,8 +123,8 @@ _EXT_RE = re.compile(r"\.([A-Za-z0-9]+)$")
 
 
 def extract_text(data: bytes, filename: str) -> Extraction:
-    """Extract checkable text from an uploaded document, format by extension
-    with content-based fallbacks (PDF magic, zip magic)."""
+    """Extract checkable text from a document, format by extension with
+    content-based fallbacks (PDF magic, zip magic)."""
     if not data:
         raise ExtractError("the uploaded file is empty")
     match = _EXT_RE.search(filename or "")

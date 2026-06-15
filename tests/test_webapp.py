@@ -21,7 +21,8 @@ import pytest
 from nvnm_cite.chain import abi
 from nvnm_cite.chain import precompile as pc
 from nvnm_cite.loader.records import compact_json
-from nvnm_cite.webapp.extract import ExtractError, extract_text
+from nvnm_cite.verifier.extract import ExtractError, extract_text
+from nvnm_cite.verifier.resolver import Resolution, records_query
 from nvnm_cite.webapp.localindex import LocalIndex
 from nvnm_cite.webapp.service import (
     CheckService,
@@ -33,6 +34,43 @@ from nvnm_cite.webapp.service import (
     decode_call,
     name_check,
 )
+
+
+class FakeResolver:
+    """Duck-typed verifier Resolver: canned chain records, no network."""
+
+    def __init__(self, records: dict[tuple[str, str], pc.Record]):
+        self.records = records
+        self.calls: list[tuple[str, str]] = []
+
+    def resolve(self, registry: str, checksum: str) -> Resolution:
+        self.calls.append((registry, checksum))
+        _, query = records_query(registry, checksum)
+        return Resolution(record=self.records.get((registry, checksum)), query=query)
+
+
+def _case_record(registry: str, checksum: str, metadata: str, uri: str = "https://cl/x/") -> pc.Record:
+    return pc.Record(
+        registry=registry, uri=uri, checksum=checksum, checksum_algo="cite-canonical-v1",
+        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1, is_latest=True,
+    )
+
+
+# Mirrors the corpus fixture rows, but as on-chain records the resolver returns.
+CHAIN_RECORDS = {
+    ("us-scotus", "410 U.S. 113"): _case_record(
+        "us-scotus", "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
+        "https://www.courtlistener.com/opinion/108713/roe-v-wade/",
+    ),
+    ("us-ca11", "950 F.3d 1000"): _case_record(
+        "us-ca11", "950 F.3d 1000", '{"cluster":77001,"name":"Acme Corp. v. Zenith Ltd.","year":2020}',
+    ),
+    ("us-ca11", "111 F.3d 897"): _case_record(
+        "us-ca11", "111 F.3d 897",
+        '{"cases":[{"cluster":88001,"name":"First Order Co. v. Second Order Co.","year":1997},'
+        '{"cluster":88002,"name":"Third Pet. v. Fourth Resp.","year":1997}]}',
+    ),
+}
 
 # ---------------------------------------------------------------- fixtures
 
@@ -216,8 +254,8 @@ mislabeled but real citation appears as Totally Fabricated v. Name,
 """
 
 
-def test_check_exercises_all_five_statuses(data_dir: Path):
-    service = CheckService(LocalIndex(data_dir))
+def test_check_exercises_all_five_statuses():
+    service = CheckService(FakeResolver(CHAIN_RECORDS))
     report = service.check(BRIEF.encode(), "brief.txt")
 
     assert report["document"]["sha256"] == hashlib.sha256(BRIEF.encode()).hexdigest()
@@ -242,9 +280,9 @@ def test_check_exercises_all_five_statuses(data_dir: Path):
     assert report["summary"]["name_mismatches"] == 1
 
 
-def test_check_canonicalizes_spacing_variant(data_dir: Path):
+def test_check_canonicalizes_spacing_variant():
     # "410 U. S. 113" (line-broken/space-mangled form) must hit the registry key
-    service = CheckService(LocalIndex(data_dir))
+    service = CheckService(FakeResolver(CHAIN_RECORDS))
     report = service.check(b"Roe v. Wade, 410 U. S.\n113 (1973).", "x.txt")
     assert report["citations"][0]["canonical"] == "410 U.S. 113"
     assert report["citations"][0]["status"] == "VERIFIED"
@@ -490,16 +528,17 @@ def test_server_static_and_csp(live_server):
     assert res.status == 404
 
 
-def test_server_check_endpoint_is_local_only(live_server):
-    # RPC is unroutable in this fixture: a passing check proves no RPC call.
+def test_server_check_surfaces_dead_rpc(live_server):
+    # The check now reads the chain LIVE (item 0). The fixture's RPC is
+    # unroutable, so the check must FAIL LOUDLY (502) — never silently report
+    # the brief's citations as NOT_FOUND. This is the critical invariant:
+    # a transport failure is not a chain answer.
     res, data = _request(
         live_server, "POST", "/api/check",
         body=BRIEF.encode(), headers={"X-Filename": "brief.txt", "Content-Length": str(len(BRIEF.encode()))},
     )
-    assert res.status == 200
-    report = json.loads(data)
-    assert report["summary"]["by_status"]["VERIFIED"] == 2
-    assert report["privacy"]["persisted"] is False
+    assert res.status == 502
+    assert b"NOT_FOUND" not in data and b"VERIFIED" not in data
 
 
 def test_server_validation_errors(live_server):

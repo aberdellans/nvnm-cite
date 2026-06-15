@@ -36,6 +36,21 @@ SELECTORS = {
     name: "0x" + abi.function_selector(fn).hex() for name, fn in _FUNCTIONS.items()
 }
 
+# Measured (DECISIONS 2026-06-10): a keyed records()/registries() lookup that
+# misses ERRORs through eth_call with this marker; an empty page is NOT the
+# miss signal. The one place this string lives, so the verifier's NOT_FOUND
+# path and the registry-existence probe agree with each other.
+KEYED_MISS_MARKER = "collections: not found"
+
+
+def is_keyed_miss(err: Exception) -> bool:
+    """True when ``err`` is the precompile's keyed-miss error (record/registry
+    absent). Duck-typed on ``.message`` so this stays decoupled from the RPC
+    client. Callers map a miss to NOT_FOUND / registry-absent and let every
+    other failure -- transport, timeout, a non-miss RPC error -- propagate;
+    a transport failure must never be mistaken for a real chain answer."""
+    return KEYED_MISS_MARKER in (getattr(err, "message", "") or "")
+
 
 @dataclass(frozen=True)
 class Record:

@@ -1,10 +1,9 @@
 # nvnm-cite Implementation Plan
 
 ## Status
-- Current phase: Phase 2 COMPLETE (2026-06-13, tag phase-2-done). 260,763 records on testnet (us-scotus=737, us-ca11=738), reconcile CLEAN; daily updater built + live-validated. 436 tests green.
-- Last completed: task 2.7 `loader/update.py` (date_modified cursor, append-only, --dry-run; live dry-run exercised CL API incl. 429 backoff, 0 new keys = correct given late-arriving cites).
-- Next up: Phase 3 (Verifier), RE-SCOPED by the 2026-06-13 frontend merge — `nvnm-cite check` reads the chain LIVE (item 0; invariant 3 amended), via a shared verifier core also used by the existing webapp. Then slimmed Phase 4 (minimal non-enumerating receipts; per-firm-per-case registries) + new Phase 4.5 (web app). Tranche 2 stays gated by choice. See DECISIONS 2026-06-13 + docs/webapp-revision-notes.md.
-- Out-of-band (2026-06-12): web demo frontend at `src/nvnm_cite/webapp` (`uv run python -m nvnm_cite.webapp`; docs/web-demo.md). Previews Phase 3 statuses + a Phase 4 receipt DRAFT (`nvnm-cite-receipt/v1-draft`) without ticking those tasks; Phase 6 demo can build on it.
+- Current phase: Phase 3 COMPLETE (2026-06-15, tag phase-3-done). Shared live-read verifier core (`src/nvnm_cite/verifier/`: extract.py, resolver.py, check.py) used by BOTH the new `nvnm-cite check` CLI and the webapp; drafting checks read the chain LIVE via keyed `records()` reads (item 0). 461 tests green incl. a live-testnet integration test. CLI + webapp both validated against testnet (Varghese → NOT_FOUND; real-cite-wrong-name → name mismatch).
+- Last completed: Phase 3 tasks 3.1–3.3 + task 4.5a folded in (webapp `CheckService` rewired to the core, replay query surfaced in the result, honest privacy copy). pdfplumber promoted to a RUNTIME dep; coverage is a fixed built-in list (`us-scotus`, `us-ca11`) per Albert 2026-06-14; eyecite resolution chatter quieted in the normalizer.
+- Next up: Phase 4 (Receipts + anchoring) — lock the minimal non-enumerating receipt v1 (4.1), per-firm-per-case registries, `verify` takes (registry + file). Then Phase 4.5 (remaining web app copy/UX: Check-tab full rewrite, About/Inspect/FAQ, clear registry view, StatusService fast-fail). The webapp `src/nvnm_cite/webapp` is now wired to the live core (`uv run python -m nvnm_cite.webapp`; docs/web-demo.md). Tranche 2 stays gated by choice.
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -84,9 +83,9 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 **Depends on:** Phases 1 and 2.
 
 **Tasks:**
-- [ ] 3.1 `verifier/extract.py`: PDF (pdfplumber), DOCX (python-docx), plain text. Text cleanup before eyecite (line-break-mangled citations are the main recall killer in real PDFs). Extraction recall measured against the RECAP fixtures and committed alongside the goldens.
-- [ ] 3.2 `verifier/check.py`: extract, normalize, map, look up. Drafting-time default is now a LIVE keyed `records(registry, checksum)` eth_call against the NVNM-operated RPC (item 0; reverses the old local-only rule, amended invariant 3). NOT_FOUND comes from catching the keyed-miss RpcError ("collections: not found"), never an empty page; transport/RPC failures must NOT be classified as NOT_FOUND; status and name_check read the isLatest version. The local `chain_index.sqlite` is an optional cache + the `rebuild-index` audit tool, never the authority. Surface the exact query for replay (non-repudiation).
-- [ ] 3.3 Statuses (locked in DECISIONS.md): VERIFIED / NOT_FOUND / NOT_COVERED / AMBIGUOUS_JURISDICTION / UNPARSEABLE, plus the per-result `name_check: match | mismatch | unknown` field (fuzzy compare of the brief's party names against registry metadata).
+- [x] 3.1 `verifier/extract.py`: PDF (pdfplumber), DOCX (python-docx), plain text. Text cleanup before eyecite (line-break-mangled citations are the main recall killer in real PDFs). Extraction recall measured against the RECAP fixtures and committed alongside the goldens.
+- [x] 3.2 `verifier/check.py`: extract, normalize, map, look up. Drafting-time default is now a LIVE keyed `records(registry, checksum)` eth_call against the NVNM-operated RPC (item 0; reverses the old local-only rule, amended invariant 3). NOT_FOUND comes from catching the keyed-miss RpcError ("collections: not found"), never an empty page; transport/RPC failures must NOT be classified as NOT_FOUND; status and name_check read the isLatest version. The local `chain_index.sqlite` is an optional cache + the `rebuild-index` audit tool, never the authority. Surface the exact query for replay (non-repudiation).
+- [x] 3.3 Statuses (locked in DECISIONS.md): VERIFIED / NOT_FOUND / NOT_COVERED / AMBIGUOUS_JURISDICTION / UNPARSEABLE, plus the per-result `name_check: match | mismatch | unknown` field (fuzzy compare of the brief's party names against registry metadata).
 
 **Exit criteria:** end-to-end run on the RECAP fixtures plus a synthetic brief that exercises all five statuses and a name_check mismatch.
 
@@ -118,7 +117,7 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 **Depends on:** the re-scoped Phase 3 (shared verifier core) and Phase 4 (receipt v1 lock + registry model).
 
 **Tasks:**
-- [ ] 4.5a Wire item 0 into `CheckService`: resolve via the live keyed read (drop the local-index lookup; promote the existing `ChainGateway.keyed_record` path); surface the replayable `eth_call` query in the Check result.
+- [x] 4.5a Wire item 0 into `CheckService`: resolve via the live keyed read (drop the local-index lookup; promote the existing `ChainGateway.keyed_record` path); surface the replayable `eth_call` query in the Check result. DONE in Phase 3 (CheckService now delegates to the shared `verifier` core with a `ChainResolver`; the result carries a per-citation `query`; honest privacy copy). Remaining for the 4.5 pass: render the replay query visibly in the Check UI.
 - [ ] 4.5b Hosting model + honest copy: document uploaded → parsed in memory server-side (eyecite, the one normalizer) → discarded with the response; never persisted, never on chain. Rewrite the Check-tab privacy copy (item 1); add the "we keep aggregate lookup stats as RPC operator" disclosure (item 2b).
 - [ ] 4.5c Receipt + registry UX: drop the kya_id input (show "Attesting as 0x…"); remove the compaction ladder (minimal receipt); per-firm-per-case registry create/onboarding flow; the Verify tab takes (registry link + file), not a bare hash; a CLEAR, clerk-legible registry view (item 3 forward requirement — our surface is the filing link's target, since we don't control Blockscout's UI).
 - [ ] 4.5d Copy rewrites: Inspect (drop jargon — item 5); About + lawyer FAQ (newcomer-friendly, figures rendered live from `/api/status`, never hard-coded — item 6); Verify copy stays as-is (item 4).

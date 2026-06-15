@@ -1,0 +1,43 @@
+{
+  "description": "Extraction recall for the verifier (task 3.1): the FULL pipeline (verifier/extract.py PDF extraction + normalizer) run over the real RECAP fixtures in manifest.json. Measured 2026-06-14 with pdfplumber 0.11.9, eyecite 2.7.6. test_verifier_recall.py recomputes and checks these: occurrence/distinct counts as FLOORS (an eyecite upgrade finding MORE must not break the suite), key-cite counts and the scanned-zero result exactly. The scanned ECF 21 is the honest negative: an image-only PDF yields zero citations, reported rather than hidden.",
+  "measured_with": {"pdfplumber": "0.11.9", "eyecite": "2.7.6", "date": "2026-06-14"},
+  "documents": {
+    "mata-avianca-nysd-ecf21-affirmation-scanned": {
+      "born_digital": false,
+      "method": "pdf (10 pages)",
+      "chars": 639,
+      "scan_warning": true,
+      "occurrences": 0,
+      "distinct_keys": 0,
+      "varghese_925_f3d_1339": 0
+    },
+    "mata-avianca-nysd-ecf24-reply-memo": {
+      "born_digital": true,
+      "method": "pdf (6 pages)",
+      "chars": 10416,
+      "scan_warning": false,
+      "occurrences": 31,
+      "distinct_keys": 26,
+      "varghese_925_f3d_1339": 1
+    },
+    "mata-avianca-nysd-ecf54-sanctions-opinion": {
+      "born_digital": true,
+      "method": "pdf (43 pages)",
+      "chars": 67963,
+      "scan_warning": false,
+      "occurrences": 97,
+      "distinct_keys": 64,
+      "varghese_925_f3d_1339": 2
+    },
+    "walters-openai-ca11-ecf9-appellant-brief": {
+      "born_digital": true,
+      "method": "pdf (14 pages)",
+      "chars": 13098,
+      "scan_warning": false,
+      "occurrences": 26,
+      "distinct_keys": 11,
+      "registries": ["us-ca11", "us-scotus"],
+      "varghese_925_f3d_1339": 0
+    }
+  }
+}

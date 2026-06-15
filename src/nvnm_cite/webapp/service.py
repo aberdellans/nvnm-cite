@@ -2,9 +2,11 @@
 
 Trust boundaries, restated where the code lives:
 
-- ``CheckService`` (drafting time): local index only. It performs no RPC
-  and never persists the document; bytes live in this call frame and are
-  garbage the moment the report is returned.
+- ``CheckService`` (drafting time): a thin wrapper over the shared
+  verifier core (``nvnm_cite.verifier``), which reads NVNM Chain LIVE via
+  keyed ``records()`` reads (item 0, DECISIONS 2026-06-13). It never
+  persists the document; bytes live in this call frame and are garbage the
+  moment the report is returned. The same core powers ``nvnm-cite check``.
 - ``ReceiptService`` (filing time): re-verifies every keyed citation via
   ``records()`` eth_calls pinned to one block, so the anchored receipt
   claims chain state at a stated height (plan task 3.2 semantics). The
@@ -26,7 +28,6 @@ the normalizer's reason carried through.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import re
@@ -40,9 +41,23 @@ from nvnm_cite.chain import precompile as pc
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
 from nvnm_cite.config import TESTNET_CHAIN_ID, TESTNET_EXPLORER
 from nvnm_cite.loader.records import METADATA_CAP, compact_json
-from nvnm_cite.normalizer import CANONICAL_SPEC, NORMALIZER_VERSION, Disposition, normalize
-from nvnm_cite.webapp.extract import ExtractError, extract_text
-from nvnm_cite.webapp.localindex import IndexHit, LocalIndex
+from nvnm_cite.normalizer import CANONICAL_SPEC, NORMALIZER_VERSION
+from nvnm_cite.verifier.check import (
+    AMBIGUOUS,
+    COVERED_REGISTRIES,
+    NOT_COVERED,
+    NOT_FOUND,
+    STATUS_CHARS,
+    UNPARSEABLE,
+    VERIFIED,
+    CheckError,
+    check_document,
+    name_check,
+    record_cluster,
+    record_names,
+)
+from nvnm_cite.verifier.resolver import Resolver
+from nvnm_cite.webapp.localindex import LocalIndex
 
 WEBAPP_VERSION = "0.1.0"
 RECEIPT_SCHEMA = "nvnm-cite-receipt/v1-draft"
@@ -57,16 +72,9 @@ RECEIPTS_REGISTRY_METADATA = compact_json(
     {"schema": "nvnm-cite-receipt/v1", "spec": "cite-canonical-v1"}
 )
 
-COURT_REGISTRIES = ("us-scotus", "us-ca11")
+# Receipts read the same covered registries the verifier core defines.
+COURT_REGISTRIES = COVERED_REGISTRIES
 
-VERIFIED = "VERIFIED"
-NOT_FOUND = "NOT_FOUND"
-NOT_COVERED = "NOT_COVERED"
-AMBIGUOUS = "AMBIGUOUS_JURISDICTION"
-UNPARSEABLE = "UNPARSEABLE"
-STATUS_CHARS = {VERIFIED: "V", NOT_FOUND: "N", NOT_COVERED: "C", AMBIGUOUS: "A", UNPARSEABLE: "U"}
-
-MAX_TEXT_CHARS = 2_000_000
 MAX_RECEIPT_ENTRIES = 500
 
 _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
@@ -86,12 +94,6 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _is_keyed_miss(err: RpcError) -> bool:
-    # Measured (DECISIONS 2026-06-10): keyed misses ERROR with this marker;
-    # an empty page is NOT the miss signal. Anything else is transport.
-    return "collections: not found" in (err.message or "")
-
-
 def _clean_str(value: Any, cap: int) -> str | None:
     if not isinstance(value, str):
         return None
@@ -99,197 +101,28 @@ def _clean_str(value: Any, cap: int) -> str | None:
     return cleaned[:cap] if cleaned else None
 
 
-# --- name_check heuristic (conservative preview of plan task 3.3) ---
-
-_NAME_STOPWORDS = frozenset(
-    "v vs in re ex parte et al the of and on a an matter state states united"
-    " people commonwealth city county town u s inc llc co corp ltd".split()
-)
-
-
-def _name_tokens(name: str) -> set[str]:
-    words = re.sub(r"[^a-z0-9]+", " ", name.lower()).split()
-    return {w for w in words if w not in _NAME_STOPWORDS and len(w) > 1}
-
-
-def name_check(plaintiff: str | None, defendant: str | None, record_names: list[str]) -> str:
-    """match | mismatch | unknown. Mismatch only when both brief parties are
-    present and neither shares a single significant token with any record
-    name: the heuristic flags the invented-name failure mode and stays
-    silent when it cannot be sure."""
-    parties = [_name_tokens(p) for p in (plaintiff, defendant) if p]
-    parties = [p for p in parties if p]  # drop vacuous ("United States" alone)
-    candidates = [_name_tokens(n) for n in record_names if n]
-    if not parties or not candidates:
-        return "unknown"
-    for cand in candidates:
-        if all(p & cand for p in parties):
-            return "match"
-    if len(parties) == 2 and not any(p & cand for p in parties for cand in candidates):
-        return "mismatch"
-    return "unknown"
-
-
 # =====================================================================
-# Drafting-time check (local only)
+# Drafting-time check (delegates to the shared verifier core)
 # =====================================================================
 
 
 class CheckService:
-    def __init__(self, index: LocalIndex):
-        self.index = index
+    """Drafting-time citation check. A thin wrapper over the shared verifier
+    core (``nvnm_cite.verifier``), which reads NVNM Chain LIVE via keyed
+    ``records()`` reads (item 0, DECISIONS 2026-06-13) — the same core powers
+    ``nvnm-cite check``. Kept as a class so the server's wiring and the tests
+    construct it uniformly. Transport / RPC failures propagate out of the
+    core and surface to the client (a 502) rather than masquerading as
+    NOT_FOUND."""
+
+    def __init__(self, resolver: Resolver):
+        self.resolver = resolver
 
     def check(self, data: bytes, filename: str) -> dict:
-        started = time.monotonic()
         try:
-            extraction = extract_text(data, filename)
-        except ExtractError as exc:
-            raise WebAppError(str(exc)) from exc
-        sha256 = hashlib.sha256(data).hexdigest()
-        if len(extraction.text) > MAX_TEXT_CHARS:
-            raise WebAppError(
-                f"document text exceeds {MAX_TEXT_CHARS:,} characters", http_status=413
-            )
-
-        result = normalize(extraction.text)
-        covered = self.index.covered
-
-        entries: dict[tuple, dict] = {}
-        for occ in result.citations:
-            if occ.disposition is Disposition.OK:
-                key = ("ok", occ.registry, occ.canonical)
-            elif occ.disposition is Disposition.AMBIGUOUS_JURISDICTION:
-                key = ("ambiguous", occ.canonical or occ.as_written)
-            else:
-                key = ("unresolved", occ.as_written.strip().lower())
-            entry = entries.get(key)
-            if entry is None:
-                entry = entries[key] = {
-                    "registry": occ.registry,
-                    "canonical": occ.canonical,
-                    "as_written": occ.as_written,
-                    "variants": [],
-                    "occurrences": 0,
-                    "kinds": set(),
-                    "court": occ.court,
-                    "year": occ.year,
-                    "plaintiff": occ.plaintiff,
-                    "defendant": occ.defendant,
-                    "reason": occ.reason,
-                    "first_span": list(occ.span),
-                    "spans": [],
-                }
-            entry["occurrences"] += 1
-            entry["kinds"].add(occ.kind)
-            entry["spans"].append({"span": list(occ.span), "kind": occ.kind, "as_written": occ.as_written, "pin_cite": occ.pin_cite})
-            if occ.as_written not in entry["variants"]:
-                entry["variants"].append(occ.as_written)
-            for field_name in ("plaintiff", "defendant", "court"):
-                if entry[field_name] is None:
-                    entry[field_name] = getattr(occ, field_name)
-            if entry["year"] is None:
-                entry["year"] = occ.year
-
-        keyed = [
-            (e["registry"], e["canonical"])
-            for (kind, *_), e in entries.items()
-            if kind == "ok" and e["registry"] in covered
-        ]
-        hits = self.index.lookup_many(keyed)
-
-        citations: list[dict] = []
-        counts = {s: 0 for s in (VERIFIED, NOT_FOUND, NOT_COVERED, AMBIGUOUS, UNPARSEABLE)}
-        mismatches = 0
-        for (kind, *_), entry in entries.items():
-            hit: IndexHit | None = None
-            if kind == "ok":
-                if entry["registry"] in covered:
-                    hit = hits.get((entry["registry"], entry["canonical"]))
-                    status = VERIFIED if hit else NOT_FOUND
-                    reason = None if hit else (
-                        "no record for this citation in the "
-                        f"{entry['registry']} registry (first-page canonical keys)"
-                    )
-                else:
-                    status = NOT_COVERED
-                    reason = (
-                        f"{entry['registry']} is outside pilot coverage "
-                        f"({', '.join(COURT_REGISTRIES)})"
-                    )
-            elif kind == "ambiguous":
-                status, reason = AMBIGUOUS, entry["reason"]
-            else:
-                status, reason = UNPARSEABLE, entry["reason"]
-            counts[status] += 1
-
-            record_names = [c.get("name", "") for c in hit.cases] if hit else []
-            check = name_check(entry["plaintiff"], entry["defendant"], record_names)
-            if check == "mismatch":
-                mismatches += 1
-
-            citations.append(
-                {
-                    "registry": entry["registry"],
-                    "canonical": entry["canonical"],
-                    "as_written": entry["as_written"],
-                    "variants": entry["variants"],
-                    "occurrences": entry["occurrences"],
-                    "kinds": sorted(entry["kinds"]),
-                    "status": status,
-                    "name_check": check,
-                    "reason": reason,
-                    "court": entry["court"],
-                    "year": entry["year"],
-                    "plaintiff": entry["plaintiff"],
-                    "defendant": entry["defendant"],
-                    "first_span": entry["first_span"],
-                    "spans": entry["spans"][:50],
-                    "record": (
-                        {
-                            "uri": hit.uri,
-                            "cases": hit.cases[:5],
-                            "more_cases": max(0, len(hit.cases) - 5),
-                            "collision": hit.collision,
-                            "source": hit.source,
-                        }
-                        if hit
-                        else None
-                    ),
-                }
-            )
-        citations.sort(key=lambda c: c["first_span"])
-
-        return {
-            "document": {
-                "filename": filename,
-                "sha256": sha256,
-                "bytes": len(data),
-                "extraction": {
-                    "method": extraction.method,
-                    "chars": len(extraction.text),
-                    "warning": extraction.warning,
-                },
-            },
-            "normalizer": {"version": NORMALIZER_VERSION, "spec": CANONICAL_SPEC},
-            "index": {"registries": self.index.coverage(), "covered": sorted(covered)},
-            "summary": {
-                "occurrences": len(result.citations),
-                "distinct": len(citations),
-                "by_status": counts,
-                "name_mismatches": mismatches,
-            },
-            "citations": citations,
-            "privacy": {
-                "persisted": False,
-                "note": (
-                    "Processed in memory and discarded with this response; "
-                    "nothing was written to disk and no chain or network "
-                    "request was made during this check."
-                ),
-            },
-            "generated_at": _utc_now(),
-            "elapsed_ms": round((time.monotonic() - started) * 1000),
-        }
+            return check_document(data, filename, self.resolver)
+        except CheckError as exc:
+            raise WebAppError(str(exc), exc.http_status) from exc
 
 
 # =====================================================================
@@ -329,7 +162,7 @@ class ChainGateway:
                 "metadata": reg.metadata,
             }
         except RpcError as err:
-            if not _is_keyed_miss(err):
+            if not pc.is_keyed_miss(err):
                 raise
             value = None
         self._registry_cache[name] = (time.monotonic(), value)
@@ -343,7 +176,7 @@ class ChainGateway:
         try:
             raw = self.rpc.eth_call(pc.PRECOMPILE_ADDRESS, query, block=block)
         except RpcError as err:
-            if _is_keyed_miss(err):
+            if pc.is_keyed_miss(err):
                 return None
             raise
         records, _ = pc.decode_records_result(raw)
@@ -359,7 +192,7 @@ class ChainGateway:
             message = err.message or str(err)
             if "unauthorized" in message.lower():
                 kind = "unauthorized"
-            elif _is_keyed_miss(err):
+            elif pc.is_keyed_miss(err):
                 kind = "registry-missing"
             else:
                 kind = "other"
@@ -568,9 +401,9 @@ class ReceiptService:
                 record = self.gateway.keyed_record(registry, canonical, block=block_tag)
                 if record is not None:
                     status = VERIFIED
-                    names = _record_names(record.metadata)
+                    names = record_names(record.metadata)
                     check = name_check(plaintiff, defendant, names)
-                    cluster = _record_cluster(record.metadata)
+                    cluster = record_cluster(record.metadata)
                     if cluster is not None:
                         entry["k"] = cluster
                     if check == "match":
@@ -718,23 +551,6 @@ class ReceiptService:
                 },
             },
         }
-
-
-def _record_names(metadata: str) -> list[str]:
-    parsed = _try_json(metadata)
-    if not isinstance(parsed, dict):
-        return []
-    if isinstance(parsed.get("cases"), list):
-        return [c.get("name", "") for c in parsed["cases"] if isinstance(c, dict)]
-    name = parsed.get("name")
-    return [name] if isinstance(name, str) else []
-
-
-def _record_cluster(metadata: str) -> int | None:
-    parsed = _try_json(metadata)
-    if isinstance(parsed, dict) and isinstance(parsed.get("cluster"), int):
-        return parsed["cluster"]
-    return None
 
 
 def _render_receipt_record(record: pc.Record) -> dict:

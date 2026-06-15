@@ -399,12 +399,12 @@ source = { editable = "." }
 dependencies = [
     { name = "courts-db" },
     { name = "eyecite" },
+    { name = "pdfplumber" },
     { name = "reporters-db" },
 ]
 
 [package.dev-dependencies]
 dev = [
-    { name = "pdfplumber" },
     { name = "pytest" },
 ]
 
@@ -412,14 +412,12 @@ dev = [
 requires-dist = [
     { name = "courts-db", specifier = ">=0.10.27" },
     { name = "eyecite", specifier = ">=2.7.6" },
+    { name = "pdfplumber", specifier = ">=0.11.9" },
     { name = "reporters-db", specifier = ">=3.2.65" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "pdfplumber", specifier = ">=0.11.9" },
-    { name = "pytest", specifier = ">=8" },
-]
+dev = [{ name = "pytest", specifier = ">=8" }]
 
 [[package]]
 name = "packaging"

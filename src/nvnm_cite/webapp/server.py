@@ -18,6 +18,7 @@ from importlib import resources
 from pathlib import Path
 
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
+from nvnm_cite.verifier.resolver import ChainResolver
 from nvnm_cite.webapp.localindex import LocalIndex
 from nvnm_cite.webapp.service import (
     ChainGateway,
@@ -49,9 +50,11 @@ _CSP = (
 class Services:
     def __init__(self, rpc_url: str, data_dir: Path):
         self.rpc_url = rpc_url
-        index = LocalIndex(data_dir)
+        index = LocalIndex(data_dir)  # status panel only; not the check authority
         gateway = ChainGateway(lambda: EvmRpc(rpc_url))
-        self.check = CheckService(index)
+        # Drafting checks read the chain LIVE (item 0): a fresh EvmRpc per call
+        # keeps the resolver safe under the threaded server.
+        self.check = CheckService(ChainResolver(lambda: EvmRpc(rpc_url)))
         self.receipt = ReceiptService(gateway)
         self.tx = TxService(gateway)
         self.status = StatusService(gateway, index, data_dir, rpc_url=rpc_url)
@@ -137,6 +140,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(f"chain RPC error: {err}", 502)
         except (BrokenPipeError, ConnectionResetError):
             pass
+        except OSError as err:
+            # Transport failure reaching the chain RPC (connection refused,
+            # timeout, ...): surface it; a dead RPC is never a chain answer.
+            self._send_error_json(f"could not reach the chain RPC: {err}", 502)
         except Exception:
             traceback.print_exc()
             self._send_error_json("internal error", 500)
@@ -180,6 +187,10 @@ class Handler(BaseHTTPRequestHandler):
             self._send_error_json(f"chain RPC error: {err}", 502)
         except (BrokenPipeError, ConnectionResetError):
             pass
+        except OSError as err:
+            # Transport failure reaching the chain RPC (connection refused,
+            # timeout, ...): surface it; a dead RPC is never a chain answer.
+            self._send_error_json(f"could not reach the chain RPC: {err}", 502)
         except Exception:
             traceback.print_exc()
             self._send_error_json("internal error", 500)

@@ -20,10 +20,18 @@ them are excluded: registries hold case citations only.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 
 from eyecite import clean_text, get_citations, resolve_citations
+
+# eyecite emits informational logger.warning chatter during resolution (e.g.
+# "Unknown overlap case" for an Id. adjacent to a full cite). It is not a
+# signal we act on — our output is pinned by the golden suite — and it must
+# not leak to a user's terminal or the server log. Quiet it to ERROR while
+# leaving genuine errors visible.
+logging.getLogger("eyecite").setLevel(logging.ERROR)
 from eyecite.models import (
     CitationBase,
     FullCaseCitation,

@@ -1,4 +1,10 @@
-"""Local citation lookup for drafting-time checks. No RPC, ever.
+"""Local citation index: a rebuildable audit/cache, NOT the check authority.
+
+Since item 0 (DECISIONS 2026-06-13) the drafting-time check reads NVNM
+Chain live (see ``nvnm_cite.verifier``); this module no longer answers
+"is this citation real?". It survives as the coverage source for the
+status panel and as the offline mirror behind ``rebuild-index`` (anyone
+can reconstruct the registries from an RPC URL and diff our work).
 
 Two sources, preferred in order per registry:
 
@@ -6,13 +12,8 @@ Two sources, preferred in order per registry:
    chain (rebuildable by anyone with an RPC URL). Used when the registry
    has been synced.
 2. ``corpus.sqlite`` — the CourtListener-derived corpus, restricted to
-   the tranche-1 reporter whitelist so the lookup set mirrors the
-   record set prepared for anchoring (census + whitelist: DECISIONS
-   2026-06-11). Used while the bulk load is still draining and the
-   chain index has not caught up.
-
-Either way the check leaves no chain trace: CLAUDE.md invariant 3, and
-the reason this module exists instead of a per-citation eth_call.
+   the tranche-1 reporter whitelist so the counts mirror the record set
+   prepared for anchoring (census + whitelist: DECISIONS 2026-06-11).
 """
 
 from __future__ import annotations
