@@ -158,12 +158,31 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 
 ---
 
+## Phase 7: Mainnet production plan (placeholder — author at end of project)
+
+**Goal:** A written, human-gated PLAN (a document, not code) for running NVNM Cite "for real" on mainnet 1611 — not a test pilot nobody relies on, but a production service whose NOT_FOUND a lawyer can trust. It folds in the Mainnet cutover preconditions (task 6.4) and the lessons the testnet pilot surfaced.
+
+**Depends on:** the whole pilot (Phases 0–6) as the evidence base.
+
+**Tasks (placeholder — flesh out before writing):**
+- [ ] 7.1 Data-coverage completeness — THE load-bearing trust issue. The testnet pilot proved CourtListener holds real, Published opinions with NO reporter citation attached: e.g. *Muransky v. Godiva Chocolatier, Inc.*, 979 F.3d 917 (11th Cir. 2020) (en banc) — the opinion cluster is present (4801215) but the cite is absent from CL's bulk AND live data (citation-lookup → 404). Measured ~4.1% of Published ca11 clusters (2,195) and ~0.0% of SCOTUS lack any reporter cite. A keyed-by-citation registry FALSE-NOT_FOUNDs these real cases. The mainnet plan must decide how to close or bound this (a second/supplemental citation source, a cluster-name fallback signal, vetted backfill, scoped guarantees) while keeping provenance honest ("existence in a NAMED source"). For the test pilot this is handled by direct backfill (see DECISIONS 2026-06-16); mainnet needs a principled answer.
+- [ ] 7.2 NOT_FOUND semantics for production: distinguish "fabricated" from "real but uncovered / missing-from-source"; a status model + copy that never nudges a lawyer to delete a real citation.
+- [ ] 7.3 Key ceremony + ownership (per 6.4): registry write key + receipts agent key generated and held OUTSIDE Claude Code sessions; mainnet is never written from a session.
+- [ ] 7.4 Coverage scope + SLA: which courts, what completeness bar (measured + published), refresh/update cadence, staleness monitoring.
+- [ ] 7.5 Open-source + publication posture: normalizer spec + reference-implementation licensing; registry IDs / spec / schema publication.
+- [ ] 7.6 Cost + load plan: extrapolated from measured testnet gas/throughput (task 2.6); budget sign-off.
+
+**Exit criteria:** a reviewed mainnet-plan document exists; every item has a decision or an explicit "deferred, with reason"; no mainnet write happens before it is signed off.
+
+---
+
 ## Known risks (tracked, not hidden)
 
 - Parallel citations: one cluster can have up to three registry records (U.S. / S. Ct. / L. Ed.); receipts group results by cluster id.
 - Citation-string collisions: two short orders can share a reporter first page; record metadata holds a case array when the census finds them.
 - 5th/11th Circuit split: pre-October-1981 old-Fifth cases are binding ca11 precedent but live under court ca5 and are cited "(5th Cir.)"; during the pilot they are honestly NOT_COVERED (registries mirror court identity, not precedential reach). The demo uses post-1981 cites.
 - Unpublished/WL-only ca11 cites map to NOT_COVERED with a named reason; the census measures the gap and the reconcile report publishes it.
+- CourtListener citation-completeness gap (discovered 2026-06-16): CL holds Published opinion CLUSTERS with NO reporter citation attached, so our CL-keyed registry false-NOT_FOUNDs real cases. Measured ~4.1% of Published ca11 clusters (2,195) / ~0.0% SCOTUS. Most are recent decisions awaiting a West cite (no cite exists yet — not a real false-NOT_FOUND, since you can't cite a nonexistent cite) or genuinely uncited; the real class is older cases whose West cite EXISTS but CL lacks it (e.g. Muransky 979 F.3d 917). Test-pilot handling: targeted backfill (scripts/backfill_supplemental.py, DECISIONS 2026-06-16). Mainnet: Phase 7 task 7.1. We never invent cites — a cite goes on chain only from an authoritative source.
 - PDF extraction recall is the demo-day risk for arbitrary real briefs: two-column layouts, footnotes, scans. Mitigations: RECAP fixtures from Phase 1, measured recall per release, UNPARSEABLE as honest output, born-digital demo fixture.
 - Archive-state dependency for pinned-block re-verification: RESOLVED, 0.7 (h) confirmed full archive state on the default public RPC; the rebuild fallback stays documented against future pruning-policy changes.
 - Attribution: Free Law Project requests attribution for CourtListener data; it lives in README, registry metadata, and the demo. Never copy FLP site prose (CC BY-ND) into project docs.
