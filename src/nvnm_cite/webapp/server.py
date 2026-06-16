@@ -33,8 +33,12 @@ from nvnm_cite.webapp.service import (
 MAX_UPLOAD_BYTES = 30 * 1024 * 1024
 MAX_JSON_BYTES = 1 * 1024 * 1024
 # The status panel must fail fast on a dead/slow RPC (task 4.5e): a short
-# timeout, distinct from the 30 s default the check/receipt paths use.
+# timeout, distinct from the default the check path uses.
 STATUS_RPC_TIMEOUT = 4.0
+# Interactive receipt/tx/lookup paths (prepare re-check, anchor confirmation
+# polling, verify lookup) use a moderate timeout so a slow public RPC surfaces a
+# retryable error in seconds instead of freezing the flow for the 30 s default.
+INTERACTIVE_RPC_TIMEOUT = 12.0
 
 _STATIC_TYPES = {
     ".html": "text/html; charset=utf-8",
@@ -55,7 +59,9 @@ class Services:
     def __init__(self, rpc_url: str, data_dir: Path, telemetry_path: Path | None = None):
         self.rpc_url = rpc_url
         index = LocalIndex(data_dir)  # status panel only; not the check authority
-        gateway = ChainGateway(lambda: EvmRpc(rpc_url))
+        # Receipt prepare/lookup + tx polling go through this gateway; a moderate
+        # timeout keeps a slow RPC from freezing the anchor flow.
+        gateway = ChainGateway(lambda: EvmRpc(rpc_url, timeout=INTERACTIVE_RPC_TIMEOUT))
         # Opt-in aggregate, by-citation lookup telemetry (item 2b): off unless
         # the operator passes --telemetry. One shared sink (thread-safe) feeds
         # the drafting-time check resolver; disclosed in the privacy copy.

@@ -751,10 +751,17 @@ async function createReceiptRegistry() {
   if (!prepared || !prepared.setup) return;
   await sendTx(prepared.setup.tx, "anchor-status", (box, info) => {
     if (info.success) {
-      const b = banner("ok", "i-seal", `Registry ${prepared.registry} created`,
-        `Confirmed in block ${info.block.toLocaleString("en-US")} at ${info.block_time}. Re-preparing the receipt…`);
-      box.appendChild(b);
-      setTimeout(prepareReceipt, 1200);
+      // The receipt and its record calldata were built at prepare time and do
+      // NOT change when the registry is created. Don't re-run the whole check
+      // (slow, and the just-created registry can take a beat to be readable on
+      // the public RPC — re-preparing then re-offers "create registry" and
+      // dead-ends the flow). Just mark the registry ready and enable anchoring.
+      prepared.registry_exists = true;
+      prepared.setup = null;
+      $("setup-box").classList.add("hidden");
+      $("anchor-btn").disabled = false;
+      box.appendChild(banner("ok", "i-seal", `Registry ${prepared.registry} created`,
+        `Confirmed in block ${info.block.toLocaleString("en-US")}. You can now sign & anchor the receipt below.`));
     } else {
       box.appendChild(banner("bad", "i-alert", "Registry creation failed",
         "The creation transaction reverted. Check the chain status and try again."));
