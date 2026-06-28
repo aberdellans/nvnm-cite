@@ -4,6 +4,7 @@
 - Current phase: Phase 4 COMPLETE incl. Phase 4.5 web app (tasks 4.5a–4.5e done). The webapp receipt flow is rewired to the LOCKED receipt v1: per-firm-per-case registries (`<firm>--<case>`), non-enumerating ~526 B receipts, no kya_id, Verify takes (registry + browser-hashed file), opt-in by-citation telemetry + its disclosure copy, StatusService fast-fail (short-timeout probe). The webapp now MIRRORS the CLI — `ReceiptService.prepare` delegates to `receipts/anchor.py::prepare_anchor` (re-uploads the file, re-checks pinned to a block), so the webapp receipt is byte-identical to `nvnm-cite anchor`. Verified LIVE end to end in the browser (all 5 tabs, zero console errors) against testnet; one latent JS bug (banner `.rb-sub` null on the found/revert paths) found + fixed. 488 tests green. This session closes Phase 4.5 → tag phase-4-done.
 - Last completed: Phase 4.5 web app — `webapp/{service,server,__main__}.py` + `static/{index.html,app.js,app.css}` rewired to locked v1; `tests/test_webapp.py` rewritten to the v1 shape (+ status fast-fail / telemetry-on tests). NO transactions sent this session (read-only verification; the demo receipt already existed from the Phase 4 session). Anchoring (writes) stays gated behind the wallet + an explicit in-chat OK.
 - Next up: Phase 5 (MCP server) — FastMCP stdio, 5 tools (check_citations / anchor_receipt[confirm] / verify_receipt / registry_stats / coverage), Claude Desktop smoke-test against testnet. Then P6 (demo). Tranche 2 stays gated by choice.
+- STRATEGIC RE-SCOPE (2026-06-24): Phase 7 (mainnet) rewritten to FULL US case-law scope — all federal (incl. ~94 districts, bankruptcy, specialized) + ALL state courts. Measured this session: ~7.84M cases / ~11.9M citation records / ~$55k gas (state is ~87%); mainnet gas confirmed live (45 gwei, precompile parity). Federal-appellate backbone (924,421 records / $4,252) is tranche 1; state needs a normalizer rebuild (7.7). See the rewritten Phase 7 + Future development wishlist. Full census + the live-mainnet-gas confirmation still owe a DECISIONS entry.
 
 How to read this file: one section per phase with Goal / Depends on / Tasks / Exit criteria. Tick checkboxes as tasks complete and refresh the Status header at session end. Settled choices and measured results go to DECISIONS.md, not here. The session kickoff prompt is in README.md.
 
@@ -112,7 +113,7 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 
 ## Phase 4.5: Web app — merge the frontend workstream, harden, host (1-2 sessions)
 
-**Goal:** The existing web demo (`src/nvnm_cite/webapp/`, already on main: commits 2200e32, 41e00c3) becomes the primary product surface — adopting item 0, the minimal receipt, and the per-firm-per-case registry model — honest and usable when hosted (not just on localhost). This phase MERGES the parallel frontend workstream into the plan; the architecture decisions are DECISIONS 2026-06-13 and the prepared copy is docs/webapp-revision-notes.md.
+**Goal:** The existing web demo (`src/nvnm_cite/webapp/`, already on main: commits 2200e32, 41e00c3) becomes the primary product surface — adopting item 0, the minimal receipt, and the per-firm-per-case registry model — honest and usable when hosted (not just on localhost). This phase MERGES the parallel frontend workstream into the plan; the architecture decisions are the DECISIONS 2026-06-13 entries (the prepared-copy working doc docs/webapp-revision-notes.md was removed in the 2026-06-27 repo cleanup; its decisions live in those DECISIONS entries).
 
 **Depends on:** the re-scoped Phase 3 (shared verifier core) and Phase 4 (receipt v1 lock + registry model).
 
@@ -158,21 +159,56 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 
 ---
 
-## Phase 7: Mainnet production plan (placeholder — author at end of project)
+## Phase 7: Mainnet production plan — FULL US case-law scope (author before mainnet)
 
-**Goal:** A written, human-gated PLAN (a document, not code) for running NVNM Cite "for real" on mainnet 1611 — not a test pilot nobody relies on, but a production service whose NOT_FOUND a lawyer can trust. It folds in the Mainnet cutover preconditions (task 6.4) and the lessons the testnet pilot surfaced.
+**Goal:** A written, human-gated PLAN (a document, not code) for running NVNM Cite on mainnet 1611 as a production service whose NOT_FOUND a lawyer can trust — at FULL US case-law scope (all federal courts incl. ~94 districts + bankruptcy + specialized, AND all state courts), not just the federal-appellate pilot backbone. Folds in the mainnet cutover preconditions (task 6.4) and the testnet pilot's lessons.
 
-**Depends on:** the whole pilot (Phases 0–6) as the evidence base.
+**Depends on:** the whole pilot (Phases 0–6) as the evidence base; the normalizer rebuild (7.7) before any state tranche.
 
-**Tasks (placeholder — flesh out before writing):**
-- [ ] 7.1 Data-coverage completeness — THE load-bearing trust issue. The testnet pilot proved CourtListener holds real, Published opinions with NO reporter citation attached: e.g. *Muransky v. Godiva Chocolatier, Inc.*, 979 F.3d 917 (11th Cir. 2020) (en banc) — the opinion cluster is present (4801215) but the cite is absent from CL's bulk AND live data (citation-lookup → 404). Measured ~4.1% of Published ca11 clusters (2,195) and ~0.0% of SCOTUS lack any reporter cite. A keyed-by-citation registry FALSE-NOT_FOUNDs these real cases. The mainnet plan must decide how to close or bound this (a second/supplemental citation source, a cluster-name fallback signal, vetted backfill, scoped guarantees) while keeping provenance honest ("existence in a NAMED source"). For the test pilot this is handled by direct backfill (see DECISIONS 2026-06-16); mainnet needs a principled answer.
-- [ ] 7.2 NOT_FOUND semantics for production: distinguish "fabricated" from "real but uncovered / missing-from-source"; a status model + copy that never nudges a lawyer to delete a real citation.
-- [ ] 7.3 Key ceremony + ownership (per 6.4): registry write key + receipts agent key generated and held OUTSIDE Claude Code sessions; mainnet is never written from a session.
-- [ ] 7.4 Coverage scope + SLA: which courts, what completeness bar (measured + published), refresh/update cadence, staleness monitoring.
-- [ ] 7.5 Open-source + publication posture: normalizer spec + reference-implementation licensing; registry IDs / spec / schema publication.
-- [ ] 7.6 Cost + load plan: extrapolated from measured testnet gas/throughput (task 2.6); budget sign-off.
+**Scope DECIDED (2026-06-24 exploration; settles the old 7.4 "which courts" question):** the production target is the full US case-law citation graph, loaded in tranches. Why full, not federal-appellate-only: (1) coverage breadth = anti-hallucination power — an uncovered court turns a fabricated cite into NOT_COVERED, indistinguishable from real-but-uncovered, so a narrow scope lets fabrications hide; (2) ~90% of US litigation is in STATE courts, so a federal-only service is not "relevant for real-life legal use." Same pipeline + data source (CourtListener/CAP holds essentially all published US case law) + registry model; the genuinely new engineering is the state-reporter normalizer (7.7).
 
-**Exit criteria:** a reviewed mainnet-plan document exists; every item has a decision or an explicit "deferred, with reason"; no mainnet write happens before it is signed off.
+**Measured scale & cost** (CourtListener bulk snapshot 2026-03-31; full census → DECISIONS. Records = distinct citations under real reporters, excluding WL/LEXIS/specialty vendor cites per the pilot rule; raw-distinct, canonical dedup trims modestly):
+
+| Tranche | Citation records | Gas @ $0.0046/rec |
+|---|---:|---:|
+| 1. Federal appellate backbone (SCOTUS + 13 circuits) — exact | 924,421 | $4,252 |
+| 2. Federal complete (+ ~94 districts, bankruptcy, specialized) | ~1,469,892 (all federal) | ~$6,800 |
+| 3–4. All state courts | ~10,442,192 | ~$48,000 |
+| **FULL US case law (~7,837,721 cases)** | **~11,912,016** | **~$54,800** |
+
+State is ~87% of the universe. Mainnet gas confirmed live (2026-06-24): 45 gwei, precompile parity (addRegistry 83,541 gas, identical to testnet); dollar figures assume wmmUSD ≈ $1 — confirm the peg before budget sign-off. The load is submission-bound (~2.1 tx/s/key): full scope is ~65 days single-key, ~1 week with ~10–15 parallel editor-granted keys (the checkpointed loader is already built).
+
+**Tranche ladder (load order; each gated on a PUBLISHED per-court completeness bar):**
+1. Federal appellate backbone — proven on testnet; ship first.
+2. Federal complete — same federal reporters, no normalizer change (~$2.5k more records).
+3. State-normalizer pilot — 3–5 high-volume states (CA, NY, TX, FL, IL) — proves regional / official / parallel / neutral citation handling on real data before scaling.
+4. All remaining states, in tranches.
+
+**Tasks:**
+- [ ] 7.1 Data-coverage completeness — THE load-bearing trust issue, larger at state scale. The pilot proved CourtListener holds Published opinions with NO reporter cite (e.g. *Muransky*, 979 F.3d 917; ~4.1% of Published ca11 clusters, ~0.0% SCOTUS), false-NOT_FOUNDing real cases. State/older coverage is MORE uneven (CAP strong through ~2018; recent + neutral cites vary). Decide how to close or bound (supplemental source, cluster-name fallback, vetted backfill, scoped guarantees); publish a per-court coverage %; never invent a cite (a cite goes on chain only from an authoritative source). Pilot handling: direct backfill (DECISIONS 2026-06-16).
+- [ ] 7.2 NOT_FOUND semantics for production: distinguish "fabricated" from "real but uncovered / missing-from-source"; copy that never nudges a lawyer to delete a real citation.
+- [ ] 7.3 Key ceremony + ownership (per 6.4): registry write key(s) + receipts agent key generated and held OUTSIDE sessions; mainnet is never written from a session; the parallel-key fleet (7.6) is part of the ceremony.
+- [ ] 7.4 Coverage scope = FULL US case law (DECIDED, above). Remaining: enumerate the courts-db→CL court_id set per tranche; per-court census; the tranche schedule + completeness bars; refresh/update cadence + staleness monitoring across all courts.
+- [ ] 7.5 Open-source + publication posture: normalizer spec (now incl. state reporters) + reference-implementation licensing; registry IDs / spec / schema publication.
+- [ ] 7.6 Cost + load plan — MEASURED (above): ~11.9M records, ~$55k gas. Remaining: confirm the wmmUSD peg; finalize the parallel-key fleet + checkpoint ops at ~12M scale; client-side batched signing if the wall-clock needs it (wishlist W4 if a native batch write is ever added).
+- [ ] 7.7 NEW — Normalizer rebuild for state coverage (gating for tranches 3–4; the project's biggest remaining engineering lift). Extend cite-canonical/v1 + the jurisdiction mapper to: the 7 regional reporter families (So./P./S.W./N.E./A./S.E./N.W.), ~50 states' official reporters, neutral / public-domain citation formats, official↔regional parallel-cite resolution, and reporter→state-court registry mapping. eyecite/reporters-db/courts-db already know these reporters; the work is the deterministic canonical spec + an EXHAUSTIVE golden suite (invariant 5: the normalizer is the trust boundary — ~50× the reporters means ~50× the places a normalization bug becomes a wrong NOT_FOUND). Version-bump the normalizer; every receipt records the version.
+
+**Exit criteria:** a reviewed mainnet-plan document exists; full-scope census in DECISIONS; the tranche schedule + per-tranche completeness bars defined; the state-reporter normalizer rebuilt + golden-green; every item has a decision or an explicit "deferred, with reason"; no mainnet write before sign-off.
+
+---
+
+## Future development wishlist (post-mainnet-v1; justification-first, not scheduled)
+
+Candidates beyond the full-scope existence registries, each with the reason it earns a place. None gates mainnet-v1; all extend it.
+
+- [ ] **W1 — Chain primitive: `updateRecordStatus` + supersession pointer.** Propose to the NVNM chain team: implement the spec'd-but-unshipped `updateRecordStatus` and add a `supersededBy` record pointer + reason; admin-gated; append-only (writes only status/pointer, never the original content; the original tx payload is immutable by the chain regardless). The record tuple ALREADY carries `status`/`recordId`/`index`/`isLatest` and `records()` already returns `status` — this finishes a designed-for feature. *Why:* a first-class "no longer valid → see this instead" with a preserved audit trail; upgrades our correction policy (DECISIONS exp. f) from a metadata convention to a chain primitive; a general-purpose version-control / revocation primitive (document hashes, credentials, regulated recordkeeping) valuable across NVNM. Chain-upgrade-level change; one-page spec to draft.
+- [ ] **W2 — Case-status layer (good-law signals).** On W1: attach overruled / vacated / depublished signals to a case's record, sourced ONLY as a NAMED citator's attested claim (invariant 2), never an NVNM assertion. *Why:* existence-only is correct but leaves the question lawyers fear ("is it still good law?") open; a named-source status layer answers it without NVNM asserting truth. Enabled by one-record-per-case + W1.
+- [ ] **W3 — Withdrawal / reassignment handling.** The model is append-only and has no clean story for a cite that DISAPPEARS or is reassigned (rare federally — West doesn't recycle cites — real for state/neutral cites + depublication). *Why:* a correctness edge that grows at state scale; W1's status primitive is the mechanism (mark `Invalid`, keep history).
+- [ ] **W4 — Native batch write (`addRecords`).** Propose a batch method to write N records per tx. *Why:* at ~12M records the load is submission-bound; batching amortizes the ~21k intrinsic gas/tx (~22%, ~$12k) and cuts tx count. NOT required (parallel keys already reach full scope in ~1 week) and per-record STORAGE cost dominates regardless — an efficiency win, not a redesign. Does not change one-record-per-case.
+- [ ] **W5 — Non-case authority (statutes / rules / regs) — DEFERRED + a near-term transparency fix.** Today the normalizer silently DROPS statutes / rules / regs / constitutional cites (not verified, not flagged, not in the tally). *Near-term, do regardless:* disclose "case citations only" in the receipt + UI (a lawyer should know the check's scope). *Future:* a separate statute existence registry (U.S.C./C.F.R. from OLRC/govinfo) is feasible and the architecture generalizes, but it's a new schema + source + different existence semantics (versioning/repeal), and statutes are less prone to the volume/page fabrication that plagues AI case cites — lower ROI than case coverage. Build on demand.
+- [ ] **W6 — Registry handoff to courts.** Transfer registry admin to the actual clerk of court per registry. *Why:* the endgame legitimacy story — the court attests its own citations; the deny-by-default ownership model was built for exactly this. Cleanest at the appellate / state-supreme tier (one clerk per court).
+
+*Considered & not pursued:* a Merkle-commitment model (anchor a corpus root on chain, serve lookups off-chain with proofs) is cheaper on-chain but reintroduces an off-chain data/proof authority, defeating the "the chain itself answers, replayable by anyone" trust property. Revisit only if on-chain storage cost ever dominates — at ~$55k for the full corpus, it does not.
 
 ---
 
@@ -186,7 +222,10 @@ Session budget: 9-12 build sessions (P0: 2-3, P1: 1-2, P2: 2-3, P3: 1, P4: 1-2, 
 - PDF extraction recall is the demo-day risk for arbitrary real briefs: two-column layouts, footnotes, scans. Mitigations: RECAP fixtures from Phase 1, measured recall per release, UNPARSEABLE as honest output, born-digital demo fixture.
 - Archive-state dependency for pinned-block re-verification: RESOLVED, 0.7 (h) confirmed full archive state on the default public RPC; the rebuild fallback stays documented against future pruning-policy changes.
 - Attribution: Free Law Project requests attribution for CourtListener data; it lives in README, registry metadata, and the demo. Never copy FLP site prose (CC BY-ND) into project docs.
+- FULL-SCOPE state-coverage completeness (Phase 7.1): CAP/CL coverage is strong through ~2018 but recent + neutral state cites vary by state, so the false-NOT_FOUND gap is wider and uneven across states — measure + PUBLISH a per-court coverage % before claiming a state. Never invent a cite.
+- Normalizer trust surface at state scale (Phase 7.7): ~50 states' official reporters + 7 regional families + neutral-cite formats mean far more places a normalization bug becomes a wrong NOT_FOUND (invariant 5: the normalizer is the trust boundary). The exhaustive golden suite is the gate, proven on the CA/NY/TX/FL/IL pilot before scaling.
+- Append-only has no withdrawal path: a cite that DISAPPEARS or is reassigned (depublication, a vacated reporter cite) can't be retired today — rare federally (West doesn't recycle cites), real at state scale. Mechanism is wishlist W1/W3 (mark Invalid, keep history).
 
 ## Mainnet cutover (post-pilot, human-gated; not session work)
 
-Preconditions per task 6.4. Then: create registries on mainnet 1611 from a hardened script outside Claude Code; bulk load tranche 1; run reconcile until the diff is zero or documented; wire the daily update cron; publish registry IDs, the citation spec, and the receipt schema; add monitoring for load failures and registry staleness. Acceptance: a third party, given only the explorer and the published spec, can independently confirm registry coverage and verify a receipt.
+Preconditions per task 6.4. Then: create registries on mainnet 1611 from a hardened script outside Claude Code; bulk load by tranche (Phase 7 ladder: federal appellate → federal complete → state-normalizer pilot → all states); run reconcile until the diff is zero or documented after each tranche; wire the daily update cron across all loaded courts; publish registry IDs, the citation spec, and the receipt schema; add monitoring for load failures and registry staleness. Acceptance: a third party, given only the explorer and the published spec, can independently confirm registry coverage and verify a receipt.
