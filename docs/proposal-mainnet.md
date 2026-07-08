@@ -169,7 +169,7 @@ All figures are reproducible from the repository.
 | Figure | Source |
 |---|---|
 | Per-record gas ~96k; $0.0046/record; 45 gwei | `DECISIONS.md` (2026-06-10 gas entry; 2026-06-13 cost extrapolation) |
-| Mainnet gas price 45 gwei; precompile gas identical (83,541) | live read-only probe of `https://evm.nvnmchain.io` (chain 1611), 2026-06-24 — `eth_gasPrice` + `eth_estimateGas`, no key/no write |
+| Mainnet gas price 45 gwei; precompile gas identical (83,541) | live read-only probe of `https://evm.nvnmchain.io` (chain 1611), 2026-06-24 — `eth_gasPrice` + `eth_estimateGas`, no key/no write. *Amended 2026-07-07: the 83,541 figure is payload-specific (locked creation strings ≈ 79.1k); the parity claim is what carries, re-confirmed within 30 gas on identical calldata (DECISIONS 2026-07-07)* |
 | Pilot spend $1,201 for 260,763 records | `DECISIONS.md` (2026-06-13 "Tranche-1 load COMPLETE") |
 | Throughput ~2.1 tx/s/key; ~1.5 days/tranche | `DECISIONS.md` (2026-06-11 load entries) |
 | Parallel-key (grantRole) scaling validated | `DECISIONS.md` (experiment d) |

@@ -10,6 +10,24 @@
 > in the appendix. The only open variable on cost is the wmmUSD/USD peg, which is
 > yours to confirm.
 
+> **CORRIGENDUM 2026-07-07** — this brief was sent 2026-06-27; the text below is
+> preserved as sent, but the supersession-proposal exchange with MANTRA corrected
+> four of its chain-facts claims (full detail in DECISIONS 2026-07-07):
+> 1. The precompile is **not event-free** (section 1, section 4a): AddRegistry /
+>    AddRecord / UpdateRecordStatus / GrantRole / RevokeRole events fire on both
+>    networks and always did (only `caller` indexed). Drafting-time reads remain
+>    traceless, so the privacy property we lean on survives — for reads.
+> 2. `updateRecordStatus` was **not missing from the deployed binary** (section
+>    4a, appendix): it is live on both networks as
+>    `updateRecordStatus(registryId, recordId, index, status)`. Our probes and
+>    the May 2026 report had guessed name/checksum-keyed signatures; writes are
+>    id-keyed. The 4a ask was therefore already shipped, except the pointer,
+>    which lands as a documented metadata convention instead of a chain field.
+> 3. `revokeRole` also exists (unknown to us when this was written).
+> 4. The 83,541-gas addRegistry figure (sections 2, appendix) is
+>    payload-specific (~79.1k with our locked creation strings); the durable
+>    claim is testnet/mainnet parity, re-confirmed 2026-07-07 within 30 gas.
+
 ---
 
 ## 1. What NVNM Cite is

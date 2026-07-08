@@ -26,7 +26,15 @@ const abiJson = JSON.parse(
 const iface = new Interface(abiJson);
 
 const selectors = {};
-for (const fn of ["addRecord", "addRegistry", "grantRole", "records", "registries"]) {
+for (const fn of [
+  "addRecord",
+  "addRegistry",
+  "grantRole",
+  "records",
+  "registries",
+  "revokeRole",
+  "updateRecordStatus",
+]) {
   selectors[fn] = iface.getFunction(fn).selector;
 }
 
@@ -83,6 +91,16 @@ const CALLS = [
     desc: "registries-by-name",
     fn: "registries",
     args: [0, "us-ca11", ["0x", 0, 25, false, false]],
+  },
+  {
+    desc: "revokeRole-editor",
+    fn: "revokeRole",
+    args: [3, "", "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "editor"],
+  },
+  {
+    desc: "updateRecordStatus-supersede",
+    fn: "updateRecordStatus",
+    args: [733, 1, 1, "Superseded"],
   },
 ];
 

@@ -14,6 +14,8 @@ from nvnm_cite.chain.precompile import (
     build_grant_role,
     build_records_query,
     build_registries_query,
+    build_revoke_role,
+    build_update_record_status,
     decode_add_record_result,
     decode_add_registry_result,
     decode_records_result,
@@ -22,12 +24,19 @@ from nvnm_cite.chain.precompile import (
 
 GOLDEN = Path(__file__).parent / "golden" / "abi" / "vectors.json"
 
-# Selectors published in the original build plan, an independent third source
-# for these three (ethers and our keccak both derive them from the ABI).
+# Independently published selectors (ethers and our keccak both derive them
+# from the vendored ABI): the first three came from the chain's own
+# documentation via the original build plan; revokeRole and updateRecordStatus
+# come from MANTRA's anchoring-abi.sol @dev comments (received 2026-07-07),
+# additionally confirmed by live dispatch on both networks (DECISIONS
+# 2026-07-07: recognized selectors answer with auth/decode errors, unknown
+# ones with "unknown method id").
 PUBLISHED_SELECTORS = {
     "addRecord": "0x9b7b7869",
     "addRegistry": "0x318b38b1",
     "records": "0x02abafdf",
+    "revokeRole": "0xacd58bc7",
+    "updateRecordStatus": "0x97b40c25",
 }
 
 # Builder calls mirroring generate_vectors.cjs case for case.
@@ -59,6 +68,12 @@ BUILDERS = {
         page_key=bytes.fromhex("deadbeef00aa"), offset=7, limit=50, reverse=True
     ),
     "registries-by-name": lambda: build_registries_query(name="us-ca11", limit=25),
+    "revokeRole-editor": lambda: build_revoke_role(
+        3, "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "editor"
+    ),
+    "updateRecordStatus-supersede": lambda: build_update_record_status(
+        733, 1, 1, "Superseded"
+    ),
 }
 
 

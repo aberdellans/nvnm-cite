@@ -1,9 +1,15 @@
-"""Typed wrappers for the NVNM anchoring precompile's five methods.
+"""Typed wrappers for the NVNM anchoring precompile's seven methods.
 
 Builds calldata and decodes eth_call results against the vendored ABI
-(anchoring.json in this package, the single source of truth copied from
-the NVNM_MCP_Server project). No networking here: the RPC client and the
-live round-trip arrive with plan task 0.6.
+(anchoring.json in this package; originally copied from the NVNM_MCP_Server
+project, extended 2026-07-07 with updateRecordStatus + revokeRole and
+cross-checked against MANTRA's anchoring-abi.sol and the deployed binary).
+No networking here: the RPC client and the live round-trip arrive with plan
+task 0.6.
+
+Key asymmetry (measured 2026-07-07): READS key on registry name + checksum
+string; WRITES that target an existing record (updateRecordStatus,
+role grants/revokes) key on numeric ids (registryId/recordId/index).
 
 Chain-set fields (timestamp, recordId, index, isLatest) are zeroed in
 outbound addRecord calldata; the chain fills them. The records() query
@@ -120,6 +126,29 @@ def build_grant_role(
         raise ValueError(f"role must be 'admin' or 'editor', got {role!r}")
     return abi.encode_call(
         _FUNCTIONS["grantRole"], [registry_id, checksum, account, role]
+    )
+
+
+def build_revoke_role(
+    registry_id: int, account: str, role: str, checksum: str = ""
+) -> bytes:
+    if role not in ("admin", "editor"):
+        raise ValueError(f"role must be 'admin' or 'editor', got {role!r}")
+    return abi.encode_call(
+        _FUNCTIONS["revokeRole"], [registry_id, checksum, account, role]
+    )
+
+
+def build_update_record_status(
+    registry_id: int, record_id: int, index: int, status: str
+) -> bytes:
+    """In-place status write on an existing (registry, record, index) — the
+    write side is id-keyed, unlike the name+checksum-keyed reads. `status`
+    is free-form on chain; the vocabulary is an application convention."""
+    if not status:
+        raise ValueError("status is required")
+    return abi.encode_call(
+        _FUNCTIONS["updateRecordStatus"], [registry_id, record_id, index, status]
     )
 
 
