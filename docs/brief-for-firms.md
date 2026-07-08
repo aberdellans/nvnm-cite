@@ -30,8 +30,9 @@ before you file.
 When you're ready, NVNM Cite records a compact **receipt** on the NVNM Chain. The
 receipt contains a fingerprint (SHA-256) of your exact document plus provenance —
 when it was checked, against which court registries, and by whom. Anyone can
-later re-run the same check and confirm the result. We cannot alter it after the
-fact, and neither can anyone else.
+later re-run the same check and confirm the result. The record is append-only:
+nothing can ever be erased or rewritten, and every version stays permanently
+readable.
 
 ---
 
@@ -65,6 +66,9 @@ a black-box judgment you have to defend.
 - **Open and auditable methodology.** The citation normalizer — the rules that
   decide what counts as a match — is openly specified and versioned, and every
   receipt records the version used. No moving the goalposts.
+- **Corrections never rewrite history.** If a registry entry ever needs fixing,
+  the fix is appended as a new version and the original stays permanently
+  readable beside it. No silent edits.
 
 ---
 
