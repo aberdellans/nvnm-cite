@@ -16,3 +16,6 @@ __pycache__/
 
 # macOS
 .DS_Store
+
+# Design bundle downloads (extracted copies are committed)
+NVNM Cite.zip

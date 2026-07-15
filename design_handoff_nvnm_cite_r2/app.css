@@ -1,64 +1,4 @@
 /* ════════════════════════════════════════════════════════════════════
-   Self-hosted fonts (latin subsets, woff2). OFL-licensed; license texts
-   vendored at /fonts-OFL.txt. Served same-origin under font-src 'self'.
-   ════════════════════════════════════════════════════════════════════ */
-
-/* Source Serif 4 — italic 400 700 (latin) */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: italic;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/source-serif-4-italic-400-700-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* Source Serif 4 — normal 400 700 (latin) */
-@font-face {
-  font-family: 'Source Serif 4';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/source-serif-4-normal-400-700-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* Public Sans — normal 400 700 (latin) */
-@font-face {
-  font-family: 'Public Sans';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/public-sans-normal-400-700-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* IBM Plex Mono — normal 400 (latin) */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("/ibm-plex-mono-normal-400-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* IBM Plex Mono — normal 500 (latin) */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url("/ibm-plex-mono-normal-500-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-/* IBM Plex Mono — normal 600 (latin) */
-@font-face {
-  font-family: 'IBM Plex Mono';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url("/ibm-plex-mono-normal-600-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-
-/* ════════════════════════════════════════════════════════════════════
    NVNM Cite — app.css
    Law-report × premium-fintech. Ivory paper, near-black ink,
    deep navy primary, bronze accent. Light mode primary; print designed.
@@ -1402,29 +1342,6 @@ tr.diff:hover td { background: var(--warn-tint); }
   .footer { border-top: 1px solid #000; }
 }
 
-/* ── Phase 4.5 additions: how-it-works, FAQ, coverage lede, replay list ── */
-.how-steps { margin: 14px 0 8px; padding-left: 22px; max-width: 72ch; }
-.how-steps li { font-size: 14px; color: var(--ink-2); margin: 7px 0; text-wrap: pretty; }
-.how-steps strong { color: var(--ink); }
-
-.about-who { font-size: 14px; color: var(--ink-2); max-width: 72ch; text-wrap: pretty; }
-.about-coverage-lede {
-  font-size: 14px; color: var(--ink); max-width: 72ch; margin: 6px 0 14px; text-wrap: pretty;
-}
-
-.faq { max-width: 78ch; margin: 6px 0; }
-.faq details { border-bottom: 1px solid var(--hairline); padding: 2px 0; }
-.faq summary {
-  cursor: pointer; padding: 10px 2px; font-weight: 600; font-size: 13.5px; color: var(--navy);
-}
-.faq summary:hover { color: var(--navy-deep); }
-.faq details[open] summary { color: var(--ink); }
-.faq details p { margin: 0 2px 12px; font-size: 13.5px; color: var(--ink-2); text-wrap: pretty; }
-
-.replay-item { margin: 10px 0; }
-.replay-item .cite-canon { font-weight: 600; }
-.replay-item .cite-sub { color: var(--ink-3); margin-left: 8px; }
-.replay-item .codeblock { margin-top: 4px; word-break: break-all; }
 /* ══════════════════════════════════════════════════════════════
    ROUND 2 — flow revisions (2026-07). Same palette, no new tones.
    All colors below are existing tokens; see HANDOFF-R2.md §contrast.

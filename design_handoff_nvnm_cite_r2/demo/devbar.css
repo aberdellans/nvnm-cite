@@ -1,0 +1,45 @@
+/* DEV ONLY — state-switcher bar for design review. Not part of the deliverable. */
+
+body { padding-bottom: 52px; }
+
+.devbar {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #22201b;
+  color: #b5ada0;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.devbar .devbar-tag {
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #d8b271;
+  flex: none;
+}
+
+.devbar label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.devbar select {
+  font-family: inherit;
+  font-size: 11px;
+  background: #36332c;
+  color: #e8e2d4;
+  border: 1px solid #4c4840;
+  border-radius: 3px;
+  padding: 3px 5px;
+}
+
+@media print { .devbar { display: none; } body { padding-bottom: 0; } }

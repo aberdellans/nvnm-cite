@@ -48,6 +48,7 @@ from nvnm_cite.receipts.schema import (
     ReceiptError,
 )
 from nvnm_cite.verifier.check import COVERED_REGISTRIES, CheckError, check_document
+from nvnm_cite.verifier.extract import ExtractError, extract_text
 from nvnm_cite.verifier.resolver import Resolver
 from nvnm_cite.webapp.localindex import LocalIndex
 
@@ -299,6 +300,12 @@ class ReceiptService:
             "registry": plan.registry,
             "registry_exists": plan.registry_exists,
             "already_anchored": plan.already_anchored,
+            # Discovery ordering (item 3): the registry line must be ON the
+            # filing before its bytes are anchored, or verification of the
+            # filed document misses. Re-extracts the text (the plan does not
+            # carry it) and searches for the registry name; the UI warns but
+            # never blocks on a miss.
+            "registry_line_found": _registry_line_found(data, filename, plan.registry),
             "agent": {"address": agent_address.lower()},
             "document_sha256": plan.document_sha256,
             "checked_at_block": plan.checked_at_block,
@@ -395,6 +402,15 @@ class ReceiptService:
                 },
             },
         }
+
+
+def _registry_line_found(data: bytes, filename: str, registry: str) -> bool:
+    """True when the document's extracted text names its receipt registry."""
+    try:
+        text = extract_text(data, filename).text
+    except ExtractError:
+        return False
+    return registry.lower() in text.lower()
 
 
 def _render_receipt_record(record: pc.Record) -> dict:

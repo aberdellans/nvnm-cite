@@ -4,9 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NVNM Cite — Citation verification &amp; filing receipts</title>
-<link rel="stylesheet" href="/app.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231c3354' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v17M7 20h10M12 5.5 5 7.5M12 5.5l7 2M5 7.5l-2.6 5.7a3.4 3.4 0 0 0 5.2 0L5 7.5ZM19 7.5l-2.6 5.7a3.4 3.4 0 0 0 5.2 0L19 7.5Z'/%3E%3C/svg%3E">
-<script src="/app.js" defer></script>
+<!-- DEV ONLY: Google Fonts for preview. Production: self-host subset woff2 per HANDOFF.md and add font-src 'self' to CSP. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400..700&amp;family=Public+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap">
+<link rel="stylesheet" href="app.css">
+<!-- DEV ONLY: demo state driver + dev bar. Production replaces these two lines with: <script src="app.js" defer></script> -->
+<link rel="stylesheet" href="demo/devbar.css">
+<script src="demo/demo.js" defer></script>
 </head>
 <body>
 
@@ -42,13 +47,13 @@
 </header>
 
 <nav class="tabs-bar" aria-label="Sections">
-  <div class="shell tabs-shell" data-fade-l="0" data-fade-r="0">
-    <div id="tabs" class="tabs" role="tablist">
-      <button class="tab active" data-tab="check" type="button" id="tab-check" role="tab" aria-selected="true" aria-controls="panel-check">Check citations</button>
-      <button class="tab" data-tab="record" type="button" id="tab-record" role="tab" aria-selected="false" aria-controls="panel-record">Record verification</button>
-      <button class="tab" data-tab="verify" type="button" id="tab-verify" role="tab" aria-selected="false" aria-controls="panel-verify">Verify a receipt</button>
-      <button class="tab" data-tab="inspect" type="button" id="tab-inspect" role="tab" aria-selected="false" aria-controls="panel-inspect">Inspect a transaction</button>
-      <button class="tab" data-tab="about" type="button" id="tab-about" role="tab" aria-selected="false" aria-controls="panel-about">About &amp; status</button>
+  <div class="shell tabs-shell">
+    <div id="tabs" class="tabs">
+      <button class="tab active" data-tab="check" type="button">Check citations</button>
+      <button class="tab" data-tab="record" type="button">Record verification</button>
+      <button class="tab" data-tab="verify" type="button">Verify a receipt</button>
+      <button class="tab" data-tab="inspect" type="button">Inspect a transaction</button>
+      <button class="tab" data-tab="about" type="button">About &amp; status</button>
     </div>
   </div>
 </nav>
@@ -56,7 +61,7 @@
 <main class="shell">
 
   <!-- ════════ TAB 1 · CHECK ════════ -->
-  <section class="panel active" id="panel-check" role="tabpanel" aria-labelledby="tab-check">
+  <section class="panel active" id="panel-check" data-screen-label="Check citations">
     <div class="panel-head">
       <h2>Check citations</h2>
       <p class="lede">Every citation in your brief is checked for <em>existence</em> against the public
@@ -67,13 +72,9 @@
     <div class="callout callout-privacy">
       <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
       <div>
-        <strong>Your document stays private.</strong>
-        <p>Your brief is parsed in memory to find its citations, then discarded the moment your
-        report is ready — never stored, never put on chain. Each citation is checked by reading
-        NVNM&nbsp;Chain directly, so the verdict is the chain's answer, not ours, and anyone can
-        re-run the same lookup. Nothing about your document goes on chain unless you choose to
-        record a receipt.</p>
-        <p class="hint hidden" id="check-telemetry-note"></p>
+        <strong>Nothing leaves this machine.</strong>
+        <p>The check runs entirely in your browser against a local copy of the registries. No network
+        requests are made, and no copy of your document is kept.</p>
       </div>
     </div>
 
@@ -81,7 +82,7 @@
       <svg class="ic dz-icon" aria-hidden="true"><use href="#i-doc"></use></svg>
       <span class="dz-main">Drop a brief here, or choose a file</span>
       <span class="dz-sub">.pdf&ensp;·&ensp;.docx&ensp;·&ensp;.txt&ensp;·&ensp;.md</span>
-      <input type="file" id="check-file" class="visually-hidden" accept=".pdf,.docx,.txt,.md,.text" tabindex="-1">
+      <input type="file" id="check-file" class="visually-hidden" accept=".pdf,.docx,.txt,.md" tabindex="-1">
     </div>
 
     <div class="alt-action">
@@ -91,13 +92,12 @@
       </div>
       <div id="paste-area" class="paste-area hidden">
         <textarea id="paste-text" rows="8" spellcheck="false" placeholder="Paste the text of your brief, motion, or memorandum…"></textarea>
-        <p class="hint">A receipt anchors the SHA-256 of exact bytes: to attest the document you will
-        file, upload the file itself rather than pasted text.</p>
+        <p class="hint">Pasted text loses page structure; per-page citation positions will not be reported.</p>
         <button id="paste-check" class="btn btn-primary" type="button">Check pasted text</button>
       </div>
     </div>
 
-    <div id="check-busy" class="busy hidden" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Checking…</span></div>
+    <div id="check-busy" class="busy hidden"><span class="spinner" aria-hidden="true"></span><span>Checking…</span></div>
     <div id="check-progress" class="progress hidden" role="status">
       <div class="progress-head"><span class="spinner" aria-hidden="true"></span><span id="check-progress-text">Checking…</span></div>
       <div class="progress-bar"><div class="progress-fill" id="check-progress-fill"></div></div>
@@ -124,13 +124,6 @@
           <tbody></tbody>
         </table>
       </div>
-      <details class="json-details" id="check-replay">
-        <summary>Replay these lookups against any node</summary>
-        <p class="hint">Each checked citation is one keyed <span class="mono">records()</span> read against
-        NVNM&nbsp;Chain. This page does not invent the answers — re-run any of these against an independent
-        NVNM&nbsp;RPC and you get the same record, or the same “not found.”</p>
-        <div id="check-replay-list"></div>
-      </details>
       <div class="legend">
         <h3 class="overline">Reading the results</h3>
         <dl>
@@ -149,7 +142,7 @@
   </section>
 
   <!-- ════════ TAB 2 · RECORD ════════ -->
-  <section class="panel" id="panel-record" role="tabpanel" aria-labelledby="tab-record">
+  <section class="panel" id="panel-record" data-screen-label="Record verification">
     <div class="panel-head">
       <h2>Record verification</h2>
       <p class="lede">Anchor a <em>filing receipt</em> on NVNM&nbsp;Chain: an immutable, timestamped attestation
@@ -186,24 +179,20 @@
         </div>
       </div>
 
-      <div class="callout">
-        <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
-        <div>
-          <strong>Attesting as <span id="record-agent" class="mono">— connect a wallet —</span></strong>
-          <p>The receipt names your signing wallet as the attester. On NVNM&nbsp;Chain the identity
-          <em>is</em> the wallet address — there is no separate identifier to enter.</p>
+      <div class="field-grid">
+        <div class="field-row">
+          <label for="filer-input">Filer</label>
+          <input type="text" id="filer-input" placeholder="Firm, filer, or agent name" spellcheck="false">
+        </div>
+        <div class="field-row">
+          <label for="matter-input">Matter</label>
+          <input type="text" id="matter-input" placeholder="Matter or docket reference" spellcheck="false">
         </div>
       </div>
 
-      <div class="field-grid">
-        <div class="field-row">
-          <label for="firm-input">Filer / firm</label>
-          <input type="text" id="firm-input" maxlength="120" placeholder="e.g. Inveniam" spellcheck="false">
-        </div>
-        <div class="field-row">
-          <label for="case-input">Case / matter</label>
-          <input type="text" id="case-input" maxlength="160" placeholder="e.g. Mata v. Avianca" spellcheck="false">
-        </div>
+      <div class="field-row">
+        <label for="kya-id">Agent identifier <span class="field-opt">(KYA id, optional)</span></label>
+        <input type="text" id="kya-id" class="mono" placeholder="kya:your-agent-id" spellcheck="false">
       </div>
 
       <div id="regline-callout" class="regline">
@@ -212,13 +201,12 @@
           <strong>Put this line on your filing now — before anchoring</strong>
         </div>
         <div class="regline-row">
-          <code id="regline-text" class="regline-text pending">Enter the filer and case above — the registry line is generated from them.</code>
+          <code id="regline-text" class="regline-text pending">Enter filer and matter above — the registry line is generated from them.</code>
           <button id="regline-copy" class="btn btn-outline" type="button" disabled>Copy line</button>
         </div>
-        <p class="hint">Opposing counsel and clerks find the receipt through this line: it names the registry,
-        owned by your wallet, where the receipt lives. The document you check and anchor below must be the
-        <strong>final exported file</strong> that already contains it — editing the document after anchoring
-        breaks the fingerprint match.</p>
+        <p class="hint">Verification by opposing counsel finds the receipt through this line. The document you
+        check and anchor below must be the <strong>final exported file</strong> that already contains it —
+        editing the document after anchoring breaks the fingerprint match.</p>
       </div>
 
       <div id="wallet-callout"></div>
@@ -227,22 +215,26 @@
         <button id="prepare-btn" class="btn btn-primary" type="button">Prepare receipt — live chain re-check</button>
         <p class="hint hidden" id="prepare-gate">Waiting on the steps above — recording needs a checked document and a
         connected wallet on NVNM&nbsp;Chain. Checking and verifying never need a wallet.</p>
-        <p class="hint">This re-checks the exact file against NVNM&nbsp;Chain at the current head block and
-        builds the receipt. It is read-only — nothing is written until you sign.</p>
+        <p class="hint">This is the first network interaction, and it is read-only: the registries are consulted
+        at the current head block. Nothing is written.</p>
       </div>
 
-      <div id="prepare-busy" class="busy hidden" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Re-checking against the live chain…</span></div>
+      <div id="prepare-busy" class="busy hidden"><span class="spinner" aria-hidden="true"></span><span>Re-checking against the live chain…</span></div>
       <div id="prepare-error" class="error hidden" role="alert"></div>
 
       <div id="prepare-result" class="hidden">
         <div id="prepare-meta" class="kv"></div>
         <div id="regline-status"></div>
 
-        <h3 class="overline">What the receipt records</h3>
-        <div id="prepare-tally" class="summary-chips"></div>
-        <p class="hint">The receipt records this <em>tally</em> and the document's fingerprint — never the list of
-        cited cases. The fingerprint binds the exact file, so anyone with it can reproduce every verdict; the
-        authorities in your brief stay off the public chain. The full per-citation results are on the Check tab.</p>
+        <h3 class="overline">Local check vs. live chain</h3>
+        <div class="table-scroll">
+          <table class="cite-table" id="prepare-table">
+            <thead>
+              <tr><th scope="col">Citation</th><th scope="col">Local</th><th scope="col">Chain</th><th scope="col">Names</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
 
         <details class="json-details" id="receipt-json">
           <summary>Receipt JSON — this exact text is what gets anchored</summary>
@@ -260,21 +252,18 @@
         <div id="setup-box" class="callout callout-warn hidden">
           <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
           <div>
-            <strong>One-time setup: this matter's receipt registry does not exist yet.</strong>
-            <p>Receipts for this matter live in their own registry, named from the filer and case. It has not
-            been created on this chain yet. Creating it is a single transaction; the creating wallet becomes its
-            admin (self-sovereign — no NVNM gatekeeper):</p>
-            <pre class="codeblock"><code></code></pre>
-            <button class="btn btn-outline" type="button">Create this registry with wallet</button>
+            <strong>One-time setup: the receipts registry does not exist yet.</strong>
+            <p>Receipts are anchored into a dedicated <span class="mono">receipts-v1</span> registry. It has not
+            been created on this chain. Any wallet may create it; creation is a single transaction:</p>
+            <pre class="codeblock"><code>addRegistry("receipts-v1", "nvnm-cite filing receipts", "sha256")</code></pre>
+            <button class="btn btn-outline" type="button">Create receipts-v1 with wallet</button>
           </div>
         </div>
 
         <div class="action-row">
           <button id="anchor-btn" class="btn btn-primary" type="button" disabled>Sign &amp; anchor with wallet</button>
-          <p class="hint">Your wallet shows the exact transaction before anything is sent. Gas on testnet is
-          paid in wmantraUSD; an anchor costs roughly 0.005–0.01&nbsp;wmantraUSD.</p>
         </div>
-        <div id="anchor-status" aria-live="polite"></div>
+        <div id="anchor-status"></div>
       </div>
 
       <div class="callout asserts-callout">
@@ -295,28 +284,21 @@
   </section>
 
   <!-- ════════ TAB 3 · VERIFY ════════ -->
-  <section class="panel" id="panel-verify" role="tabpanel" aria-labelledby="tab-verify">
+  <section class="panel" id="panel-verify" data-screen-label="Verify a receipt">
     <div class="panel-head">
       <h2>Verify a receipt</h2>
-      <p class="lede">For opposing counsel, clerks of court, and judges: paste the citation-verification
-      registry named on the filing, drop in the filed document, and see instantly whether a receipt exists
-      for that exact file. Free, read-only — no wallet, no account.</p>
+      <p class="lede">For opposing counsel, clerks of court, and judges: drop in a filed document and see
+      instantly whether a citation-check receipt exists for that exact file. Free, read-only —
+      no wallet, no account.</p>
     </div>
 
     <div class="callout callout-privacy">
       <svg class="ic" aria-hidden="true"><use href="#i-fingerprint"></use></svg>
       <div>
         <strong>The document never leaves your computer.</strong>
-        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint and the
-        registry name are sent for the lookup. The file itself is never uploaded.</p>
+        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint is sent
+        to the chain for lookup.</p>
       </div>
-    </div>
-
-    <div class="field-row">
-      <label for="verify-registry">Citation-verification registry</label>
-      <input type="text" id="verify-registry" class="mono" maxlength="64" placeholder="e.g. inveniam--mata-v-avianca" spellcheck="false">
-      <p class="hint">Copy it from the “Citation verifications” link printed on the filing. It points to the
-      registry that holds the receipt.</p>
     </div>
 
     <div class="dropzone" id="verify-drop" role="button" tabindex="0" aria-label="Drop a document or press Enter to choose a file">
@@ -337,98 +319,81 @@
       </div>
     </div>
 
-    <div id="verify-busy" class="busy hidden" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Hashing locally, then querying chain…</span></div>
+    <div id="verify-busy" class="busy hidden"><span class="spinner" aria-hidden="true"></span><span>Hashing locally, then querying chain…</span></div>
     <div id="verify-error" class="error hidden" role="alert"></div>
     <div id="verify-result" class="hidden"></div>
 
-    <details class="json-details replay-details hidden" id="replay-details">
+    <details class="json-details replay-details">
       <summary>Don’t trust this page? Replay the lookup yourself</summary>
-      <p class="hint">The registry is public. This exact query — generated from your lookup —
-      returns the same record from any NVNM testnet RPC; this page adds nothing you cannot reproduce:</p>
-      <pre class="codeblock"><code id="replay-curl"></code></pre>
+      <p class="hint">The receipt registry is public. Query the chain directly — any RPC client works:</p>
+      <pre class="codeblock"><code id="replay-curl">curl -s -X POST https://rpc.testnet.nvnm.network \
+  -H "content-type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{
+        "to":"0x0000000000000000000000000000000000000808",
+        "data":"0x[getRecords(receipts-v1, &lt;document-sha256&gt;)]"
+      },"latest"]}'</code></pre>
     </details>
   </section>
 
   <!-- ════════ TAB 4 · INSPECT ════════ -->
-  <section class="panel" id="panel-inspect" role="tabpanel" aria-labelledby="tab-inspect">
+  <section class="panel" id="panel-inspect" data-screen-label="Inspect a transaction">
     <div class="panel-head">
       <h2>Inspect a transaction</h2>
-      <p class="lede">Every record NVNM&nbsp;Cite writes — each case citation and each filing receipt — is
-      stored on NVNM&nbsp;Chain as plain, readable text. Paste a transaction's reference number to see exactly
-      what it contains: the citation, the case it points to, and when it was recorded.</p>
+      <p class="lede">Every record on NVNM&nbsp;Chain is stored in plaintext, but generic block explorers
+      mangle the ABI framing into mojibake. Paste any anchoring transaction hash to decode it into
+      readable text — and prove the plaintext claim yourself.</p>
     </div>
 
     <div class="field-row field-row-inline tx-row">
-      <label for="tx-input" class="visually-hidden">Transaction reference</label>
-      <input type="text" id="tx-input" class="mono" placeholder="0x… transaction reference (66 characters)" spellcheck="false" maxlength="66">
+      <label for="tx-input" class="visually-hidden">Transaction hash</label>
+      <input type="text" id="tx-input" class="mono" placeholder="0x… transaction hash (66 characters)" spellcheck="false" maxlength="66">
       <button id="tx-inspect" class="btn btn-primary" type="button">Decode</button>
     </div>
 
-    <div id="inspect-busy" class="busy hidden" aria-live="polite"><span class="spinner" aria-hidden="true"></span><span>Fetching and decoding…</span></div>
+    <div id="inspect-busy" class="busy hidden"><span class="spinner" aria-hidden="true"></span><span>Fetching and decoding…</span></div>
     <div id="inspect-error" class="error hidden" role="alert"></div>
     <div id="inspect-result" class="hidden"></div>
   </section>
 
   <!-- ════════ TAB 5 · ABOUT ════════ -->
-  <section class="panel" id="panel-about" role="tabpanel" aria-labelledby="tab-about">
+  <section class="panel" id="panel-about" data-screen-label="About & status">
     <div class="panel-head">
       <h2>About &amp; status</h2>
-      <p class="lede">NVNM&nbsp;Cite checks whether the cases cited in a legal document are real. AI tools have
-      caused lawyers to file briefs citing cases that don’t exist; NVNM&nbsp;Cite catches that before filing by
-      checking every citation against an authoritative, public record of real published decisions — and can
-      create a permanent, independently-verifiable receipt that you ran the check on a specific document at a
-      specific time.</p>
+      <p class="lede">NVNM&nbsp;Cite is a public registry of canonical US case citations and a
+      receipt system for citation checks, running on NVNM&nbsp;Chain.</p>
     </div>
 
     <div class="about-grid">
       <div class="about-card">
-        <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
-        <h3>It checks citations are real</h3>
-        <p>Every citation in a brief is matched against a public registry of real decisions: real, not found,
-        or not yet covered. A fabricated cite has no record to find.</p>
+        <svg class="ic" aria-hidden="true"><use href="#i-seal"></use></svg>
+        <h3>It proves provenance</h3>
+        <p>A receipt proves a check happened: when, against which registries, over which exact
+        document, attested by whom.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-scales"></use></svg>
-        <h3>Existence, not endorsement</h3>
-        <p>A verified citation exists as a real decision. It does <em>not</em> tell you the case is still good
-        law, hasn’t been overruled, or supports your argument. Shepardizing / KeyCite is still your job.</p>
+        <h3>It never asserts truth</h3>
+        <p>A verified citation exists in the registry. Whether it is good law, or supports an
+        argument, remains the lawyer’s judgment.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-lock"></use></svg>
-        <h3>Private to draft</h3>
-        <p>Your brief is parsed in memory and discarded with the report — never stored, never put on chain.
-        Citations are checked by reading the chain directly; the verdict is the chain’s answer, not ours, and
-        anyone can replay the same lookup.</p>
+        <h3>Drafting stays private</h3>
+        <p>Citation checks run locally and make zero network requests. Documents are never
+        uploaded; only a fingerprint ever leaves the machine, and only if you record.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-shield"></use></svg>
-        <h3>Free to verify</h3>
-        <p>Anyone — opposing counsel, a clerk, a judge — can confirm a receipt exists for a document. Checking
-        and verifying need no cryptocurrency, no wallet, and no account; only recording uses a wallet.</p>
+        <h3>Anyone can audit</h3>
+        <p>Registries and receipts are plaintext on a public chain. Verification is free and
+        requires no wallet, no account, and no trust in this page.</p>
       </div>
     </div>
-
-    <h3 class="overline">How it works</h3>
-    <ol class="how-steps">
-      <li><strong>Check</strong> — upload a brief; each citation comes back real, not found, not covered,
-      ambiguous, or unparseable.</li>
-      <li><strong>Record</strong> — optionally save a tamper-proof, timestamped receipt that this exact
-      document was checked, signed by your wallet, into a registry you own for the matter.</li>
-      <li><strong>Verify</strong> — anyone with the filed document and the registry link can confirm, for free,
-      that a receipt exists for that exact file.</li>
-    </ol>
-
-    <h3 class="overline">Who it’s for</h3>
-    <p class="about-who">Drafting attorneys and their AI tools (catch fabrications pre-filing); opposing counsel
-    and courts (confirm a filing was checked); malpractice insurers and legal-ops (proof-of-process). Checking
-    and verifying need no wallet or account; recording a receipt uses a wallet, normally handled by the firm’s
-    tool or agent.</p>
 
     <h3 class="overline">Live status</h3>
     <div id="about-status" class="kv"></div>
 
-    <h3 class="overline">Current coverage</h3>
-    <p class="about-coverage-lede" id="about-coverage-lede">Loading coverage from the live registry…</p>
+    <h3 class="overline">Registry coverage</h3>
     <div id="coverage-empty" class="callout hidden">
       <svg class="ic" aria-hidden="true"><use href="#i-info"></use></svg>
       <div>
@@ -447,43 +412,13 @@
       </table>
     </div>
 
-    <h3 class="overline">FAQ for lawyers</h3>
-    <div class="faq">
-      <details><summary>If a citation comes back “verified,” is it safe to cite?</summary>
-        <p>It’s a real, published decision. You must still confirm it’s good law and on point — verification is
-        existence only.</p></details>
-      <details><summary>What does “not found” mean — is my citation definitely fake?</summary>
-        <p>No record matched in a covered court. It could be fabricated, mistyped, a pin-cite rather than a
-        first-page cite, or a court not yet covered. Investigate before relying on it.</p></details>
-      <details><summary>Is my document made public or stored anywhere?</summary>
-        <p>No. It’s parsed in memory to find its citations and discarded immediately — never stored, never put
-        on chain. Only a fingerprint (and, if you record, the check tally) can go on chain, and only when you
-        choose.</p></details>
-      <details><summary>What exactly does the receipt prove?</summary>
-        <p>That a citation check was performed, at a chain-stamped time, over the exact document with that
-        fingerprint, by a specific wallet. Tamper-evident proof of process — not a ruling on your brief.</p></details>
-      <details><summary>Is the timestamp legally meaningful?</summary>
-        <p>It’s an immutable, independently-verifiable record; evidentiary weight is for the court, but it
-        can’t be backdated or altered after the fact.</p></details>
-      <details><summary>What if NVNM&nbsp;Cite shuts down?</summary>
-        <p>Receipts live on the public chain and stay verifiable by anyone; the registries are public and
-        rebuildable from the chain.</p></details>
-      <details><summary>Do I need crypto to use this?</summary>
-        <p>Not to check or verify. Recording a receipt uses a wallet, typically managed for you by the firm or
-        its agent.</p></details>
-      <details><summary>How much does it cost?</summary>
-        <p>Checking and verifying are free. Recording costs a small network fee (fractions of a cent on testnet
-        today).</p></details>
-    </div>
-
     <h3 class="overline">Versions</h3>
     <div id="about-versions" class="kv"></div>
 
     <h3 class="overline">Attribution</h3>
     <div id="about-attribution" class="attribution">
       <p>Case data: <a href="https://www.courtlistener.com" rel="noopener">CourtListener</a> /
-      <a href="https://free.law" rel="noopener">Free Law Project</a>. Citation parsing builds on
-      Free Law Project’s eyecite, reporters-db, and courts-db. Citation text and metadata are
+      <a href="https://free.law" rel="noopener">Free Law Project</a>. Citation text and metadata are
       reproduced from the public record; registry curation and normalization by NVNM&nbsp;Cite.</p>
     </div>
   </section>
@@ -493,7 +428,7 @@
 <footer class="footer">
   <div class="shell footer-grid">
     <p><strong>NVNM Cite</strong> · pilot on NVNM Chain testnet · chain id <span class="mono">787111</span></p>
-    <p>Anchoring precompile <span class="mono">0x0000…0A00</span></p>
+    <p>Anchoring precompile <span class="mono">0x0000…0808</span></p>
     <p class="footer-ethic">Provenance, not truth.</p>
     <p>Case data: CourtListener / Free Law Project</p>
     <p>This page never sees a private key.</p>

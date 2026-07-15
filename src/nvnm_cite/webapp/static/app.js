@@ -7,8 +7,11 @@
  * chain decides. Dynamic data (case names, chain metadata) is rendered
  * exclusively via textContent — never innerHTML.
  *
- * DOM vocabulary (classes/shapes) follows the 2026-06-12 design handoff;
- * the integration contract ids/classes are unchanged.
+ * DOM vocabulary (classes/shapes) follows the 2026-06-12 design handoff
+ * plus the round-2 contract delta (design_handoff_nvnm_cite_r2/
+ * HANDOFF-R2.md, 2026-07): verdict banner, severity-grouped table with
+ * a NOT COVERED disclosure, chips-as-filters, the registry-line step,
+ * wallet callouts, stepper tones, sticky tab bar, and coverage states.
  */
 
 const CHAIN_ID = 787111;                 // nvnm-testnet-1
@@ -24,6 +27,9 @@ let EXPLORER = "https://explorer.evm.testnet.nvnmchain.io";
 let RPC_URL = CHAIN_PARAMS.rpcUrls[0];
 
 const STATUS_ORDER = ["VERIFIED", "NOT_FOUND", "NOT_COVERED", "AMBIGUOUS_JURISDICTION", "UNPARSEABLE"];
+/* Severity order for the regrouped results table (round 2, P0-1); NOT_COVERED
+   renders last behind a disclosure row. */
+const SEVERITY_ORDER = ["NOT_FOUND", "AMBIGUOUS_JURISDICTION", "UNPARSEABLE", "VERIFIED"];
 const CHIP_LABEL = {
   VERIFIED: "Verified",
   NOT_FOUND: "Not found",
@@ -202,10 +208,33 @@ async function apiPostBytes(path, bytes, filename, extraHeaders) {
 
 let lastReport = null;   // last /api/check report (page memory only)
 let lastFile = null;     // {bytes, name} of the last checked file (re-sent to prepare a receipt)
+let lastSource = "file"; // "file" | "paste" | "sample" — drives the paste warning + sample tag
 let prepared = null;     // last /api/receipt/prepare response
-let wallet = { address: null, chainOk: false };
+let wallet = { address: null, chainOk: false, detected: false };
+let filterSet = new Set();      // statuses the summary-chip filters keep visible
+let coveredExpanded = false;    // NOT COVERED disclosure state
 
-/* ---------- tabs ---------- */
+/* ---------- tabs (sticky bar + overflow cues, round 2 P1-3/P1-4) ---------- */
+
+const tabsEl = document.getElementById("tabs");
+const tabsShell = tabsEl.parentElement;   // .tabs-shell
+const tabsBar = tabsShell.parentElement;  // .tabs-bar
+
+function scrollActiveTabIntoView() {
+  const t = tabsEl.querySelector(".tab.active");
+  if (!t) return;
+  tabsEl.scrollLeft = Math.max(0, t.offsetLeft - (tabsEl.clientWidth - t.offsetWidth) / 2);
+}
+
+function updStuck() {
+  tabsBar.classList.toggle("stuck", tabsBar.getBoundingClientRect().top <= 0 && window.scrollY > 0);
+}
+
+function updFades() {
+  const max = tabsEl.scrollWidth - tabsEl.clientWidth;
+  tabsShell.setAttribute("data-fade-l", tabsEl.scrollLeft > 4 ? "1" : "0");
+  tabsShell.setAttribute("data-fade-r", max - tabsEl.scrollLeft > 4 ? "1" : "0");
+}
 
 function activateTab(name) {
   document.querySelectorAll(".tab").forEach((t) => {
@@ -215,15 +244,21 @@ function activateTab(name) {
   });
   document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${name}`));
   if (history.replaceState) history.replaceState(null, "", `#${name}`);
+  scrollActiveTabIntoView();
+  updFades();
 }
 
 function initTabs() {
-  $("tabs").addEventListener("click", (e) => {
+  tabsEl.addEventListener("click", (e) => {
     const btn = e.target.closest(".tab");
     if (btn) activateTab(btn.dataset.tab);
   });
   const fromHash = location.hash.replace("#", "");
   if (["check", "record", "verify", "inspect", "about"].includes(fromHash)) activateTab(fromHash);
+  window.addEventListener("scroll", updStuck, { passive: true });
+  tabsEl.addEventListener("scroll", updFades, { passive: true });
+  window.addEventListener("resize", updFades);
+  updFades();
 }
 
 /* ---------- status (header, banners, about) ---------- */
@@ -300,37 +335,76 @@ async function loadStatus() {
     kvRow(vbox, "Receipt schema", st.versions.receipt_schema, { mono: true });
   }
 
+  renderCoverage(st);
+}
+
+/* Coverage rendering (round 2, P1-1): counts come from the local index when
+   one exists; otherwise the About table falls back to live-status facts
+   (names and ids only) behind an honest "counts unavailable" callout, and the
+   Check-tab scope line + legend stay server-filled either way. */
+function renderCoverage(st) {
   const rows = st.index && st.index.registries ? st.index.registries : [];
+  const liveNames = Object.keys(st.registries || {});
+  const coveredNames = rows.length ? rows.map((r) => r.registry) : liveNames;
+
+  const legendCov = $("legend-coverage");
+  if (legendCov && coveredNames.length) legendCov.textContent = coveredNames.join(", ");
+
   const tbody = clear($("coverage-table").querySelector("tbody"));
+  const lede = $("about-coverage-lede");
+  const emptyBox = $("coverage-empty");
   let totalRecords = 0;
   let snapshot = "";
-  rows.forEach((r) => {
-    totalRecords += r.records || 0;
-    if (r.snapshot) snapshot = r.snapshot;
-    const tr = el("tr");
-    const t1 = el("td"); t1.appendChild(el("span", "cite-canon", r.registry)); tr.appendChild(t1);
-    tr.appendChild(el("td", null, r.source === "chain-index" ? "chain index" : `corpus snapshot ${r.snapshot || ""}`));
-    tr.appendChild(el("td", "num", (r.records || 0).toLocaleString("en-US")));
-    const detail = r.source === "chain-index"
-      ? `synced to block ${r.synced_block.toLocaleString("en-US")} at ${r.synced_at}`
-      : (r.note || "CourtListener-derived snapshot");
-    tr.appendChild(el("td", null, detail));
-    tbody.appendChild(tr);
-  });
 
-  // Live coverage figure for the About explainer (never hard-coded — item 6).
-  const lede = $("about-coverage-lede");
-  if (lede) {
-    if (totalRecords > 0) {
-      const courts = rows.map((r) => r.registry).join(", ");
+  if (rows.length) {
+    emptyBox.classList.add("hidden");
+    rows.forEach((r) => {
+      totalRecords += r.records || 0;
+      if (r.snapshot) snapshot = r.snapshot;
+      const tr = el("tr");
+      const t1 = el("td"); t1.appendChild(el("span", "cite-canon", r.registry)); tr.appendChild(t1);
+      tr.appendChild(el("td", null, r.source === "chain-index" ? "chain index" : `corpus snapshot ${r.snapshot || ""}`));
+      tr.appendChild(el("td", "num", (r.records || 0).toLocaleString("en-US")));
+      const detail = r.source === "chain-index"
+        ? `synced to block ${r.synced_block.toLocaleString("en-US")} at ${r.synced_at}`
+        : (r.note || "CourtListener-derived snapshot");
+      tr.appendChild(el("td", null, detail));
+      tbody.appendChild(tr);
+    });
+    if (lede) {
       lede.textContent =
         `NVNM Cite currently covers ${totalRecords.toLocaleString("en-US")} citation keys across ` +
-        `${rows.length} ${rows.length === 1 ? "registry" : "registries"} (${courts})` +
+        `${rows.length} ${rows.length === 1 ? "registry" : "registries"} (${coveredNames.join(", ")})` +
         (snapshot ? `, from CourtListener public bulk data (snapshot ${snapshot})` : "") +
         ". Citations to courts not yet covered are reported honestly as “not covered” rather than guessed at.";
-    } else {
-      lede.textContent = "Coverage is loading from the live registry…";
     }
+  } else {
+    // No local index on this instance: honest empty state, never "loading".
+    emptyBox.classList.toggle("hidden", liveNames.length === 0);
+    liveNames.forEach((name) => {
+      const reg = st.registries[name];
+      const tr = el("tr");
+      const t1 = el("td"); t1.appendChild(el("span", "cite-canon", name)); tr.appendChild(t1);
+      tr.appendChild(el("td", null, "live status (names and ids only)"));
+      tr.appendChild(el("td", "num", "—"));
+      tr.appendChild(el("td", null, reg.exists
+        ? `registry id ${reg.id} · created ${String(reg.created_at).slice(0, 10)}`
+        : "not created yet"));
+      tbody.appendChild(tr);
+    });
+    if (lede) {
+      lede.textContent = liveNames.length
+        ? "This instance has no local index, so citation-key counts are unavailable; the registries below are read live from the chain and lookups are unaffected."
+        : "The chain RPC is unreachable, so coverage cannot be shown right now.";
+    }
+  }
+
+  // Check-tab scope line (server-filled; the mainnet scope will change it).
+  const scope = $("coverage-scope");
+  if (scope && totalRecords > 0) {
+    scope.textContent =
+      `the canonical record of ${totalRecords.toLocaleString("en-US")} citation keys across ` +
+      `${coveredNames.join(", ")} during the pilot`;
   }
 }
 
@@ -346,11 +420,12 @@ function wireDropzone(zoneId, inputId, onFile) {
   zone.addEventListener("drop", (e) => { const f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) onFile(f); });
 }
 
-function docCard(box, doc) {
+function docCard(box, doc, source) {
   const card = clear(box);
   const title = el("div", "doc-title");
   title.appendChild(icon("i-doc"));
   title.appendChild(el("span", null, doc.filename || "document"));
+  if (source === "sample") title.appendChild(el("span", "sample-tag", "sample document"));
   card.appendChild(title);
   const kv = el("div", "kv");
   kvRow(kv, "SHA-256", doc.sha256, { mono: true, copy: doc.sha256 });
@@ -361,10 +436,88 @@ function docCard(box, doc) {
   card.appendChild(kv);
 }
 
-function renderCheck(report) {
-  lastReport = report;
-  docCard($("check-doc"), report.document);
+/* Progress affordance (round 2, P1-2). Indeterminate until the server can
+   stream per-citation progress; the determinate mode is wired and waiting
+   ("Checking citation 12 of 63…" + #check-progress-fill width, sanctioned
+   CSSOM exception #2). */
+function setCheckProgress(on, done, total) {
+  const box = $("check-progress");
+  box.classList.toggle("hidden", !on);
+  if (!on) return;
+  const bar = box.querySelector(".progress-bar");
+  const fill = $("check-progress-fill");
+  if (Number.isFinite(done) && Number.isFinite(total) && total > 0) {
+    bar.classList.remove("indeterminate");
+    $("check-progress-text").textContent = `Checking citation ${done} of ${total} against NVNM Chain…`;
+    fill.style.width = `${Math.round((done / total) * 100)}%`;
+  } else {
+    bar.classList.add("indeterminate");
+    $("check-progress-text").textContent = "Checking citations against NVNM Chain…";
+    fill.style.width = "";
+  }
+}
 
+/* Verdict banner (round 2, P0-1): the result view leads with the answer the
+   lawyer came for. Red repeats the NOT_FOUND rows so they are never scrolled
+   for; green stays honest about coverage; amber makes no claim either way. */
+function buildVerdict(report) {
+  const box = clear($("check-verdict"));
+  if (!report || !report.citations.length) return;
+  const counts = report.summary.by_status;
+  const nf = report.citations.filter((c) => c.status === "NOT_FOUND");
+  const nVerified = counts.VERIFIED || 0;
+  const nOutside = counts.NOT_COVERED || 0;
+
+  const v = el("div", "verdict");
+  const head = el("div", "verdict-head");
+  const body = el("div");
+  const title = el("div", "verdict-title");
+  const sub = el("p", "verdict-sub");
+  body.appendChild(title);
+  body.appendChild(sub);
+
+  if (nf.length > 0) {
+    v.classList.add("verdict-bad");
+    head.appendChild(icon("i-alert"));
+    title.textContent = `${nf.length} ${nf.length === 1 ? "citation" : "citations"} could not be found — review ${nf.length === 1 ? "it" : "these"} before filing.`;
+    title.setAttribute("data-print", `${nf.length} NOT FOUND`);
+    sub.textContent = "No registry record exists. Treat as presumptively fabricated until proven otherwise.";
+    head.appendChild(body);
+    v.appendChild(head);
+    const list = el("div", "verdict-list");
+    nf.forEach((c) => {
+      const item = el("div", "verdict-item");
+      item.appendChild(el("span", "vc-cite", c.canonical || c.as_written));
+      item.appendChild(el("span", "vc-reason", c.reason || ""));
+      list.appendChild(item);
+    });
+    v.appendChild(list);
+  } else if (nVerified > 0) {
+    v.classList.add("verdict-ok");
+    head.appendChild(icon("i-seal"));
+    title.textContent = "Every covered citation verified.";
+    title.setAttribute("data-print", "ALL VERIFIED");
+    const verifiedBit = `${nVerified} ${nVerified === 1 ? "citation has" : "citations have"} a registry record. `;
+    sub.textContent = nOutside > 0
+      ? verifiedBit + `${nOutside} ${nOutside === 1 ? "citation is" : "citations are"} outside pilot coverage — no conclusion either way. Existence only; good-law status remains your judgment.`
+      : verifiedBit + "Existence only; good-law status remains your judgment.";
+    head.appendChild(body);
+    v.appendChild(head);
+  } else {
+    v.classList.add("verdict-warn");
+    head.appendChild(icon("i-info"));
+    title.textContent = "No covered citations to verify.";
+    title.setAttribute("data-print", "OUTSIDE COVERAGE");
+    sub.textContent = "Every citation found is outside pilot coverage or could not be read as a citation. The check makes no claim either way about this document.";
+    head.appendChild(body);
+    v.appendChild(head);
+  }
+  box.appendChild(v);
+}
+
+/* Summary chips as filters (round 2, P0-1): pressing a status chip narrows
+   the table to the kept statuses; occurrences stays a plain stat. */
+function buildSummaryChips(report) {
   const chips = clear($("check-summary"));
   const oc = el("div", "sum-chip");
   oc.appendChild(el("span", "n", String(report.summary.occurrences)));
@@ -373,63 +526,141 @@ function renderCheck(report) {
   STATUS_ORDER.forEach((s) => {
     const n = report.summary.by_status[s] || 0;
     if (!n && s !== "VERIFIED" && s !== "NOT_FOUND") return;
-    const c = el("div", `sum-chip sum-${s}`);
+    const canFilter = n > 0;
+    const c = el(canFilter ? "button" : "div", `sum-chip sum-${s}`);
+    if (canFilter) {
+      c.type = "button";
+      c.setAttribute("aria-pressed", filterSet.has(s) ? "true" : "false");
+      c.addEventListener("click", () => {
+        if (filterSet.has(s)) filterSet.delete(s);
+        else filterSet.add(s);
+        if (filterSet.has("NOT_COVERED")) coveredExpanded = true;
+        renderCheckTable(report);
+        buildSummaryChips(report);
+      });
+    }
     c.appendChild(el("span", "n", String(n)));
     c.appendChild(el("span", "l", SUM_LABEL[s]));
     chips.appendChild(c);
   });
+}
+
+function checkRow(c, collapsed) {
+  const tr = el("tr", collapsed ? "row-collapsed" : null);
+  tr.dataset.status = c.status;
+  const tdS = el("td"); tdS.appendChild(chipFor(c.status)); tr.appendChild(tdS);
+
+  const tdC = el("td");
+  tdC.appendChild(el("span", "cite-canon", c.canonical || c.as_written));
+  if (c.canonical && c.as_written && c.as_written !== c.canonical) {
+    tdC.appendChild(el("span", "cite-sub", `${c.as_written} (as written)`));
+  }
+  const partyBits = [c.plaintiff, c.defendant].filter(Boolean).join(" v. ");
+  if (partyBits) {
+    // Round 2, P1-7: the brief-side attribution (eyecite's loose metadata) is
+    // labeled so a discrepancy reads as the brief's, not the registry's.
+    tdC.appendChild(el("span", "attr-label", "as attributed in the brief"));
+    tdC.appendChild(el("span", "cite-sub", partyBits + (c.year ? ` (${c.year})` : "")));
+  }
+  if (c.reason) tdC.appendChild(el("span", "cite-reason", c.reason));
+  if (c.snippet) {
+    const sn = el("span", "cite-snippet");
+    sn.appendChild(el("span", "snip-label", "source text"));
+    sn.appendChild(document.createTextNode(c.snippet));
+    tdC.appendChild(sn);
+  }
+  tr.appendChild(tdC);
+
+  const tdR = el("td");
+  if (c.record && c.record.cases.length) {
+    const primary = c.record.cases[0];
+    const line = el("span", "reg-line");
+    line.appendChild(el("span", "reg-name", primary.name || "(unnamed)"));
+    if (primary.year) {
+      line.appendChild(document.createTextNode(" "));
+      line.appendChild(el("span", "reg-year", `(${primary.year})`));
+    }
+    tdR.appendChild(line);
+    tdR.appendChild(regLink(c.record.uri, "CourtListener "));
+    const extra = (c.record.cases.length - 1) + (c.record.more_cases || 0);
+    if (extra > 0) {
+      tdR.appendChild(el("span", "collision-note", `+${extra} more decision${extra > 1 ? "s" : ""} share this first page`));
+    }
+    tdR.appendChild(el("span", "source-tag", `${c.registry} · ${c.record.source}`));
+  } else {
+    tdR.appendChild(el("span", "cell-empty", "—"));
+  }
+  tr.appendChild(tdR);
+
+  const tdN = el("td"); tdN.appendChild(nameMark(c.name_check)); tr.appendChild(tdN);
+  tr.appendChild(el("td", "num", `${c.occurrences}×`));
+  return tr;
+}
+
+/* Severity-grouped table (round 2, P0-1): NOT_FOUND first, NOT_COVERED
+   collapsed behind a disclosure row; chip filters hide rows via
+   .row-filtered (print forces both visible). */
+function renderCheckTable(report) {
+  const tbody = clear($("check-table").querySelector("tbody"));
+  const rows = report.citations;
+  const filtered = (s) => filterSet.size > 0 && !filterSet.has(s);
+
+  SEVERITY_ORDER.forEach((s) => {
+    rows.filter((c) => c.status === s).forEach((c) => {
+      const tr = checkRow(c, false);
+      if (filtered(s)) tr.classList.add("row-filtered");
+      tbody.appendChild(tr);
+    });
+  });
+
+  const covered = rows.filter((c) => c.status === "NOT_COVERED");
+  if (covered.length > 0 && !filtered("NOT_COVERED")) {
+    const trG = el("tr", "group-row");
+    const td = el("td");
+    td.colSpan = 5;
+    const btn = el("button", "group-btn");
+    btn.type = "button";
+    btn.setAttribute("aria-expanded", coveredExpanded ? "true" : "false");
+    btn.appendChild(chipFor("NOT_COVERED"));
+    btn.appendChild(el("span", null,
+      `${covered.length} ${covered.length === 1 ? "citation" : "citations"} outside pilot coverage — ${coveredExpanded ? "hide" : "show"}`));
+    btn.addEventListener("click", () => { coveredExpanded = !coveredExpanded; renderCheckTable(report); });
+    td.appendChild(btn);
+    trG.appendChild(td);
+    tbody.appendChild(trG);
+    covered.forEach((c) => tbody.appendChild(checkRow(c, !coveredExpanded)));
+  }
+}
+
+function renderCheck(report) {
+  lastReport = report;
+  filterSet = new Set();
+  coveredExpanded = false;
+  docCard($("check-doc"), report.document, lastSource);
+
+  const empty = report.citations.length === 0;
+  buildVerdict(empty ? null : report);
+  $("check-empty").classList.toggle("hidden", !empty);
+  $("check-summary").classList.toggle("hidden", empty);
+  $("check-table").closest(".table-scroll").classList.toggle("hidden", empty);
+  document.querySelector("#panel-check .legend").classList.toggle("hidden", empty);
+  document.querySelector("#panel-check .next-step").classList.toggle("hidden", empty);
 
   const warnBox = clear($("check-warning"));
   if (report.document.extraction && report.document.extraction.warning) {
     warnBox.appendChild(calloutWarnNote("Extraction warning.", report.document.extraction.warning));
   }
-  if (report.summary.name_mismatches > 0) {
+  if (!empty && report.summary.name_mismatches > 0) {
     warnBox.appendChild(calloutWarnNote(
       "A party-name mismatch was detected.",
       `${report.summary.name_mismatches} verified citation(s) are attributed in the brief to a different case name than the registry records. A real citation paired with an invented case name is the other classic hallucination.`,
     ));
   }
 
-  const tbody = clear($("check-table").querySelector("tbody"));
-  report.citations.forEach((c) => {
-    const tr = el("tr");
-    const tdS = el("td"); tdS.appendChild(chipFor(c.status)); tr.appendChild(tdS);
-
-    const tdC = el("td");
-    tdC.appendChild(el("span", "cite-canon", c.canonical || c.as_written));
-    if (c.canonical && c.as_written && c.as_written !== c.canonical) {
-      tdC.appendChild(el("span", "cite-sub", `${c.as_written} (as written)`));
-    }
-    const partyBits = [c.plaintiff, c.defendant].filter(Boolean).join(" v. ");
-    if (partyBits) tdC.appendChild(el("span", "cite-sub", partyBits + (c.year ? ` (${c.year})` : "")));
-    if (c.reason) tdC.appendChild(el("span", "cite-reason", c.reason));
-    tr.appendChild(tdC);
-
-    const tdR = el("td");
-    if (c.record && c.record.cases.length) {
-      const primary = c.record.cases[0];
-      const line = el("span", "reg-line");
-      line.appendChild(el("span", "reg-name", primary.name || "(unnamed)"));
-      if (primary.year) {
-        line.appendChild(document.createTextNode(" "));
-        line.appendChild(el("span", "reg-year", `(${primary.year})`));
-      }
-      tdR.appendChild(line);
-      tdR.appendChild(regLink(c.record.uri, "CourtListener "));
-      const extra = (c.record.cases.length - 1) + (c.record.more_cases || 0);
-      if (extra > 0) {
-        tdR.appendChild(el("span", "collision-note", `+${extra} more decision${extra > 1 ? "s" : ""} share this first page`));
-      }
-      tdR.appendChild(el("span", "source-tag", `${c.registry} · ${c.record.source}`));
-    } else {
-      tdR.appendChild(el("span", "cell-empty", "—"));
-    }
-    tr.appendChild(tdR);
-
-    const tdN = el("td"); tdN.appendChild(nameMark(c.name_check)); tr.appendChild(tdN);
-    tr.appendChild(el("td", "num", `${c.occurrences}×`));
-    tbody.appendChild(tr);
-  });
+  if (!empty) {
+    buildSummaryChips(report);
+    renderCheckTable(report);
+  }
 
   // Replay affordance (item 0 / 4.5a): each keyed citation carries the exact
   // eth_call, so the verdict is non-repudiable — anyone re-runs it.
@@ -452,31 +683,48 @@ function renderCheck(report) {
     $("check-replay").classList.add("hidden");
   }
 
-  hide("check-busy", "check-error");
+  setCheckProgress(false);
+  hide("check-error");
   show("check-result");
   syncRecordPanel();
 }
 
-async function runCheck(bytes, filename) {
+async function runCheck(bytes, filename, source) {
   hide("check-result", "check-error");
-  show("check-busy");
+  setCheckProgress(true);
   try {
     const report = await apiPostBytes("/api/check", bytes, filename);
     lastFile = { bytes, name: filename };  // retained in page memory to prepare a receipt
+    lastSource = source || "file";
     renderCheck(report);
   } catch (err) {
-    hide("check-busy");
+    setCheckProgress(false);
+    showError("check-error", err);
+  }
+}
+
+async function runSample() {
+  hide("check-result", "check-error");
+  setCheckProgress(true);
+  try {
+    const res = await fetch("/sample-mata-avianca.txt");
+    if (!res.ok) throw new Error(`could not load the bundled sample (${res.status})`);
+    const bytes = await res.arrayBuffer();
+    await runCheck(bytes, "mata-v-avianca-sample.txt", "sample");
+  } catch (err) {
+    setCheckProgress(false);
     showError("check-error", err);
   }
 }
 
 function initCheck() {
-  wireDropzone("check-drop", "check-file", async (f) => runCheck(await f.arrayBuffer(), f.name));
+  wireDropzone("check-drop", "check-file", async (f) => runCheck(await f.arrayBuffer(), f.name, "file"));
   $("paste-toggle").addEventListener("click", () => $("paste-area").classList.toggle("hidden"));
   $("paste-check").addEventListener("click", () => {
     const text = $("paste-text").value;
-    if (text.trim()) runCheck(new TextEncoder().encode(text), "pasted-text.txt");
+    if (text.trim()) runCheck(new TextEncoder().encode(text), "pasted-text.txt", "paste");
   });
+  $("sample-run").addEventListener("click", runSample);
   $("to-record").addEventListener("click", () => activateTab("record"));
 }
 
@@ -489,11 +737,13 @@ async function refreshWalletState() {
   const btn = $("wallet-btn");
   btn.className = "btn btn-outline btn-wallet";
   btn.disabled = false;
+  wallet.detected = !!eth;
   if (!eth) {
     btn.textContent = "No wallet detected";
     btn.disabled = true;
     btn.title = "Install MetaMask (metamask.io) to record receipts. Checking and verifying never need a wallet.";
-    wallet = { address: null, chainOk: false };
+    wallet.address = null;
+    wallet.chainOk = false;
     syncRecordPanel();
     return;
   }
@@ -558,34 +808,109 @@ function slugify(s) {
   return (s || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-function updateRegistryPreview() {
-  const prev = $("registry-preview");
-  if (!prev) return;
+function registryNameFromInputs() {
   const firm = slugify($("firm-input").value), c = slugify($("case-input").value);
-  if (firm && c) {
-    clear(prev);
-    prev.appendChild(document.createTextNode("Receipts for this matter live in registry "));
-    prev.appendChild(el("span", "mono", `${firm}--${c}`));
-    prev.appendChild(document.createTextNode(", owned by your wallet — put a link to it on the filing so a clerk can find the receipt."));
+  return firm && c ? `${firm}--${c}` : null;
+}
+
+/* The registry line (round 2, P0-2): deterministic from filer + matter, shown
+   BEFORE anchoring — the filed document must already carry it, because the
+   receipt binds the exact bytes (item 3's discovery ordering). */
+function reglineFor(registry) {
+  return `Citation verifications: NVNM Chain registry ${registry}`;
+}
+
+function updRegline() {
+  const t = $("regline-text");
+  const registry = registryNameFromInputs();
+  t.classList.toggle("pending", !registry);
+  $("regline-copy").disabled = !registry;
+  t.textContent = registry
+    ? reglineFor(registry)
+    : "Enter the filer and case above — the registry line is generated from them.";
+  setSteps();
+}
+
+function stepState(id, cls, text) {
+  const s = $(id);
+  s.className = "step-state" + (cls ? " " + cls : "");
+  s.textContent = text;
+}
+
+/* Stepper states (round 2): every step reports where the flow actually is;
+   step 4 is driven by the anchor lifecycle in anchorReceipt(). */
+function setSteps() {
+  const haveDoc = !!(lastReport && lastFile);
+
+  if (!haveDoc) stepState("step-report-state", "", "not yet");
+  else if (lastSource === "paste") stepState("step-report-state", "warn", "pasted text");
+  else stepState("step-report-state", "ok", "done");
+
+  if (!haveDoc) stepState("step-line-state", "", "not yet");
+  else if (prepared) {
+    if (prepared.registry_line_found) stepState("step-line-state", "ok", "on filing");
+    else stepState("step-line-state", "warn", "not on filing");
+  } else if (registryNameFromInputs()) stepState("step-line-state", "", "copy it now");
+  else stepState("step-line-state", "", "not yet");
+
+  if (wallet.address && wallet.chainOk) stepState("step-wallet-state", "ok", shortHex(wallet.address, 5));
+  else if (wallet.address) stepState("step-wallet-state", "warn", "wrong network");
+  else if (!wallet.detected) stepState("step-wallet-state", "", "no wallet");
+  else stepState("step-wallet-state", "", "not yet");
+}
+
+/* Wallet guidance on the Record tab (round 2, P0-3): the no-wallet lawyer
+   gets a path, not a dead end. */
+function buildWalletCallout() {
+  const box = clear($("wallet-callout"));
+  if (wallet.address && wallet.chainOk) return;
+  const wrong = !!wallet.address && !wallet.chainOk;
+  const c = el("div", "callout" + (wrong ? " callout-warn" : ""));
+  c.appendChild(icon(wrong ? "i-alert" : "i-info"));
+  const d = el("div");
+  if (!wallet.detected) {
+    d.appendChild(el("strong", null, "No wallet detected."));
+    const p = el("p", null, "Recording is normally done by your firm’s filing tool or agent. To record manually from this browser, install ");
+    const a = el("a", null, "MetaMask");
+    a.href = "https://metamask.io"; a.target = "_blank"; a.rel = "noopener";
+    p.appendChild(a);
+    p.appendChild(document.createTextNode(". Checking and verifying never need a wallet."));
+    d.appendChild(p);
+  } else if (wrong) {
+    d.appendChild(el("strong", null, "Wallet connected to the wrong network."));
+    d.appendChild(el("p", null, `Signing needs NVNM Chain (chain id ${CHAIN_ID}). Switch networks to continue.`));
+    const b = el("button", "btn btn-outline", "Switch to NVNM Chain");
+    b.type = "button";
+    b.addEventListener("click", async () => { await switchNetwork().catch(() => {}); refreshWalletState(); });
+    d.appendChild(b);
   } else {
-    prev.textContent = "Receipts for this matter live in their own registry, owned by your wallet and named from the filer and case above — you put a link to it on the filing so a clerk can find the receipt later.";
+    d.appendChild(el("strong", null, "Wallet not connected."));
+    d.appendChild(el("p", null, "Use “Connect wallet” in the header to sign the receipt. Checking and verifying never need a wallet."));
   }
+  c.appendChild(d);
+  box.appendChild(c);
 }
 
 function syncRecordPanel() {
   const haveDoc = !!(lastReport && lastFile);
-  const rs = $("step-report-state");
-  rs.textContent = haveDoc ? "done" : "not yet";
-  rs.classList.toggle("ok", haveDoc);
-  const ws = $("step-wallet-state");
-  if (wallet.address && wallet.chainOk) { ws.textContent = shortHex(wallet.address, 5); ws.classList.add("ok"); }
-  else if (wallet.address) { ws.textContent = "wrong network"; ws.classList.remove("ok"); }
-  else { ws.textContent = "not yet"; ws.classList.remove("ok"); }
   $("record-nodoc").classList.toggle("hidden", haveDoc);
   $("record-main").classList.toggle("hidden", !haveDoc);
-  if (haveDoc) docCard($("record-doc"), lastReport.document);
+  if (haveDoc) {
+    docCard($("record-doc"), lastReport.document, lastSource);
+    // Round 2, P0-4: a receipt over pasted bytes never matches a filed file.
+    $("paste-warning").classList.toggle("hidden", lastSource !== "paste");
+  }
   const agentEl = $("record-agent");
   if (agentEl) agentEl.textContent = wallet.address ? wallet.address : "— connect a wallet —";
+
+  // Round 2, P0-3: prepare is gated on the stepper's prerequisites (the
+  // filer/case fields still validate on click — they name the registry).
+  const gateOk = haveDoc && !!wallet.address && wallet.chainOk;
+  $("prepare-btn").disabled = !gateOk;
+  $("prepare-gate").classList.toggle("hidden", gateOk);
+
+  buildWalletCallout();
+  updRegline();
 }
 
 async function prepareReceipt() {
@@ -605,6 +930,7 @@ async function prepareReceipt() {
   }
   hide("prepare-result", "prepare-error");
   clear($("anchor-status"));
+  stepState("step-anchor-state", "", "waiting");
   show("prepare-busy");
   try {
     prepared = await apiPostBytes("/api/receipt/prepare", lastFile.bytes, lastFile.name, {
@@ -613,11 +939,49 @@ async function prepareReceipt() {
       "X-Agent": encodeURIComponent(wallet.address),
     });
     renderPrepared(prepared);
+    setSteps();
   } catch (err) {
     showError("prepare-error", err);
   } finally {
     hide("prepare-busy");
   }
+}
+
+/* Registry-line status in the prepare result (round 2, P0-2): a warning,
+   never a blocker — the engineering boolean comes from the server's text
+   extraction of the exact uploaded bytes. */
+function buildReglineStatus(found) {
+  const box = clear($("regline-status"));
+  const d = el("div", "regline-status " + (found ? "regline-found" : "regline-missing"));
+  d.appendChild(icon(found ? "i-seal" : "i-alert"));
+  const body = el("div");
+  if (found) {
+    body.appendChild(el("strong", null, "Registry line found in the document."));
+    body.appendChild(el("p", null, "The filing already carries its registry line; anchoring this exact file keeps the fingerprint match intact."));
+  } else {
+    body.appendChild(el("strong", null, "Registry line not found in the document."));
+    body.appendChild(el("p", null, "You can still anchor — but if you add the line afterwards, the filed document will no longer match this receipt. Add it now, re-export, and re-check the final file."));
+  }
+  d.appendChild(body);
+  box.appendChild(d);
+}
+
+/* Receipt size meter (round-1 design, adopted in round 2): the locked v1
+   receipt is non-enumerating, so it sits far under the cap by construction. */
+function setSizeMeter(bytes, cap) {
+  const meter = $("size-meter");
+  const pct = Math.min(100, Math.round((bytes / cap) * 1000) / 10);
+  meter.querySelector(".size-value").textContent =
+    `${bytes.toLocaleString("en-US")} of ${cap.toLocaleString("en-US")} bytes`;
+  const fill = meter.querySelector(".size-fill");
+  fill.style.width = pct + "%"; /* sanctioned CSSOM exception */
+  const tight = pct > 85;
+  fill.classList.toggle("tight", tight);
+  const note = meter.querySelector(".size-note");
+  note.className = "hint size-note" + (tight ? " tight-note" : "");
+  note.textContent = tight
+    ? `Near the ${cap.toLocaleString("en-US")}-byte anchoring limit.`
+    : "Minimal and non-enumerating — the receipt never lists the cited cases, so it always sits well within the on-chain limit.";
 }
 
 function renderPrepared(p) {
@@ -637,11 +1001,11 @@ function renderPrepared(p) {
     meta.appendChild(el("p", "hint", "A receipt for this exact document already exists in this registry. Anchoring again records a new version; the prior one stays."));
   }
 
+  buildReglineStatus(!!p.registry_line_found);
   renderTally($("prepare-tally"), p.receipt.summary);
 
   $("receipt-json").querySelector("code").textContent = p.receipt.json;
-  $("receipt-size").textContent =
-    `Receipt size: ${p.receipt.bytes.toLocaleString("en-US")} of ${p.receipt.cap.toLocaleString("en-US")} bytes — minimal and non-enumerating, always well within the on-chain limit.`;
+  setSizeMeter(p.receipt.bytes, p.receipt.cap);
 
   const setupBox = $("setup-box");
   const probeBox = clear($("probe-box"));
@@ -724,7 +1088,7 @@ async function sendTx(tx, statusBoxId, onMined) {
     } else {
       box.appendChild(el("div", "error", `Wallet error: ${(err && err.message) || err}`));
     }
-    return;
+    return false;
   }
   const wait = el("div", "txwait");
   wait.appendChild(el("span", "spinner"));
@@ -740,11 +1104,12 @@ async function sendTx(tx, statusBoxId, onMined) {
     if (info.found && !info.pending) {
       box.removeChild(wait);
       onMined(box, info, hash);
-      return;
+      return true;
     }
   }
   clear(msg);
   msg.appendChild(document.createTextNode(`Still pending after 150 s — track it at ${EXPLORER}/tx/${hash}`));
+  return false;
 }
 
 async function createReceiptRegistry() {
@@ -769,10 +1134,13 @@ async function createReceiptRegistry() {
   });
 }
 
-function anchorReceipt() {
+async function anchorReceipt() {
   if (!prepared) return;
-  return sendTx(prepared.tx, "anchor-status", (box, info, hash) => {
+  stepState("step-anchor-state", "busy", "anchoring…");
+  let outcome = null; // "ok" | "bad" set by onMined
+  await sendTx(prepared.tx, "anchor-status", (box, info, hash) => {
     if (!info.success) {
+      outcome = "bad";
       const b = banner("bad", "i-alert", "Transaction reverted", "");
       const sub = b.querySelector(".rb-sub");
       sub.appendChild(document.createTextNode("Anchoring transaction "));
@@ -781,6 +1149,7 @@ function anchorReceipt() {
       box.appendChild(b);
       return;
     }
+    outcome = "ok";
     const sha = prepared.document_sha256;
     const registry = prepared.registry;
     const b = banner("ok", "i-seal", "Verification recorded on NVNM Chain",
@@ -795,16 +1164,18 @@ function anchorReceipt() {
     }
     b.appendChild(kv);
 
-    // Discovery (item 3): the registry LINK goes on the filing, not the tx.
-    const disc = el("div", "callout");
-    disc.appendChild(icon("i-info"));
-    const dd = el("div");
-    dd.appendChild(el("strong", null, "Put this on your filing"));
-    const dp = el("p", null, "So anyone can find the receipt, add a line citing the registry: ");
-    dp.appendChild(el("span", "mono", `Citation verifications: NVNM Chain registry ${registry}`));
-    dd.appendChild(dp);
-    disc.appendChild(dd);
-    b.appendChild(disc);
+    // Round 2, P0-2: confirmation, never instruction. The registry line was
+    // taught BEFORE anchoring; here we only confirm (or warn) about what the
+    // anchored bytes actually contain.
+    const note = el("div", "rb-note " + (prepared.registry_line_found ? "rb-note-ok" : "rb-note-warn"));
+    if (prepared.registry_line_found) {
+      note.appendChild(el("strong", null, "Your filing already carries the registry line."));
+      note.appendChild(el("p", null, "File the document exactly as anchored — no further edits."));
+    } else {
+      note.appendChild(el("strong", null, "The anchored file does not contain the registry line."));
+      note.appendChild(el("p", null, "If you add it now, the filed document will no longer match this receipt. Add the line, re-export, then re-check and re-anchor the final file."));
+    }
+    b.appendChild(note);
 
     const actions = el("div", "rb-actions");
     const a1 = el("a", "btn btn-outline", "View on Blockscout ");
@@ -825,14 +1196,23 @@ function anchorReceipt() {
     b.appendChild(actions);
     box.appendChild(b);
   });
+  if (outcome === "ok") stepState("step-anchor-state", "ok", "done");
+  else if (outcome === "bad") stepState("step-anchor-state", "bad", "failed");
+  else stepState("step-anchor-state", "", "waiting"); // declined or still pending
 }
 
 function initRecord() {
   $("record-gocheck").addEventListener("click", () => activateTab("check"));
+  $("paste-gocheck").addEventListener("click", () => activateTab("check"));
   $("prepare-btn").addEventListener("click", prepareReceipt);
   $("anchor-btn").addEventListener("click", anchorReceipt);
-  $("firm-input").addEventListener("input", updateRegistryPreview);
-  $("case-input").addEventListener("input", updateRegistryPreview);
+  $("firm-input").addEventListener("input", updRegline);
+  $("case-input").addEventListener("input", updRegline);
+  $("regline-copy").addEventListener("click", () => {
+    if (navigator.clipboard) navigator.clipboard.writeText($("regline-text").textContent);
+    $("regline-copy").textContent = "Copied";
+    setTimeout(() => { $("regline-copy").textContent = "Copy line"; }, 1400);
+  });
 }
 
 /* ---------- verify (free lookup) ---------- */

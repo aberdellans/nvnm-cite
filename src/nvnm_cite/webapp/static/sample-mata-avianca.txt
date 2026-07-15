@@ -1,0 +1,142 @@
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 1 of 6
+UNITED STATES DISTRICT COURT
+SOUTHERN DISTRICT OF NEW YORK
+--------------------------------------------------------------- x
+ROBERTO MATA, :
+: Civil Action No. 22-CV-1461(PKC)
+Plaintiff, :
+:
+vs. :
+:
+AVIANCA, INC., :
+:
+:
+Defendant.
+:
+:
+---------------------------------------------------------------- x
+REPLY MEMORANDUM OF LAW IN FURTHER SUPPORT OF DEFENDANT’S
+MOTION TO DISMISS PLAINTIFF’S VERIFIED COMPLAINT
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 2 of 6
+Preliminary Statement
+Defendant AVIANCA, INC. (“Avianca”), by and through its attorneys, Condon & Forsyth
+LLP, respectfully submit this Reply Memorandum of Law in further support of its Motion to
+Dismiss the claims alleged in Plaintiff’s Verified Complaint pursuant to Rule 12(b)(6) of the
+Federal Rules of Civil Procedure, on the ground that Plaintiff’s action is time-barred pursuant to
+Article 35 of the Montreal Convention.
+Plaintiff does not dispute that this action is governed by the Montreal Convention, and
+Plaintiff has not cited any existing authority holding that the Bankruptcy Code tolls the two-year
+limitations period or that New York law supplies the relevant statute of limitations. Although
+Plaintiff ostensibly cites to a variety of cases in opposition to this motion, the undersigned has been
+unable to locate most of the case law cited in Plaintiff’s Affirmation in Opposition, and the few
+cases which the undersigned has been able to locate do not stand for the propositions for which
+they are cited.
+For these reasons, Avianca respectfully submits that the Verified Complaint should be
+dismissed as untimely.
+Argument
+I. There are no cases holding that the Bankruptcy Code tolls the two-year limitations
+period established in Article 35 of the Montreal Convention.
+As set forth in Avianca’s original moving papers, it is well established that local tolling
+rules do not apply to the limitations period set forth in Article 35 of the Montreal Convention. See
+Fishman v. Delta Air Lines, Inc., 132 F.3d 138, 144 (2d Cir. 1998); Campbell v. Air Jamaica, Ltd.,
+760 F.3d 1165, 1117 (11th Cir. 2014); LAM Wholesale, LLC v. United Airlines, Inc., No. 18-cv-
+3794, 2019 WL 1439098, at *2 (E.D.N.Y. Mar. 31, 2019); Mateo v. JetBlue Airways, 847 F. Supp.
+2d 383, 387-88 (E.D.N.Y. 2012); see also 17 N.Y. Jur. 2d Carriers § 542 (2023).
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 3 of 6
+In support of his position that the Bankruptcy Code tolls the two-year limitations period,
+Plaintiff cites to “Varghese v. China Southern Airlines Co., Ltd., 925 F.3d 1339 (11th Cir. 2019).”
+The undersigned has not been able to locate this case by caption or citation, nor any case bearing
+any resemblance to it. Plaintiff offers lengthy quotations purportedly from the “Varghese” case,
+including: “We [the Eleventh Circuit] have previously held that the automatic stay provisions of
+the Bankruptcy Code may toll the statute of limitations under the Warsaw Convention, which is
+the precursor to the Montreal Convention . . . We see no reason why the same rule should not apply
+under the Montreal Convention.” The undersigned has not been able to locate this quotation, nor
+anything like it any case. The quotation purports to cite to “Zicherman v. Korean Air Lines Co.,
+Ltd., 516 F.3d 1237, 1254 (11th Cir. 2008).” The undersigned has not been able to locate this case;
+although there was a Supreme Court case captioned Zicherman v. Korean Air Lines Co., Ltd., that
+case was decided in 1996, it originated in the Southern District of New York and was appealed to
+the Second Circuit, and it did not address the limitations period set forth in the Warsaw
+Convention. 516 U.S. 217 (1996).
+A second, similar quotation from “Varghese” purports to cite to “Miller v. United Airlines,
+Inc., 174 F.3d 366, 371-72 (2d Cir. 1999)” and In re Air Crash Disaster Near New Orleans, La.,
+821 F.2d 1147, 1165 (5th Cir. 1987). The undersigned was not able to locate the “Miller” case;
+although there is a case captioned Miller v. United Airlines, Inc., that case did not address the
+Warsaw Convention, the Bankruptcy Code, or any limitations period. 174 Cal. App. 3d 878
+(1985). While the In re Air Crash Disaster case does exist, it also did not address the Bankruptcy
+Code or any limitations period.
+Further, both “Varghese” quotations purport to cite to Kaiser Steel Corp. v. W.S. Ranch
+Co., 391 U.S. 593, 598 (1968) for the proposition that “[t]he tolling effect of the automatic stay on
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 4 of 6
+a statute of limitations is generally a matter of federal law.” Putting aside that there is no page 598
+in Kaiser Steel, that case concerned the stay of a federal action until a related state court case was
+decided, and made no mention of a statute of limitations or its tolling.
+Notwithstanding Plaintiff’s attempt to argue otherwise, courts have made clear that local
+tolling rules do not apply to actions governed by the Montreal Convention. Because Plaintiff filed
+the present action more than two years after the date of his arrival at his destination, this action
+must be dismissed as untimely.
+II. The statute of limitations set forth in C.P.L.R. § 214(5) does not apply to Plaintiff’s
+claims because the Montreal Convention exclusively governs this action.
+As discussed in Avianca’s original moving papers, the Montreal Convention exclusively
+governs claims arising from personal injury sustained during international transportation. See
+Montreal Convention, arts. 17, 29; see also King v. American Airlines, 284 F.3d 353, 356-57 (2d
+Cir. 2022) (citing El Al Israel Airlines, Ltd. v. Tseng, 525 U.S. 155, 156 (1999)). Accordingly, an
+action governed by the Montreal Convention must be brought within the two-year limitations
+period as required by Article 35 of the Montreal Convention. See Fishman, 132 F.3d at 143-45;
+Mateo, 847 F. Supp. 2d at 387-88; von Schoenebeck v. Koninklijke Luchtvaart Maatschappij N.V.,
+659 F. App’x 392, 393 (9th Cir. 2016).
+There is no dispute that the Plaintiff was travelling as a passenger on an international flight
+when he allegedly sustained injury after a metal serving cart struck his left knee. Thus, the
+Montreal Convention governs the rights and liabilities of the parties and, therefore, preempts state
+law.
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 5 of 6
+Plaintiff asserts that New York courts have concurrent jurisdiction over actions governed
+by the Montreal Convention.1 Even if that is true, a state court that adjudicates a claim arising
+under federal law must apply the statute of limitations contained in that federal law. See Felder v.
+Casey, 487 U.S. 131, 153-54 (1988) (White, J. concurring) (“‘[I]f [a federal claim] be available in
+a state court to found a right, and the record shows a lapse of time after which the [A]ct says that
+no action shall be maintained, the action must fail in the courts of a State as in those of the United
+States.’” (quoting Atlantic Coast Line R. Co. v. Burnette, 239 U.S. 199, 201 (1915))); see also
+Podraza v. Carriero, 212 A.D.2d 331, 335 (4th Dep’t 1995) (“The accrual of a cause of action
+based on a Federal Statute is governed by Federal law.”); O’Hara v. Bayliner, 89 N.Y.2d 636, 645
+(1997) (refusing to apply New York’s Statute of Limitation and its tolling provisions to a federal
+maritime case because doing so would be outcome-determinative and contradict Congressional
+intention of a uniform standard). Accordingly, whether a New York court could adjudicate this
+federal question has no bearing on whether this Court could apply a statute of limitations contained
+in the New York Civil Practice Laws and Rules.
+In any case, although the New York federal courts typically adjudicate claims arising under
+the Montreal Convention, state courts adjudicating claims arising under the Warsaw or Montreal
+Convention consistently apply the limitations periods set forth therein. See, e.g., Kahn v. Trans.
+1 Plaintiffs cites the following cases in support of these arguments: (1) “Shaboon v. Egyptair, 2013
+IL App (1st) 111279-U (Ill. App. Ct. 2013)”; (2) “Peterson v. Iran Air, 905 F. Supp. 2d 121
+(D.D.C. 2012)”; (3) “Martinez v. Delta Airlines, Inc., 2019 WL 4639462 (Tex. App. Sept. 25,
+2019)”; and (4) “Estate of Durden v. KLM Royal Dutch Airlines, 2017 WL 2418825 (Ga. Ct. App.
+June 5, 2017)”. The undersigned could not find these cases. Plaintiff also cites to “Ehrlich v.
+American Airlines, Inc., 360 N.J. Super. 360 (App. Div. 2003).” The undersigned could not locate
+this case, but notes that there is a Second Circuit case captioned Ehrlich v. American Airlines, Inc.
+regarding the ability of a passenger to recover psychological damages following an incident in
+international transportation. 360 F.3d 366 (2d Cir. 2004).
+Case 1:22-cv-01461-PKC Document 24 Filed 03/15/23 Page 6 of 6
+World Airlines, Inc., 82 A.D.2d 696, 705-06 (N.Y. 1981) (applying the two-year limitations period
+to an action governed by the Warsaw Convention and refusing to apply New York law governing
+tolling because “article 29 was intended to be in the nature of a condition precedent to suit”);
+Astudillo v. Port Auth. of New York & New Jersey, 7 Misc. 3d 1004(A), *4 (Sup. Ct. 2004) (same).
+Similarly, federal courts refuse to apply state law-based statutes of limitation to actions governed
+by the Montreal Convention. See, e.g., LAM Wholesale, 2019 WL 1439098, at *2.
+The Montreal Convention preempts all claims that arise within the scope of the
+Convention, regardless of whether such claims sound in tort or contract, and, as a treaty, the
+Convention supersedes state law and policy. Because Plaintiff’s claims are squarely within the
+scope of the Montreal Convention, Plaintiff was required to commence this action within two years
+of his arrival. He did not do so, and so his claims should be dismissed.
+Conclusion
+Based on the foregoing, Defendant Avianca, Inc., respectfully requests that the Court grant
+summary judgment in its favor and dismiss Plaintiff’s Complaint in its entirety, together with such
+other and further relief as this Court deems appropriate under the circumstances.
+Dated: New York, New York
+March 15, 2023
+CONDON & FORSYTH LLP
+By: ____________________________
+Bartholomew J. Banino (BB 4164)
+bbanino@condonlaw.com
+Marissa N. Lefland (ML 8217)
+mlefland@condonlaw.com
+Attorneys for Defendant Avianca, Inc

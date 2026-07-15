@@ -145,6 +145,16 @@ def record_view(record: pc.Record) -> dict:
     }
 
 
+def source_snippet(text: str, span: list[int] | tuple[int, int], context: int = 60) -> str:
+    """A short, whitespace-collapsed excerpt around ``span`` so a reader can
+    locate an UNPARSEABLE/AMBIGUOUS token in their own document."""
+    start, end = max(0, span[0] - context), min(len(text), span[1] + context)
+    excerpt = re.sub(r"\s+", " ", text[start:end]).strip()
+    prefix = "…" if start > 0 else ""
+    suffix = "…" if end < len(text) else ""
+    return f"{prefix}{excerpt}{suffix}"
+
+
 # --- occurrence grouping ---
 
 
@@ -267,6 +277,14 @@ def check_text(
                 "spans": entry["spans"][:50],
                 "record": record_view(record) if record is not None else None,
                 "query": query,
+                # Source context so unparseable/ambiguous tokens are findable
+                # in the reader's own document; omitted where the citation
+                # cell already identifies the location.
+                "snippet": (
+                    source_snippet(text, entry["first_span"])
+                    if status in (AMBIGUOUS, UNPARSEABLE)
+                    else None
+                ),
             }
         )
     citations.sort(key=lambda c: c["first_span"])
