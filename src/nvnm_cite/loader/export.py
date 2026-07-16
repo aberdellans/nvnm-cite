@@ -360,36 +360,47 @@ uncompressed stream) are in `manifest.json` — verify before loading.
 Scope rule: {manifest['scope']}. Excluded rows are counted per registry in
 the manifest (`excluded_reporter`, `excluded_caps`), never dropped silently.
 
-## Registry creation and ownership
+## Loading via chain software upgrade (state migration)
 
-`registries.json` holds the exact `addRegistry` inputs (name, description,
-metadata) for every registry, tranche-tagged. Two requirements:
+This data set is loaded by a MANTRA-run chain upgrade that writes the module
+state directly, not by addRecord transactions. Requirements on the migration:
 
-1. **Creator = admin, permanently** (writes are deny-by-default). The
-   registries must be created by the Inveniam-held mainnet key from the key
-   ceremony — not by a loader key. Loader keys are then granted editor on
-   each registry via `grantRole`, and can be revoked with `revokeRole` after
-   the load.
-2. The Free Law Project attribution in each registry's metadata must be
-   preserved verbatim.
+1. **Registry admin assignment is the critical field.** Creator = admin,
+   permanently, and writes are deny-by-default. Every registry's creator
+   must be set to the Inveniam-designated mainnet address (provided at
+   handoff, before the upgrade is cut) — never left as an operator or
+   default key. Post-load administration (daily incremental appends,
+   `grantRole`/`revokeRole`, `updateRecordStatus`) depends on it; a wrong
+   creator freezes 2,114 registries at this snapshot.
+2. `registries.json` holds the exact registry rows (name, description,
+   metadata), tranche-tagged. The Free Law Project attribution in each
+   registry's metadata must be preserved verbatim.
+3. Chain-assigned record fields must match what addRecord would have
+   produced, so subsequent precompile writes and keyed reads behave:
+   `recordId` sequential within each registry, `index` = 1, `isLatest` =
+   true. Records within each file are in deterministic key order; loading
+   them in file order gives a reproducible recordId assignment.
+4. Records written by state migration have no originating transactions and
+   no AddRecord events, so log-scan indexers will not see them. Our
+   verification does not depend on logs (keyed `records()` reads), but if
+   the migration will synthesize events, tell us — it changes what third
+   -party indexers can reconstruct.
+5. Ongoing writes AFTER the load go through normal addRecord transactions
+   (the daily updater appends newly published opinions). Semantics that
+   still apply then: duplicate (registry, checksum) submissions VERSION
+   rather than revert; `uri`/`checksumAlgo`/`metadata` required non-empty
+   (`{{}}` counts as empty) — every line in these files already satisfies
+   the caps and non-empty rules.
 
-## Chain behaviors the loader must handle (all measured on testnet)
+## Acceptance
 
-- Duplicate (registry, checksum) submissions VERSION rather than revert:
-  idempotency is entirely the writer's job. Use a checkpoint DB; never
-  blind-resubmit; on resume, re-verify the in-flight window via keyed
-  `records(registry, checksum)` reads (a keyed miss ERRORS with
-  `collections: not found`, never an empty page).
-- Registry names are unique chain-wide; creation is idempotent via an
-  estimate-probe.
-- `uri`, `checksumAlgo`, `metadata` are required non-empty (`{{}}` counts as
-  empty) — every line in these files already satisfies this.
-- Nonce-gapped submission is rejected; submission is strictly serialized per
-  key. Measured single-key throughput ~2.1 tx/s (submission-bound), ~96k gas
-  per average record, 40 gwei floor / 45 gwei suggested. At this scale plan
-  a parallel editor-granted key fleet.
-- Load order follows the tranche directories; each tranche should reconcile
-  clean (our `reconcile` tooling is available) before the next begins.
+After the upgrade we reconcile every registry against these exact files —
+keyed and offset-paged `records()` reads from a public node — until the
+diff is zero or every gap is documented. The per-file sha256 digests in
+`manifest.json` (of the .gz as shipped and of the uncompressed stream) are
+the reference; verify them on receipt. The tranche directories remain our
+recommended verification and coverage-publication order even if the
+migration loads everything in one upgrade.
 
 ## Attribution
 
