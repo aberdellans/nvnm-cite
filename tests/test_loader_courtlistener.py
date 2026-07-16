@@ -177,6 +177,24 @@ def test_three_pass_join(bulk_dir: Path) -> None:
     db.close()
 
 
+def test_all_courts_mode_keeps_every_court(bulk_dir: Path) -> None:
+    db_path = bulk_dir / "corpus-all.sqlite"
+    stats = build_corpus(bulk_dir, "2099-01-01", db_path, courts=("all",))
+    # The lawd cluster (13) is now kept alongside the pilot courts; the
+    # NULL-docket cluster (14) still is not.
+    assert stats["clusters"] == "4"
+    assert stats["citations"] == "7"
+    assert stats["courts"] == "all"
+
+    db = sqlite3.connect(db_path)
+    courts = dict(db.execute("SELECT cluster_id, court_id FROM clusters"))
+    assert courts == {11: "scotus", 12: "ca11", 13: "lawd", 15: "ca11"}
+    # The lawd citation (id 6) survives with its canonical key.
+    canon = dict(db.execute("SELECT citation_id, canonical FROM citations"))
+    assert canon[6] == "1 X 1"
+    db.close()
+
+
 def test_existing_db_requires_force(bulk_dir: Path) -> None:
     db_path = bulk_dir / "corpus.sqlite"
     build_corpus(bulk_dir, "2099-01-01", db_path)

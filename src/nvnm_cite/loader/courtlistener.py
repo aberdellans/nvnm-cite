@@ -37,12 +37,19 @@ import csv
 import sqlite3
 import sys
 import time
+from array import array
+from bisect import bisect_left
 from collections.abc import Iterator
 from pathlib import Path
 
 from nvnm_cite.normalizer import canonical_from_parts
 
 DEFAULT_COURTS = ("scotus", "ca11")
+# --courts all: keep EVERY court (the Phase 7 full-scope corpus). The docket
+# pass cannot hold all ~70M docket->court pairs, so an extra pass over the
+# (much smaller) clusters file first collects the ~10M docket ids that
+# clusters actually reference, and the docket pass keeps only those.
+ALL_COURTS = "all"
 BATCH_ROWS = 10_000
 
 # Some cluster text columns (syllabus, headnotes) run to megabytes.
@@ -112,8 +119,43 @@ class MalformedRows:
             print(f"  MALFORMED {self.label} row (skipped): {row!r:.200}", flush=True)
 
 
-def pass_dockets(path: Path, courts: frozenset[str]) -> tuple[dict[int, str], int]:
-    """Pass 1: docket_id -> court_id for the wanted courts."""
+def pass_cluster_dockets(path: Path) -> tuple[array, int]:
+    """Pass 0 (all-courts mode only): sorted docket ids referenced by clusters."""
+    header, rows = bulk_csv(path)
+    docket_col = header["docket_id"]
+    malformed = MalformedRows("cluster(docket scan)")
+    ids = array("q")
+    started = time.monotonic()
+    for n, row in enumerate(rows, 1):
+        if len(row) <= docket_col:
+            malformed.hit(row)
+            continue
+        raw = row[docket_col]
+        if raw:
+            ids.append(int(raw))
+        if n % 1_000_000 == 0:
+            _progress("clusters scanned for dockets", n, started)
+    ids = array("q", sorted(ids))
+    print(
+        f"  pass 0 done: {len(ids):,} docket references kept, "
+        f"{malformed.count} malformed rows skipped",
+        flush=True,
+    )
+    return ids, malformed.count
+
+
+def _in_sorted(ids: array, value: int) -> bool:
+    i = bisect_left(ids, value)
+    return i < len(ids) and ids[i] == value
+
+
+def pass_dockets(
+    path: Path, courts: frozenset[str], wanted_dockets: array | None = None
+) -> tuple[dict[int, str], int]:
+    """Pass 1: docket_id -> court_id for the wanted courts. In all-courts
+    mode (wanted_dockets set) every court is kept, but only for docket ids
+    that clusters reference; court strings are interned (a few thousand
+    distinct values across ~10M entries)."""
     header, rows = bulk_csv(path)
     id_col, court_col = header["id"], header["court_id"]
     needed = max(id_col, court_col)
@@ -124,7 +166,13 @@ def pass_dockets(path: Path, courts: frozenset[str]) -> tuple[dict[int, str], in
         if len(row) <= needed:
             malformed.hit(row)
             continue
-        if row[court_col] in courts:
+        if wanted_dockets is not None:
+            court = row[court_col]
+            if court:
+                docket_id = int(row[id_col])
+                if _in_sorted(wanted_dockets, docket_id):
+                    docket_courts[docket_id] = sys.intern(court)
+        elif row[court_col] in courts:
             docket_courts[int(row[id_col])] = row[court_col]
         if n % 5_000_000 == 0:
             _progress("dockets scanned", n, started)
@@ -281,8 +329,16 @@ def build_corpus(
     db.executescript(SCHEMA)
     started = time.monotonic()
 
+    all_courts = courts == (ALL_COURTS,)
+    wanted_dockets: array | None = None
+    if all_courts:
+        print(f"pass 0/3: cluster docket ids ({files['opinion-clusters'].name})", flush=True)
+        wanted_dockets, _ = pass_cluster_dockets(files["opinion-clusters"])
     print(f"pass 1/3: dockets ({files['dockets'].name})", flush=True)
-    docket_courts, bad_dockets = pass_dockets(files["dockets"], frozenset(courts))
+    docket_courts, bad_dockets = pass_dockets(
+        files["dockets"], frozenset(() if all_courts else courts), wanted_dockets
+    )
+    del wanted_dockets
     print(f"pass 2/3: opinion clusters ({files['opinion-clusters'].name})", flush=True)
     cluster_courts, bad_clusters = pass_clusters(files["opinion-clusters"], docket_courts, db)
     del docket_courts
@@ -311,7 +367,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     parser.add_argument("--snapshot", required=True, help="bulk snapshot date, e.g. 2026-03-31")
     parser.add_argument("--db", type=Path, default=Path("data/corpus.sqlite"))
-    parser.add_argument("--courts", default=",".join(DEFAULT_COURTS), help="comma-separated courts-db ids")
+    parser.add_argument(
+        "--courts",
+        default=",".join(DEFAULT_COURTS),
+        help="comma-separated courts-db ids, or 'all' for every court (full scope)",
+    )
     parser.add_argument("--force", action="store_true", help="rebuild over an existing db")
     args = parser.parse_args(argv)
 

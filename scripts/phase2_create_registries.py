@@ -11,10 +11,9 @@ Run:  uv run python scripts/phase2_create_registries.py          (pre-flight)
 
 from __future__ import annotations
 
-import json
 import sys
 
-from courts_db import courts
+from nvnm_cite.loader.records import creation_strings
 
 from nvnm_cite.chain.precompile import (
     PRECOMPILE_ADDRESS,
@@ -35,30 +34,6 @@ from nvnm_cite.config import (
 
 COURT_IDS = ("scotus", "ca11")
 MIN_GAS_PRICE = 40_000_000_000
-
-
-def creation_strings(court_id: str) -> tuple[str, str, str]:
-    """(registry name, description, metadata) exactly per the locked schema."""
-    by_id = {c["id"]: c for c in courts}
-    court_name = by_id[court_id]["name"]
-    name = f"us-{court_id}"
-    description = (
-        f"Canonical US case citations for {court_name} (courts-db: {court_id}). "
-        "Existence registry: a record means this citation string denotes a "
-        "published decision. nvnm-cite."
-    )
-    metadata = json.dumps(
-        {
-            "court": court_id,
-            "schema": "nvnm-cite-record/v1",
-            "source": "CourtListener bulk data, Free Law Project (courtlistener.com)",
-            "spec": "cite-canonical-v1",
-        },
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    return name, description, metadata
 
 
 def find_registry(rpc: EvmRpc, name: str):

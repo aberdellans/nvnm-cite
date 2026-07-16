@@ -128,6 +128,32 @@ def _fit_collision(cases: list[CaseRow]) -> str:
     raise RecordError("collision metadata cannot fit even one case")
 
 
+def creation_strings(court_id: str) -> tuple[str, str, str]:
+    """(registry name, description, metadata) exactly per the locked schema
+    section 2, rendered mechanically from courts-db names — never improvised.
+    Generic over any courts-db id (moved here from the phase-2 script for the
+    Phase 7 full-scope registries)."""
+    from courts_db import courts
+
+    by_id = {c["id"]: c for c in courts}
+    court_name = by_id[court_id]["name"]
+    name = f"us-{court_id}"
+    description = (
+        f"Canonical US case citations for {court_name} (courts-db: {court_id}). "
+        "Existence registry: a record means this citation string denotes a "
+        "published decision. nvnm-cite."
+    )
+    metadata = compact_json(
+        {
+            "court": court_id,
+            "schema": "nvnm-cite-record/v1",
+            "source": "CourtListener bulk data, Free Law Project (courtlistener.com)",
+            "spec": "cite-canonical-v1",
+        }
+    )
+    return name, description, metadata
+
+
 def render_record(registry: str, canonical: str, cases: list[CaseRow]) -> RenderedRecord:
     """Render one (registry, canonical key) record; raises RecordError on
     cap violations the schema says must halt (oversize uri/checksum)."""
