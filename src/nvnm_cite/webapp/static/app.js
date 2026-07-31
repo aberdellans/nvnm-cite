@@ -545,14 +545,25 @@ function buildVerdict(report) {
     head.appendChild(icon("i-alert"));
     title.textContent = `${nf.length} ${nf.length === 1 ? "citation" : "citations"} could not be found — review ${nf.length === 1 ? "it" : "these"} before filing.`;
     title.setAttribute("data-print", `${nf.length} NOT FOUND`);
-    sub.textContent = "No registry record exists. Treat as presumptively fabricated until proven otherwise.";
+    // Honesty tiering (v1.2.0 full coverage): a miss in the pilot-proven
+    // federal-appellate registries reads as presumptively fabricated; a miss
+    // in newly-expanded coverage is a flag to verify, never proof.
+    const nExpanded = nf.filter((c) => c.confidence === "expanded-coverage").length;
+    if (nExpanded === 0) {
+      sub.textContent = "No registry record exists. Treat as presumptively fabricated until proven otherwise.";
+    } else if (nExpanded === nf.length) {
+      sub.textContent = "No registry record exists — but all of these are in newly-expanded coverage, where citation formats are still being proven. Verify each yourself; never delete a citation on this signal alone.";
+    } else {
+      sub.textContent = `No registry record exists. ${nExpanded} of these are in newly-expanded coverage (marked below) — treat those as flags to verify, never proof of fabrication.`;
+    }
     head.appendChild(body);
     v.appendChild(head);
     const list = el("div", "verdict-list");
     nf.forEach((c) => {
       const item = el("div", "verdict-item");
       item.appendChild(el("span", "vc-cite", c.canonical || c.as_written));
-      item.appendChild(el("span", "vc-reason", c.reason || ""));
+      item.appendChild(el("span", "vc-reason",
+        (c.reason || "") + (c.confidence === "expanded-coverage" ? " · newly-expanded coverage — verify, don't assume" : "")));
       list.appendChild(item);
     });
     v.appendChild(list);
@@ -627,6 +638,7 @@ function checkRow(c, collapsed) {
     tdC.appendChild(el("span", "cite-sub", partyBits + (c.year ? ` (${c.year})` : "")));
   }
   if (c.reason) tdC.appendChild(el("span", "cite-reason", c.reason));
+  if (c.caution) tdC.appendChild(el("span", "cite-caution", "⚠ " + c.caution));
   if (c.snippet) {
     const sn = el("span", "cite-snippet");
     sn.appendChild(el("span", "snip-label", "source text"));
