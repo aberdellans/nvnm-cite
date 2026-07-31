@@ -1,3 +1,5 @@
+# NOTE: pre-v1.2.0 ABI (name-keyed records/registries/addRecord); historical
+# record of the pilot probes/load — non-functional against current chains.
 """Backfill real reporter citations that CourtListener is MISSING — TEST PILOT ONLY.
 
 CourtListener holds some Published opinion clusters with NO reporter citation

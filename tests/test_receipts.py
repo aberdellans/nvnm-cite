@@ -97,7 +97,7 @@ def test_build_receipt_shape_and_size():
     receipt, serialized = build_receipt(
         document_sha256=DOC_SHA.upper(),  # accepts/repairs case
         checked_at_block=1670739, registries=REGS, summary=TALLY,
-        agent_address=AGENT, timestamp="2026-06-15T12:00:00Z",
+        agent_address=AGENT, timestamp="2026-06-15T12:00:00Z", chain_id=787111,
     )
     assert receipt["schema"] == RECEIPT_SCHEMA
     assert receipt["document_sha256"] == DOC_SHA  # lowercased
@@ -117,7 +117,7 @@ def test_build_receipt_shape_and_size():
 def test_build_receipt_validation():
     base = dict(
         document_sha256=DOC_SHA, checked_at_block=1, registries=REGS,
-        summary=TALLY, agent_address=AGENT, timestamp="t",
+        summary=TALLY, agent_address=AGENT, timestamp="t", chain_id=787111,
     )
     with pytest.raises(ReceiptError):
         build_receipt(**{**base, "document_sha256": "xyz"})
@@ -129,3 +129,22 @@ def test_build_receipt_validation():
         build_receipt(**{**base, "summary": {"checked": 1}})  # wrong keys
     with pytest.raises(ReceiptError):
         build_receipt(**{**base, "registries": [{"name": "us-scotus"}]})  # missing id/head_block
+
+
+def test_build_receipt_truncates_oversize_registries_table():
+    # A many-court brief cannot blow the 2048 B metadata cap: trailing
+    # registries are dropped deterministically and counted in the additive
+    # registries_omitted field (2026-07-31 amendment).
+    from nvnm_cite.receipts.schema import build_receipt as _build
+
+    many = [{"id": 1000 + i, "name": f"us-court-{i:04d}", "head_block": 1} for i in range(80)]
+    receipt, serialized = _build(
+        document_sha256=DOC_SHA, checked_at_block=1, registries=many,
+        summary=TALLY, agent_address=AGENT, timestamp="t", chain_id=1611,
+    )
+    assert len(serialized.encode("utf-8")) <= METADATA_CAP
+    kept = len(receipt["registries"])
+    assert 0 < kept < 80
+    assert receipt["registries_omitted"] == 80 - kept
+    # kept entries are the lowest ids, order preserved
+    assert [r["id"] for r in receipt["registries"]] == [1000 + i for i in range(kept)]

@@ -9,11 +9,14 @@ this, so there is exactly one verification path.
 Statuses (LOCKED, DECISIONS 2026-06-10): VERIFIED / NOT_FOUND /
 NOT_COVERED / AMBIGUOUS_JURISDICTION / UNPARSEABLE. NOT_FOUND comes ONLY
 from a keyed miss on a covered registry; a dead RPC raises out of here and
-is never reported as NOT_FOUND (the Resolver enforces this). Coverage is a
-fixed built-in list of the registries the pilot loaded (Albert's decision
-2026-06-14): a citation that maps outside it is NOT_COVERED without a chain
-read. Existence only: a VERIFIED result asserts the citation exists on
-chain, never that the case is good law or supports a proposition.
+is never reported as NOT_FOUND (the Resolver enforces this). Coverage is
+the pinned per-network registry manifest (Albert's decision 2026-07-31:
+every court registry the official attestor loaded — 2,114 on mainnet;
+supersedes the fixed pilot pair of 2026-06-14): a citation that maps
+outside it is NOT_COVERED without a chain read. Chain calls key on the
+manifest's numeric registryId (anchoring v1.2.0: names are non-unique).
+Existence only: a VERIFIED result asserts the citation exists on chain,
+never that the case is good law or supports a proposition.
 """
 
 from __future__ import annotations
@@ -22,18 +25,37 @@ import hashlib
 import json
 import re
 import time
+from collections.abc import Mapping
 from datetime import datetime, timezone
 from typing import Any
 
+from nvnm_cite import config
 from nvnm_cite.chain import precompile as pc
+from nvnm_cite.chain import registrymap
 from nvnm_cite.normalizer import CANONICAL_SPEC, NORMALIZER_VERSION, Disposition, normalize
 from nvnm_cite.verifier.extract import ExtractError, extract_text
 from nvnm_cite.verifier.resolver import Resolver
 
-# Coverage is a fixed built-in list (Albert's decision 2026-06-14): the
-# registries the pilot loaded on testnet. A mapped registry outside this set
-# is NOT_COVERED. Expanding coverage is a one-line change here (plus a test).
-COVERED_REGISTRIES: tuple[str, ...] = ("us-scotus", "us-ca11")
+# The registries whose jurisdiction mapping AND corpus were proven end-to-end
+# during the pilot (SCOTUS + the 13 circuits). A NOT_FOUND outside this set
+# carries the expanded-coverage caution below: state-reporter normalization
+# is unproven until the plan-7.7 rebuild, so a miss there is a flag to
+# verify, never proof of fabrication.
+FEDERAL_APPELLATE: frozenset[str] = frozenset(
+    {"us-scotus", "us-cadc", "us-cafc"} | {f"us-ca{n}" for n in range(1, 12)}
+)
+
+EXPANDED_COVERAGE_CAUTION = (
+    "Coverage for this court is newly expanded and its citation formats are "
+    "still being proven against real briefs. Treat this as a flag to verify "
+    "the citation yourself — never as proof it is fabricated, and never "
+    "delete a citation on this signal alone."
+)
+
+
+def default_registry_ids() -> dict[str, int]:
+    """Coverage for the active network: the pinned manifest's name -> id map."""
+    return registrymap.load_manifest(config.get_network().key).all_registries()
 
 VERIFIED = "VERIFIED"
 NOT_FOUND = "NOT_FOUND"
@@ -208,19 +230,22 @@ def check_text(
     text: str,
     resolver: Resolver,
     *,
-    covered: tuple[str, ...] = COVERED_REGISTRIES,
+    registry_ids: Mapping[str, int] | None = None,
 ) -> dict:
     """Normalize ``text`` and resolve every citation against the chain.
 
+    ``registry_ids`` is the coverage map (registry name -> numeric
+    registryId); ``None`` loads the active network's pinned manifest.
     Raises ``CheckError`` on an over-long document. Transport / RPC failures
     from the resolver propagate (they are NOT NOT_FOUND); the caller decides
     how to surface a dead chain.
     """
     if len(text) > MAX_TEXT_CHARS:
         raise CheckError(f"document text exceeds {MAX_TEXT_CHARS:,} characters", http_status=413)
+    if registry_ids is None:
+        registry_ids = default_registry_ids()
 
     result = normalize(text)
-    covered_set = set(covered)
     entries = _group_occurrences(result.citations)
 
     citations: list[dict] = []
@@ -229,9 +254,15 @@ def check_text(
     for (kind, *_), entry in entries.items():
         record: pc.Record | None = None
         query: dict | None = None
+        registry_id: int | None = None
+        confidence: str | None = None
+        caution: str | None = None
         if kind == "ok":
-            if entry["registry"] in covered_set:
-                resolution = resolver.resolve(entry["registry"], entry["canonical"])
+            registry_id = registry_ids.get(entry["registry"])
+            if registry_id is not None:
+                resolution = resolver.resolve(
+                    registry_id, entry["canonical"], entry["registry"]
+                )
                 record = resolution.record
                 query = resolution.query
                 if record is not None:
@@ -242,10 +273,14 @@ def check_text(
                         "no record for this citation in the "
                         f"{entry['registry']} registry (first-page canonical keys)"
                     )
+                    if entry["registry"] not in FEDERAL_APPELLATE:
+                        confidence = "expanded-coverage"
+                        caution = EXPANDED_COVERAGE_CAUTION
             else:
                 status = NOT_COVERED
                 reason = (
-                    f"{entry['registry']} is outside pilot coverage ({', '.join(covered)})"
+                    f"{entry['registry']} has no registry in the pinned coverage "
+                    f"manifest ({len(registry_ids)} covered court registries)"
                 )
         elif kind == "ambiguous":
             status, reason = AMBIGUOUS, entry["reason"]
@@ -261,6 +296,9 @@ def check_text(
         citations.append(
             {
                 "registry": entry["registry"],
+                "registry_id": registry_id,
+                "confidence": confidence,
+                "caution": caution,
                 "canonical": entry["canonical"],
                 "as_written": entry["as_written"],
                 "variants": entry["variants"],
@@ -289,10 +327,14 @@ def check_text(
         )
     citations.sort(key=lambda c: c["first_span"])
 
+    covered_names = sorted(registry_ids)
     return {
         "normalizer": {"version": NORMALIZER_VERSION, "spec": CANONICAL_SPEC},
         "coverage": {
-            "covered": list(covered),
+            "count": len(registry_ids),
+            # The full 2,114-name list would bloat every response; ship it
+            # only when small (the testnet pilot pair).
+            "covered": covered_names if len(covered_names) <= 20 else None,
             "source": "NVNM Chain (live keyed records() reads)",
         },
         "summary": {
@@ -320,7 +362,7 @@ def check_document(
     filename: str,
     resolver: Resolver,
     *,
-    covered: tuple[str, ...] = COVERED_REGISTRIES,
+    registry_ids: Mapping[str, int] | None = None,
 ) -> dict:
     """Full pipeline: extract text from ``data``, then check it. The document
     SHA-256 binds the exact bytes (what a Phase 4 receipt anchors)."""
@@ -331,7 +373,7 @@ def check_document(
         raise CheckError(str(exc)) from exc
     sha256 = hashlib.sha256(data).hexdigest()
 
-    report = check_text(extraction.text, resolver, covered=covered)
+    report = check_text(extraction.text, resolver, registry_ids=registry_ids)
     report["document"] = {
         "filename": filename,
         "sha256": sha256,

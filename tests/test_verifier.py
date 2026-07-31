@@ -24,23 +24,27 @@ from nvnm_cite.verifier.resolver import ChainResolver, Resolution, records_query
 # ---------------------------------------------------------------- fakes
 
 
-def _case_record(registry: str, checksum: str, metadata: str, uri: str = "https://cl/x/") -> pc.Record:
+def _case_record(registry_id: int, checksum: str, metadata: str, uri: str = "https://cl/x/") -> pc.Record:
     return pc.Record(
-        registry=registry, uri=uri, checksum=checksum, checksum_algo="cite-canonical-v1",
-        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1, is_latest=True,
+        uri=uri, checksum=checksum, checksum_algo="cite-canonical-v1",
+        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1,
+        is_latest=True, registry_id=registry_id,
     )
 
 
+# Coverage map for these hermetic tests: the TESTNET pilot ids.
+TEST_REGISTRY_IDS = {"us-scotus": 737, "us-ca11": 738}
+
 CHAIN_RECORDS = {
-    ("us-scotus", "410 U.S. 113"): _case_record(
-        "us-scotus", "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
+    (737, "410 U.S. 113"): _case_record(
+        737, "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
         "https://www.courtlistener.com/opinion/108713/roe-v-wade/",
     ),
-    ("us-ca11", "950 F.3d 1000"): _case_record(
-        "us-ca11", "950 F.3d 1000", '{"cluster":77001,"name":"Acme Corp. v. Zenith Ltd.","year":2020}',
+    (738, "950 F.3d 1000"): _case_record(
+        738, "950 F.3d 1000", '{"cluster":77001,"name":"Acme Corp. v. Zenith Ltd.","year":2020}',
     ),
-    ("us-ca11", "111 F.3d 897"): _case_record(
-        "us-ca11", "111 F.3d 897",
+    (738, "111 F.3d 897"): _case_record(
+        738, "111 F.3d 897",
         '{"cases":[{"cluster":88001,"name":"First Order Co. v. Second Order Co.","year":1997},'
         '{"cluster":88002,"name":"Third Pet. v. Fourth Resp.","year":1997}],"omitted":3}',
     ),
@@ -50,12 +54,12 @@ CHAIN_RECORDS = {
 class FakeResolver:
     def __init__(self, records=None):
         self.records = records or CHAIN_RECORDS
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[int, str]] = []
 
-    def resolve(self, registry: str, checksum: str) -> Resolution:
-        self.calls.append((registry, checksum))
-        _, query = records_query(registry, checksum)
-        return Resolution(record=self.records.get((registry, checksum)), query=query)
+    def resolve(self, registry_id: int, checksum: str, registry_name=None) -> Resolution:
+        self.calls.append((registry_id, checksum))
+        _, query = records_query(registry_id, checksum)
+        return Resolution(record=self.records.get((registry_id, checksum)), query=query)
 
 
 class RaisingResolver:
@@ -65,7 +69,7 @@ class RaisingResolver:
         self.error = error
         self.calls = 0
 
-    def resolve(self, registry: str, checksum: str) -> Resolution:
+    def resolve(self, registry_id: int, checksum: str, registry_name=None) -> Resolution:
         self.calls += 1
         raise self.error
 
@@ -86,7 +90,7 @@ mislabeled but real citation appears as Totally Fabricated v. Name,
 
 def test_all_five_statuses_and_name_mismatch():
     resolver = FakeResolver()
-    report = check_document(BRIEF.encode(), "brief.txt", resolver)
+    report = check_document(BRIEF.encode(), "brief.txt", resolver, registry_ids=TEST_REGISTRY_IDS)
 
     by_key = {c["canonical"] or c["as_written"]: c for c in report["citations"]}
     assert by_key["410 U.S. 113"]["status"] == "VERIFIED"
@@ -109,17 +113,46 @@ def test_all_five_statuses_and_name_mismatch():
 
 
 def test_not_covered_never_hits_the_chain():
-    # A registry outside the fixed covered list must NOT trigger a chain read
-    # (it is NOT_COVERED by the built-in list, Albert's decision 2026-06-14).
+    # A registry outside the coverage map must NOT trigger a chain read
+    # (NOT_COVERED comes from the pinned manifest, no RPC).
     resolver = FakeResolver()
-    check_document(BRIEF.encode(), "brief.txt", resolver)
-    assert ("us-ca2", "100 F.3d 200") not in resolver.calls
+    check_document(BRIEF.encode(), "brief.txt", resolver, registry_ids=TEST_REGISTRY_IDS)
+    assert all("100 F.3d 200" != checksum for _, checksum in resolver.calls)
     # only the two covered citations were resolved
-    assert set(resolver.calls) == {("us-scotus", "410 U.S. 113"), ("us-ca11", "950 F.3d 1000"), ("us-ca11", "925 F.3d 1339")}
+    assert set(resolver.calls) == {(737, "410 U.S. 113"), (738, "950 F.3d 1000"), (738, "925 F.3d 1339")}
+
+
+def test_registry_id_travels_with_resolved_citations():
+    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    by_key = {c["canonical"] or c["as_written"]: c for c in report["citations"]}
+    assert by_key["410 U.S. 113"]["registry_id"] == 737
+    assert by_key["925 F.3d 1339"]["registry_id"] == 738
+    assert by_key["100 F.3d 200"]["registry_id"] is None  # NOT_COVERED, no id
+
+
+def test_expanded_coverage_not_found_carries_caution():
+    # A NOT_FOUND outside the proven federal-appellate set (here a district
+    # court) is flagged expanded-coverage: a signal to verify, never proof of
+    # fabrication. Federal-appellate NOT_FOUNDs carry no such marker.
+    text = (
+        "See Foo v. Bar, 100 F. Supp. 2d 500 (S.D.N.Y. 2000). "
+        "Also Varghese v. China Southern Airlines Co., 925 F.3d 1339 (11th Cir. 2019)."
+    )
+    ids = dict(TEST_REGISTRY_IDS, **{"us-nysd": 1500})
+    report = check_text(text, FakeResolver(), registry_ids=ids)
+    by_key = {c["canonical"]: c for c in report["citations"]}
+    district = by_key["100 F. Supp. 2d 500"]
+    assert district["status"] == "NOT_FOUND"
+    assert district["confidence"] == "expanded-coverage"
+    assert "never" in district["caution"]
+    appellate = by_key["925 F.3d 1339"]
+    assert appellate["status"] == "NOT_FOUND"
+    assert appellate["confidence"] is None
+    assert appellate["caution"] is None
 
 
 def test_keyed_results_carry_a_replayable_query():
-    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver())
+    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
     by_key = {c["canonical"] or c["as_written"]: c for c in report["citations"]}
     # VERIFIED and NOT_FOUND came from a live read -> the exact query travels back
     for k in ("410 U.S. 113", "925 F.3d 1339"):
@@ -133,7 +166,7 @@ def test_keyed_results_carry_a_replayable_query():
 
 
 def test_document_binds_sha256_and_privacy_note():
-    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver())
+    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
     import hashlib
 
     assert report["document"]["sha256"] == hashlib.sha256(BRIEF.encode()).hexdigest()
@@ -152,23 +185,23 @@ def test_transport_failure_propagates_not_treated_as_not_found():
     for err in (ConnectionRefusedError("refused"), RpcError("eth_call", -32000, "execution reverted")):
         resolver = RaisingResolver(err)
         with pytest.raises(type(err)):
-            check_text(BRIEF, resolver)
+            check_text(BRIEF, resolver, registry_ids=TEST_REGISTRY_IDS)
         assert resolver.calls >= 1  # it did attempt the read
 
 
 def test_oversize_text_raises_checkerror():
     with pytest.raises(CheckError) as exc:
-        check_text("x" * 2_000_001, FakeResolver())
+        check_text("x" * 2_000_001, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
     assert exc.value.http_status == 413
 
 
 def test_empty_document_raises_checkerror():
     with pytest.raises(CheckError):
-        check_document(b"", "empty.txt", FakeResolver())
+        check_document(b"", "empty.txt", FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
 
 
 def test_clean_document_has_no_findings():
-    report = check_document(b"This brief cites no cases at all.", "x.txt", FakeResolver())
+    report = check_document(b"This brief cites no cases at all.", "x.txt", FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
     assert report["citations"] == []
     assert report["summary"]["occurrences"] == 0
 
@@ -177,13 +210,13 @@ def test_clean_document_has_no_findings():
 
 
 def test_record_view_single_and_collision():
-    single = record_view(CHAIN_RECORDS[("us-scotus", "410 U.S. 113")])
+    single = record_view(CHAIN_RECORDS[(737, "410 U.S. 113")])
     assert single["collision"] is False
     assert single["cases"][0]["name"] == "Roe v. Wade"
     assert single["more_cases"] == 0
     assert single["source"] == "chain (live)"
 
-    coll = record_view(CHAIN_RECORDS[("us-ca11", "111 F.3d 897")])
+    coll = record_view(CHAIN_RECORDS[(738, "111 F.3d 897")])
     assert coll["collision"] is True
     assert len(coll["cases"]) == 2
     assert coll["more_cases"] == 3  # the metadata's "omitted" count is surfaced
@@ -206,7 +239,7 @@ class _RpcStub:
 def test_chainresolver_keyed_miss_is_none():
     err = RpcError("eth_call", 3, "collections: not found: key 'us-scotus/999 U.S. 1'")
     resolver = ChainResolver(lambda: _RpcStub(error=err))
-    res = resolver.resolve("us-scotus", "999 U.S. 1")
+    res = resolver.resolve(737, "999 U.S. 1")
     assert res.record is None  # genuine absence -> NOT_FOUND upstream
     assert res.query["params"][0]["to"] == pc.PRECOMPILE_ADDRESS
 
@@ -214,14 +247,14 @@ def test_chainresolver_keyed_miss_is_none():
 def test_chainresolver_transport_error_propagates():
     resolver = ChainResolver(lambda: _RpcStub(error=ConnectionRefusedError("down")))
     with pytest.raises(ConnectionRefusedError):
-        resolver.resolve("us-scotus", "410 U.S. 113")
+        resolver.resolve(737, "410 U.S. 113")
 
 
 def test_chainresolver_non_miss_rpc_error_propagates():
     err = RpcError("eth_call", -32000, "execution reverted")
     resolver = ChainResolver(lambda: _RpcStub(error=err))
     with pytest.raises(RpcError):
-        resolver.resolve("us-scotus", "410 U.S. 113")
+        resolver.resolve(737, "410 U.S. 113")
 
 
 def test_is_keyed_miss_marker():

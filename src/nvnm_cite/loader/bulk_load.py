@@ -50,7 +50,7 @@ from nvnm_cite.chain.precompile import (
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
 from nvnm_cite.chain.secp256k1 import address_from_private_key
 from nvnm_cite.chain.signer import LegacyTransaction, sign_transaction
-from nvnm_cite.config import TESTNET_CHAIN_ID, load_dotenv, testnet_private_key, testnet_rpc
+from nvnm_cite.config import get_network, load_dotenv, signing_context
 from nvnm_cite.loader.records import CaseRow, RecordError, render_record
 
 GAS_FLOOR = 40_000_000_000  # 40 gwei chain floor
@@ -283,11 +283,11 @@ class Halt(RuntimeError):
 
 
 def chain_has_key(
-    rpc: EvmRpc, registry: str, checksum: str, log=lambda s: None
+    rpc: EvmRpc, registry_id: int, checksum: str, log=lambda s: None
 ) -> bool:
-    """Keyed existence read; the miss signal is the RpcError, never an
-    empty page (DECISIONS 2026-06-10)."""
-    calldata = build_records_query(registry=registry, checksum=checksum)
+    """Keyed existence read (id-keyed under v1.2.0); the miss signal is the
+    RpcError, never an empty page (DECISIONS 2026-06-10)."""
+    calldata = build_records_query(registry_id=registry_id, checksum=checksum)
     try:
         rows, _ = decode_records_result(
             rpc_retry(log, "records()", lambda: rpc.eth_call(PRECOMPILE_ADDRESS, calldata))
@@ -299,7 +299,16 @@ def chain_has_key(
     return bool(rows)
 
 
-def recover_submitted(db: sqlite3.Connection, rpc: EvmRpc, address: str, log) -> None:
+def _registry_id_or_halt(registry_ids, registry: str) -> int:
+    rid = registry_ids.get(registry)
+    if rid is None:
+        raise Halt(f"{registry} is not in the registry manifest; refusing to guess an id")
+    return rid
+
+
+def recover_submitted(
+    db: sqlite3.Connection, rpc: EvmRpc, address: str, registry_ids, log
+) -> None:
     """Resume protocol: drain the mempool, then settle every 'submitted' row
     by a keyed read. Only the in-flight window can be in this state."""
     rows = db.execute(
@@ -317,7 +326,7 @@ def recover_submitted(db: sqlite3.Connection, rpc: EvmRpc, address: str, log) ->
         time.sleep(5)
     confirmed = reset = 0
     for position, registry, checksum in rows:
-        if chain_has_key(rpc, registry, checksum, log):
+        if chain_has_key(rpc, _registry_id_or_halt(registry_ids, registry), checksum, log):
             db.execute(
                 "UPDATE load_state SET status='confirmed', updated_at=? WHERE position=?",
                 (_now(), position),
@@ -338,16 +347,20 @@ def run_load(
     db: sqlite3.Connection,
     rpc: EvmRpc,
     key: int,
+    chain_id: int,
+    registry_ids,
     depth: int = DEFAULT_DEPTH,
     log=lambda s: print(s, flush=True),
     max_records: int | None = None,
 ) -> dict[str, int]:
+    """``key``/``chain_id`` come from config.signing_context (the one signing
+    gate); ``registry_ids`` is the pinned manifest's name -> id map."""
     address = address_from_private_key(key)
-    chain_id = rpc.chain_id()
-    if chain_id != TESTNET_CHAIN_ID:
-        raise Halt(f"chain id {chain_id} != {TESTNET_CHAIN_ID}; refusing to write")
+    live_chain = rpc.chain_id()
+    if live_chain != chain_id:
+        raise Halt(f"chain id {live_chain} != {chain_id}; refusing to write")
 
-    recover_submitted(db, rpc, address, log)
+    recover_submitted(db, rpc, address, registry_ids, log)
 
     stop = {"flag": False}
 
@@ -376,7 +389,7 @@ def run_load(
     def submit(row: tuple, use_nonce: int) -> InFlight:
         position, registry, checksum, uri, metadata = row
         calldata = build_add_record(
-            registry=registry,
+            registry_id=_registry_id_or_halt(registry_ids, registry),
             uri=uri,
             checksum=checksum,
             checksum_algo="cite-canonical-v1",
@@ -385,8 +398,10 @@ def run_load(
         # Analytic gas limit (see GAS_BASE note): caps were validated at
         # prepare, auth is proven by the running load, duplicates never
         # revert -- nothing a per-record estimate would catch is left.
+        # (v1.2.0: the registry name left the payload; the uint64 id is in
+        # the static tuple head and is covered by GAS_BASE.)
         payload_bytes = len(
-            (registry + uri + checksum + "cite-canonical-v1" + metadata).encode("utf-8")
+            (uri + checksum + "cite-canonical-v1" + metadata).encode("utf-8")
         )
         gas = GAS_BASE + GAS_PER_BYTE * payload_bytes
         tx = LegacyTransaction(
@@ -397,7 +412,7 @@ def run_load(
             value=0,
             data=calldata,
         )
-        signed = sign_transaction(tx, key, TESTNET_CHAIN_ID)
+        signed = sign_transaction(tx, key, chain_id)
         try:
             tx_hash = rpc_retry(
                 log, "sendRawTransaction", lambda: rpc.send_raw_transaction(signed.raw)
@@ -482,7 +497,7 @@ def run_load(
                             "SELECT registry, checksum FROM load_state WHERE position=?",
                             (done.position,),
                         ).fetchone()
-                        if not chain_has_key(rpc, reg, ck, log):
+                        if not chain_has_key(rpc, _registry_id_or_halt(registry_ids, reg), ck, log):
                             db.execute(
                                 "UPDATE load_state SET status='failed', updated_at=? WHERE position=?",
                                 (_now(), done.position),
@@ -566,7 +581,12 @@ def run_load(
 # --------------------------------------------------------------------------
 
 
-def print_status(db: sqlite3.Connection, rpc: EvmRpc | None, address: str | None) -> None:
+def print_status(
+    db: sqlite3.Connection,
+    rpc: EvmRpc | None,
+    address: str | None,
+    token: str = "wmantraUSD",
+) -> None:
     print("load_state:")
     for status, count in db.execute(
         "SELECT status, COUNT(*) FROM load_state GROUP BY status ORDER BY status"
@@ -585,7 +605,7 @@ def print_status(db: sqlite3.Connection, rpc: EvmRpc | None, address: str | None
         print(f"  measured: {gas[0]:,} records, avg {gas[2]:,.0f} gas")
     if rpc is not None and address is not None:
         balance = rpc.get_balance(address)
-        print(f"  balance: {balance / 1e18:.3f} wmantraUSD ({address})")
+        print(f"  balance: {balance / 1e18:.3f} {token} ({address})")
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -608,10 +628,12 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--state", type=Path, default=Path("data/load_state.sqlite"))
     p_run.add_argument("--depth", type=int, default=DEFAULT_DEPTH)
     p_run.add_argument("--max-records", type=int, default=None, help="stop after N submissions (probe runs)")
+    p_run.add_argument("--network", choices=["mainnet", "testnet"], default=None)
 
     p_stat = sub.add_parser("status", help="checkpoint counters and balance")
     p_stat.add_argument("--state", type=Path, default=Path("data/load_state.sqlite"))
     p_stat.add_argument("--offline", action="store_true", help="skip RPC reads")
+    p_stat.add_argument("--network", choices=["mainnet", "testnet"], default=None)
 
     args = parser.parse_args(argv)
     load_dotenv()
@@ -624,22 +646,29 @@ def main(argv: list[str] | None = None) -> int:
         print(f"prepare {args.tranche}: " + ", ".join(f"{k}={v:,}" for k, v in stats.items()))
         return 0
 
+    from nvnm_cite.chain.registrymap import load_manifest
+
     if args.command == "run":
+        # Writes default to testnet; mainnet requires the signing_context
+        # opt-in pair (never set in .env or sessions).
+        network = get_network(args.network, default="testnet")
         db = open_state(args.state)
-        rpc = EvmRpc(testnet_rpc())
-        key = testnet_private_key()
-        run_load(db, rpc, key, depth=args.depth, max_records=args.max_records)
-        print_status(db, rpc, address_from_private_key(key))
+        rpc = EvmRpc(network.rpc_url())
+        key, chain_id = signing_context(network)
+        registry_ids = load_manifest(network.key).all_registries()
+        run_load(db, rpc, key, chain_id, registry_ids, depth=args.depth, max_records=args.max_records)
+        print_status(db, rpc, address_from_private_key(key), token=network.gas_token)
         db.close()
         return 0
 
+    network = get_network(args.network, default="testnet")
     db = open_state(args.state)
     if args.offline:
         print_status(db, None, None)
     else:
-        rpc = EvmRpc(testnet_rpc())
-        key = testnet_private_key()
-        print_status(db, rpc, address_from_private_key(key))
+        rpc = EvmRpc(network.rpc_url())
+        key, _ = signing_context(network)
+        print_status(db, rpc, address_from_private_key(key), token=network.gas_token)
     db.close()
     return 0
 

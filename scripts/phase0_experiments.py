@@ -1,3 +1,5 @@
+# NOTE: pre-v1.2.0 ABI (name-keyed records/registries/addRecord); historical
+# record of the pilot probes/load — non-functional against current chains.
 """Phase 0 task 0.7: empirical experiment matrix against NVNM testnet.
 
 Groups (run separately so a failure doesn't lose earlier results):

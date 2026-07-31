@@ -120,7 +120,7 @@ A receipt record anchors that one exact document was citation-checked — by who
 
 ### 4.2 Discovery and verification
 
-Discovery is the registry LINK printed on the filing ("Citation verifications: `<firm>--<case>`"), a stable pointer fixed when the matter opens — never the receipt/tx, which is circular (the receipt is keyed by the final document hash, so citing it would change the bytes). A verifier follows the link, hashes the file locally, does a keyed `records(registry, sha256)` read, and re-runs the check pinned to `checked_at_block`.
+Discovery is the registry LINK printed on the filing (since the v1.2.0 amendment, section 7: "Citation verifications: NVNM Chain (chain `<chain_id>`) registry #`<id>` — `<firm>--<case>`"), a stable pointer fixed when the matter's registry is created — never the receipt/tx, which is circular (the receipt is keyed by the final document hash, so citing it would change the bytes). A verifier uses the #id, hashes the file locally, does a keyed `records(registry_id, sha256)` read, and re-runs the check pinned to `checked_at_block`.
 
 Note on the receipt `uri`: the chain requires non-empty, and improvising at anchor time is forbidden, so v1 fixes a URN rather than a URL. Rationale: the repo is private during the pilot and the project controls no public web host, so any URL written today would dangle for a third-party reader; a URN is honest about being an identifier, not a dereference. When the spec is published at mainnet cutover (task 6.4 preconditions), receipts can move to the published URL under a schema version bump.
 
@@ -139,3 +139,37 @@ Before any `addRecord` submission a conforming writer MUST:
 3. Verify `uri`, `checksumAlgo`, `metadata` are non-empty and metadata is not `{}`.
 4. Submit `timestamp=""`, `recordId=0`, `index=0`, `isLatest=false` and treat the chain's values as authoritative on read.
 5. Treat duplicate-key submission as versioning, and rely on its own checkpoint state for idempotency, never on the chain.
+
+## 7. Anchoring v1.2.0 amendment (2026-07-31; additive — no schema bump)
+
+The 2026-07-30 chain upgrade (anchoring module v1.2.0) made registry names
+NON-UNIQUE and moved every chain call — reads and writes — to the numeric
+`registryId`. Consequences for this document, none of which change the
+locked field layouts above:
+
+- **The canonical reference to any registry is its numeric #id.** Names
+  remain the human-readable convention of sections 2 and 4, but nothing on
+  chain enforces their uniqueness and no chain call accepts them as keys.
+  For the court registries the published name→id map is the pinned,
+  creator-verified manifest `src/nvnm_cite/chain/registry_manifest_<network>.json`
+  (schema `nvnm-cite-registry-manifest/v1`; regenerate with
+  `scripts/build_registry_manifest.py`, audit with `nvnm-cite manifest-verify`).
+  Mainnet: 2,114 registries, ids 69–2182 (`us-scotus` = 82).
+- **The discovery line on a filing carries the #id.** Locked format
+  (`receipts/anchor.py::registry_line`):
+  `Citation verifications: NVNM Chain (chain <chain_id>) registry #<id> — <firm>--<case>`.
+  A verifier uses the #id; the name is context only. A NEW registry's id is
+  assigned by the chain at `addRegistry` confirmation and recovered from the
+  AddRegistry event in the transaction receipt, so registry setup precedes
+  the final export of the filing.
+- **Receipt `registries` table under wide coverage.** With coverage at the
+  full manifest, `registries` records the court registries actually READ
+  for the document (the distinct chain-resolved citations), never the whole
+  coverage set. If an unusually many-court document would push the receipt
+  over the 2048 B metadata cap, trailing entries (sorted by id) are dropped
+  deterministically and counted in the ADDITIVE OPTIONAL top-level field
+  `registries_omitted` (absent when 0). Hash, tally, and every other field
+  are untouched; readers that ignore unknown fields are unaffected.
+- Section 5's remark that `updateRecordStatus` is "absent from the deployed
+  testnet binary" was corrected in DECISIONS 2026-07-07: the method was
+  always deployed, id-keyed. The v1 correction policy stands.

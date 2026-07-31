@@ -53,7 +53,8 @@ There is exactly one ABI codec in the system: the golden-tested `chain/abi.py` +
 `chain/precompile.py`. The server prepares calldata with it; the page contains
 **no JavaScript ABI code** and never sees a private key — transactions are signed
 by the user's own wallet (MetaMask or compatible; the page offers the chain-add for
-testnet 787111). Writes are deny-by-default on chain, and the page pre-flights them
+the server-selected network — mainnet 1611 by default, testnet 787111 with
+`--network testnet`). Writes are deny-by-default on chain, and the page pre-flights them
 with an `eth_estimateGas` probe so a lawyer learns about a missing editor grant
 *before* their wallet pops.
 

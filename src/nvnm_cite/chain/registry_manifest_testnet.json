@@ -1,0 +1,16 @@
+{
+ "schema": "nvnm-cite-registry-manifest/v1",
+ "network": "testnet",
+ "chain_id": 787111,
+ "creator": "nvnm14a3em3mr9mvta9ccgk80wn0dxgzt5lkt2r8trx",
+ "generated_at": "2026-07-31T14:45:07Z",
+ "generated_at_block": 2897390,
+ "registries": {
+  "us-ca11": {
+   "id": 738
+  },
+  "us-scotus": {
+   "id": 737
+  }
+ }
+}

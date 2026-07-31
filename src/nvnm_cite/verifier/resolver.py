@@ -33,9 +33,12 @@ class Resolution:
     query: dict
 
 
-def records_query(registry: str, checksum: str, block: str = "latest") -> tuple[bytes, dict]:
-    """Calldata + a replayable eth_call description for one keyed read."""
-    data = pc.build_records_query(registry=registry, checksum=checksum)
+def records_query(registry_id: int, checksum: str, block: str = "latest") -> tuple[bytes, dict]:
+    """Calldata + a replayable eth_call description for one keyed read.
+
+    Id-keyed under anchoring v1.2.0: the calldata carries the numeric
+    registryId (names are non-unique on chain and cannot key a read)."""
+    data = pc.build_records_query(registry_id=registry_id, checksum=checksum)
     replay = {
         "method": "eth_call",
         "params": [{"to": pc.PRECOMPILE_ADDRESS, "data": "0x" + data.hex()}, block],
@@ -44,9 +47,14 @@ def records_query(registry: str, checksum: str, block: str = "latest") -> tuple[
 
 
 class Resolver(Protocol):
-    """What the verifier core needs from the chain: resolve one citation."""
+    """What the verifier core needs from the chain: resolve one citation.
 
-    def resolve(self, registry: str, checksum: str) -> Resolution: ...
+    ``registry_name`` rides along for telemetry/reporting only; the chain
+    call keys on ``registry_id``."""
+
+    def resolve(
+        self, registry_id: int, checksum: str, registry_name: str | None = None
+    ) -> Resolution: ...
 
 
 class ChainResolver:
@@ -69,16 +77,21 @@ class ChainResolver:
         # Opt-in aggregate analytics (task 4.6); off unless an operator attaches a sink.
         self.telemetry = telemetry or NullTelemetry()
 
-    def resolve(self, registry: str, checksum: str) -> Resolution:
-        data, replay = records_query(registry, checksum, self.block)
+    def resolve(
+        self, registry_id: int, checksum: str, registry_name: str | None = None
+    ) -> Resolution:
+        # Telemetry stays keyed by NAME (analytics continuity across the
+        # v1.2.0 id migration); the chain call keys on the id.
+        tel_key = registry_name or f"#{registry_id}"
+        data, replay = records_query(registry_id, checksum, self.block)
         try:
             raw = self._rpc_factory().eth_call(pc.PRECOMPILE_ADDRESS, data, block=self.block)
         except RpcError as err:
             if pc.is_keyed_miss(err):
-                self.telemetry.record(registry, checksum, False)
+                self.telemetry.record(tel_key, checksum, False)
                 return Resolution(record=None, query=replay)
             raise  # transport / non-miss RPC error: NOT a NOT_FOUND signal, and not telemetry
         records, _ = pc.decode_records_result(raw)
         record = records[0] if records else None
-        self.telemetry.record(registry, checksum, record is not None)
+        self.telemetry.record(tel_key, checksum, record is not None)
         return Resolution(record=record, query=replay)

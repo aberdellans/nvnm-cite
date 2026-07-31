@@ -55,9 +55,9 @@ class _RpcStub:
 
 def test_resolver_records_keyed_miss(tmp_path):
     sink = SqliteTelemetry(tmp_path / "t.sqlite")
-    err = RpcError("eth_call", 3, "collections: not found: key 'us-ca11/925 F.3d 1339'")
+    err = RpcError("eth_call", 3, "collections: not found: key '(\"738\", \"925 F.3d 1339\")'")
     resolver = ChainResolver(lambda: _RpcStub(err), telemetry=sink)
-    res = resolver.resolve("us-ca11", "925 F.3d 1339")
+    res = resolver.resolve(738, "925 F.3d 1339", "us-ca11")
     assert res.record is None
     top = sink.top()
     assert top == [{"registry": "us-ca11", "citation": "925 F.3d 1339", "lookups": 1, "hits": 0}]
@@ -68,6 +68,6 @@ def test_resolver_does_not_record_transport_error(tmp_path):
     sink = SqliteTelemetry(tmp_path / "t.sqlite")
     resolver = ChainResolver(lambda: _RpcStub(ConnectionRefusedError("down")), telemetry=sink)
     with pytest.raises(ConnectionRefusedError):
-        resolver.resolve("us-scotus", "410 U.S. 113")
+        resolver.resolve(737, "410 U.S. 113", "us-scotus")
     assert sink.top() == []  # a dead chain is not a recordable lookup
     sink.close()

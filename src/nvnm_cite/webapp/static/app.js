@@ -1,11 +1,22 @@
 "use strict";
-/* NVNM Cite web demo.
+/* NVNM Cite web app.
  *
  * Trust model in one paragraph: this page never sees a private key and
  * never encodes chain data itself. The local server prepares calldata
  * with the project's golden-tested codec; the user's wallet signs; the
  * chain decides. Dynamic data (case names, chain metadata) is rendered
  * exclusively via textContent — never innerHTML.
+ *
+ * Network identity (chain id, RPC, explorer, gas token) is SERVER-FED via
+ * /api/status's `network` block — nothing chain-specific is hardcoded
+ * here, so the same page serves mainnet (the production default) and
+ * testnet. Wallet actions are gated until that block has loaded.
+ *
+ * Anchoring v1.2.0: registry names are NOT unique on chain; the numeric
+ * registry #id is the canonical reference. The discovery line on a filing
+ * carries the #id, and a NEW registry's id exists only after its creation
+ * tx confirms (recovered from the AddRegistry event via /api/tx), so the
+ * record flow is: setup tx → confirmed #id → re-prepare → anchor.
  *
  * DOM vocabulary (classes/shapes) follows the 2026-06-12 design handoff
  * plus the round-2 contract delta (design_handoff_nvnm_cite_r2/
@@ -14,17 +25,32 @@
  * wallet callouts, stepper tones, sticky tab bar, and coverage states.
  */
 
-const CHAIN_ID = 787111;                 // nvnm-testnet-1
-const CHAIN_ID_HEX = "0x" + CHAIN_ID.toString(16); // 0xc02a7
-const CHAIN_PARAMS = {
-  chainId: CHAIN_ID_HEX,
-  chainName: "NVNM Chain Testnet",
-  nativeCurrency: { name: "wmantraUSD", symbol: "wmantraUSD", decimals: 18 },
-  rpcUrls: ["https://evm.testnet.nvnmchain.io"],
-  blockExplorerUrls: ["https://explorer.evm.testnet.nvnmchain.io"],
-};
-let EXPLORER = "https://explorer.evm.testnet.nvnmchain.io";
-let RPC_URL = CHAIN_PARAMS.rpcUrls[0];
+let NET = null;  // /api/status `network` block; null until the first load
+let EXPLORER = "";
+let RPC_URL = "";
+
+function netChainId() { return NET ? NET.chain_id : null; }
+
+function chainParams() {
+  // wallet_addEthereumChain params, built from the server-fed network block.
+  return {
+    chainId: NET.chain_id_hex,
+    chainName: NET.key === "mainnet" ? "NVNM Chain" : "NVNM Chain Testnet",
+    nativeCurrency: {
+      name: NET.gas_token.name,
+      symbol: NET.gas_token.symbol,
+      decimals: NET.gas_token.decimals,
+    },
+    rpcUrls: [NET.public_rpc],
+    blockExplorerUrls: [NET.explorer],
+  };
+}
+
+function gasCostText(gas, priceGwei) {
+  const gwei = priceGwei || (NET && NET.gas_price_gwei) || 40;
+  const token = NET ? NET.gas_token.symbol : "";
+  return `~${gas.toLocaleString("en-US")} gas ≈ ${(gas * gwei * 1e-9).toFixed(4)} ${token} at ${gwei} gwei`;
+}
 
 const STATUS_ORDER = ["VERIFIED", "NOT_FOUND", "NOT_COVERED", "AMBIGUOUS_JURISDICTION", "UNPARSEABLE"];
 /* Severity order for the regrouped results table (round 2, P0-1); NOT_COVERED
@@ -210,6 +236,7 @@ let lastReport = null;   // last /api/check report (page memory only)
 let lastFile = null;     // {bytes, name} of the last checked file (re-sent to prepare a receipt)
 let lastSource = "file"; // "file" | "paste" | "sample" — drives the paste warning + sample tag
 let prepared = null;     // last /api/receipt/prepare response
+let chosenRegistryId = null; // pinned receipts-registry #id (picker choice or post-create)
 let wallet = { address: null, chainOk: false, detected: false };
 let filterSet = new Set();      // statuses the summary-chip filters keep visible
 let coveredExpanded = false;    // NOT COVERED disclosure state
@@ -271,9 +298,20 @@ async function loadStatus() {
     $("chain-badge").className = "badge badge-bad";
     return;
   }
-  if (st.constants) {
+  if (st.network) {
+    NET = st.network;
+    EXPLORER = NET.explorer;
+    RPC_URL = (NET.rpc_urls && NET.rpc_urls[0]) || NET.public_rpc;
+  } else if (st.constants) {
     if (st.constants.explorer) EXPLORER = st.constants.explorer;
     if (st.constants.rpc_url) RPC_URL = st.constants.rpc_url;
+  }
+
+  // Network badge (next to the wordmark): mainnet vs testnet, server-fed.
+  const netBadge = $("net-badge");
+  if (netBadge && NET) {
+    netBadge.textContent = NET.key === "mainnet" ? "Mainnet" : "Testnet";
+    netBadge.className = "badge " + (NET.key === "mainnet" ? "badge-mainnet" : "badge-testnet");
   }
 
   const badge = $("chain-badge");
@@ -284,6 +322,8 @@ async function loadStatus() {
     badge.textContent = "chain RPC unreachable";
     badge.className = "badge badge-bad";
   }
+  // The wallet button may have rendered before the network block arrived.
+  refreshWalletState();
 
   const bannerBox = $("global-banner");
   const notes = [];
@@ -305,8 +345,15 @@ async function loadStatus() {
     }
   }
 
+  // Footer network line (server-fed; nothing hardcoded).
+  const footChain = $("footer-chain");
+  if (footChain && NET) {
+    footChain.textContent = `${NET.label} · chain id ${NET.chain_id}`;
+  }
+
   // About panel: live status
   const box = clear($("about-status"));
+  if (NET) kvRow(box, "Network", NET.label, { mono: true });
   if (st.chain && st.chain.rpc_ok) {
     const rpcV = el("span");
     rpcV.appendChild(el("span", "mono", RPC_URL));
@@ -314,6 +361,9 @@ async function loadStatus() {
     kvRow(box, "RPC", rpcV);
     kvRow(box, "Chain id", `${st.chain.chain_id} (expected ${st.chain.expected_chain_id})`, { mono: true });
     kvRow(box, "Head block", st.chain.head_block.toLocaleString("en-US"), { mono: true });
+    if (NET && NET.gas_price_gwei) {
+      kvRow(box, "Gas price", `${NET.gas_price_gwei} gwei (${NET.gas_token.symbol})`, { mono: true });
+    }
   } else {
     kvRow(box, "RPC", `unreachable — ${(st.chain && st.chain.error) || "unknown error"}`);
   }
@@ -338,17 +388,21 @@ async function loadStatus() {
   renderCoverage(st);
 }
 
-/* Coverage rendering (round 2, P1-1): counts come from the local index when
-   one exists; otherwise the About table falls back to live-status facts
-   (names and ids only) behind an honest "counts unavailable" callout, and the
-   Check-tab scope line + legend stay server-filled either way. */
+/* Coverage rendering: the authoritative coverage figure is the pinned
+   registry MANIFEST (st.coverage — creator-verified name→id map; 2,114
+   registries on mainnet). The local-index table below it shows only the
+   locally synced/mirrored subset, honestly labeled. */
 function renderCoverage(st) {
   const rows = st.index && st.index.registries ? st.index.registries : [];
   const liveNames = Object.keys(st.registries || {});
   const coveredNames = rows.length ? rows.map((r) => r.registry) : liveNames;
+  const manifest = st.coverage || null;
+  const covSummary = manifest && manifest.count > 2
+    ? `${manifest.count.toLocaleString("en-US")} US court registries`
+    : coveredNames.join(", ");
 
   const legendCov = $("legend-coverage");
-  if (legendCov && coveredNames.length) legendCov.textContent = coveredNames.join(", ");
+  if (legendCov && covSummary) legendCov.textContent = covSummary;
 
   const tbody = clear($("coverage-table").querySelector("tbody"));
   const lede = $("about-coverage-lede");
@@ -372,20 +426,25 @@ function renderCoverage(st) {
       tbody.appendChild(tr);
     });
     if (lede) {
+      const manifestBit = manifest && manifest.count > 2
+        ? `NVNM Cite checks against ${manifest.count.toLocaleString("en-US")} US court registries on NVNM Chain ` +
+          `(pinned name→id manifest, block ${Number(manifest.generated_at_block || 0).toLocaleString("en-US")}). `
+        : "";
       lede.textContent =
-        `NVNM Cite currently covers ${totalRecords.toLocaleString("en-US")} citation keys across ` +
-        `${rows.length} ${rows.length === 1 ? "registry" : "registries"} (${coveredNames.join(", ")})` +
+        manifestBit +
+        `This instance additionally mirrors ${totalRecords.toLocaleString("en-US")} citation keys across ` +
+        `${rows.length} locally synced ${rows.length === 1 ? "registry" : "registries"} (${coveredNames.join(", ")})` +
         (snapshot ? `, from CourtListener public bulk data (snapshot ${snapshot})` : "") +
-        ". Citations to courts not yet covered are reported honestly as “not covered” rather than guessed at.";
+        ". Citations to courts without a registry are reported honestly as “not covered” rather than guessed at.";
     }
   } else {
-    // No local index on this instance: honest empty state, never "loading".
-    emptyBox.classList.toggle("hidden", liveNames.length === 0);
+    // No local index on this instance: honest state, never "loading".
+    emptyBox.classList.toggle("hidden", liveNames.length === 0 && !(manifest && manifest.count));
     liveNames.forEach((name) => {
       const reg = st.registries[name];
       const tr = el("tr");
       const t1 = el("td"); t1.appendChild(el("span", "cite-canon", name)); tr.appendChild(t1);
-      tr.appendChild(el("td", null, "live status (names and ids only)"));
+      tr.appendChild(el("td", null, "live sentinel probe"));
       tr.appendChild(el("td", "num", "—"));
       tr.appendChild(el("td", null, reg.exists
         ? `registry id ${reg.id} · created ${String(reg.created_at).slice(0, 10)}`
@@ -393,18 +452,23 @@ function renderCoverage(st) {
       tbody.appendChild(tr);
     });
     if (lede) {
-      lede.textContent = liveNames.length
-        ? "This instance has no local index, so citation-key counts are unavailable; the registries below are read live from the chain and lookups are unaffected."
-        : "The chain RPC is unreachable, so coverage cannot be shown right now.";
+      lede.textContent = manifest && manifest.count
+        ? `NVNM Cite checks against ${manifest.count.toLocaleString("en-US")} US court registries on NVNM Chain ` +
+          `(pinned name→id manifest, block ${Number(manifest.generated_at_block || 0).toLocaleString("en-US")}). ` +
+          "Lookups read the chain live; this instance keeps no local mirror. Citations to courts without a " +
+          "registry are reported honestly as “not covered”."
+        : (liveNames.length
+          ? "This instance has no local index, so citation-key counts are unavailable; the registries below are read live from the chain and lookups are unaffected."
+          : "The chain RPC is unreachable, so coverage cannot be shown right now.");
     }
   }
 
-  // Check-tab scope line (server-filled; the mainnet scope will change it).
+  // Check-tab scope line (server-filled from the manifest).
   const scope = $("coverage-scope");
-  if (scope && totalRecords > 0) {
-    scope.textContent =
-      `the canonical record of ${totalRecords.toLocaleString("en-US")} citation keys across ` +
-      `${coveredNames.join(", ")} during the pilot`;
+  if (scope && manifest && manifest.count) {
+    scope.textContent = manifest.count > 2
+      ? `the canonical citation record of ${manifest.count.toLocaleString("en-US")} US court registries`
+      : `the canonical record across ${coveredNames.join(", ")} during the pilot`;
   }
 }
 
@@ -696,6 +760,8 @@ async function runCheck(bytes, filename, source) {
     const report = await apiPostBytes("/api/check", bytes, filename);
     lastFile = { bytes, name: filename };  // retained in page memory to prepare a receipt
     lastSource = source || "file";
+    prepared = null;           // a new document invalidates any prepared receipt
+    chosenRegistryId = null;   // ...and any pinned registry choice
     renderCheck(report);
   } catch (err) {
     setCheckProgress(false);
@@ -747,11 +813,21 @@ async function refreshWalletState() {
     syncRecordPanel();
     return;
   }
+  if (!NET) {
+    // Network identity not loaded yet: never guess a chain id.
+    btn.textContent = "Connect wallet";
+    btn.disabled = true;
+    btn.title = "Waiting for the server's network identity…";
+    wallet.address = null;
+    wallet.chainOk = false;
+    syncRecordPanel();
+    return;
+  }
   const accounts = await eth.request({ method: "eth_accounts" }).catch(() => []);
   wallet.address = accounts[0] || null;
   if (wallet.address) {
     const chainHex = await eth.request({ method: "eth_chainId" }).catch(() => null);
-    wallet.chainOk = chainHex && parseInt(chainHex, 16) === CHAIN_ID;
+    wallet.chainOk = chainHex && parseInt(chainHex, 16) === netChainId();
     btn.classList.add("connected");
     if (wallet.chainOk) {
       btn.textContent = shortHex(wallet.address, 5);
@@ -768,11 +844,11 @@ async function refreshWalletState() {
 
 async function connectWallet() {
   const eth = providerOrNull();
-  if (!eth) return;
+  if (!eth || !NET) return;
   try {
     await eth.request({ method: "eth_requestAccounts" });
     const chainHex = await eth.request({ method: "eth_chainId" });
-    if (parseInt(chainHex, 16) !== CHAIN_ID) await switchNetwork();
+    if (parseInt(chainHex, 16) !== netChainId()) await switchNetwork();
   } catch (err) {
     if (err && err.code !== 4001) alert(`Wallet error: ${err.message || err}`);
   }
@@ -781,11 +857,12 @@ async function connectWallet() {
 
 async function switchNetwork() {
   const eth = providerOrNull();
+  if (!NET) return;
   try {
-    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: CHAIN_ID_HEX }] });
+    await eth.request({ method: "wallet_switchEthereumChain", params: [{ chainId: NET.chain_id_hex }] });
   } catch (err) {
     if (err && (err.code === 4902 || /unrecognized|not added/i.test(err.message || ""))) {
-      await eth.request({ method: "wallet_addEthereumChain", params: [CHAIN_PARAMS] });
+      await eth.request({ method: "wallet_addEthereumChain", params: [chainParams()] });
     } else if (err && err.code !== 4001) {
       throw err;
     }
@@ -813,21 +890,31 @@ function registryNameFromInputs() {
   return firm && c ? `${firm}--${c}` : null;
 }
 
-/* The registry line (round 2, P0-2): deterministic from filer + matter, shown
-   BEFORE anchoring — the filed document must already carry it, because the
-   receipt binds the exact bytes (item 3's discovery ordering). */
-function reglineFor(registry) {
-  return `Citation verifications: NVNM Chain registry ${registry}`;
+/* The registry line (round 2, P0-2; amended for v1.2.0): shown BEFORE
+   anchoring — the filed document must already carry it, because the receipt
+   binds the exact bytes (item 3's discovery ordering). The canonical line
+   carries the registry #id (names are not unique on chain); until the
+   registry exists the id is shown as pending. */
+function reglineFor(registryId, name) {
+  const chain = NET ? NET.chain_id : "…";
+  return `Citation verifications: NVNM Chain (chain ${chain}) registry #${registryId} — ${name}`;
 }
 
 function updRegline() {
   const t = $("regline-text");
   const registry = registryNameFromInputs();
-  t.classList.toggle("pending", !registry);
-  $("regline-copy").disabled = !registry;
-  t.textContent = registry
-    ? reglineFor(registry)
-    : "Enter the filer and case above — the registry line is generated from them.";
+  const id = prepared && prepared.registry_id ? prepared.registry_id : chosenRegistryId;
+  const complete = !!(registry && id);
+  t.classList.toggle("pending", !complete);
+  $("regline-copy").disabled = !complete;
+  if (complete) {
+    t.textContent = reglineFor(id, registry);
+  } else if (registry) {
+    t.textContent = reglineFor("(assigned at registry creation)", registry) +
+      "  — the #id is filled in once this matter's registry exists; prepare below to resolve or create it.";
+  } else {
+    t.textContent = "Enter the filer and case above — the registry line is generated from them.";
+  }
   setSteps();
 }
 
@@ -847,8 +934,9 @@ function setSteps() {
   else stepState("step-report-state", "ok", "done");
 
   if (!haveDoc) stepState("step-line-state", "", "not yet");
-  else if (prepared) {
-    if (prepared.registry_line_found) stepState("step-line-state", "ok", "on filing");
+  else if (prepared && prepared.registry_line_found) {
+    if (prepared.registry_line_found === "id") stepState("step-line-state", "ok", "on filing");
+    else if (prepared.registry_line_found === "name") stepState("step-line-state", "warn", "name only — add the #id");
     else stepState("step-line-state", "warn", "not on filing");
   } else if (registryNameFromInputs()) stepState("step-line-state", "", "copy it now");
   else stepState("step-line-state", "", "not yet");
@@ -878,7 +966,7 @@ function buildWalletCallout() {
     d.appendChild(p);
   } else if (wrong) {
     d.appendChild(el("strong", null, "Wallet connected to the wrong network."));
-    d.appendChild(el("p", null, `Signing needs NVNM Chain (chain id ${CHAIN_ID}). Switch networks to continue.`));
+    d.appendChild(el("p", null, `Signing needs ${NET ? NET.label : "NVNM Chain"} (chain id ${netChainId() || "…"}). Switch networks to continue.`));
     const b = el("button", "btn btn-outline", "Switch to NVNM Chain");
     b.type = "button";
     b.addEventListener("click", async () => { await switchNetwork().catch(() => {}); refreshWalletState(); });
@@ -908,6 +996,8 @@ function syncRecordPanel() {
   const gateOk = haveDoc && !!wallet.address && wallet.chainOk;
   $("prepare-btn").disabled = !gateOk;
   $("prepare-gate").classList.toggle("hidden", gateOk);
+  const myRegBtn = $("my-registries-btn");
+  if (myRegBtn) myRegBtn.disabled = !wallet.address;
 
   buildWalletCallout();
   updRegline();
@@ -933,11 +1023,16 @@ async function prepareReceipt() {
   stepState("step-anchor-state", "", "waiting");
   show("prepare-busy");
   try {
-    prepared = await apiPostBytes("/api/receipt/prepare", lastFile.bytes, lastFile.name, {
+    const headers = {
       "X-Firm": encodeURIComponent(firm),
       "X-Case": encodeURIComponent(matter),
       "X-Agent": encodeURIComponent(wallet.address),
-    });
+    };
+    // Pin the target registry when known (picker choice, or the id recovered
+    // from a just-confirmed creation tx). Without it the server resolves by
+    // creator + name, and surfaces any same-name ambiguity for a human pick.
+    if (chosenRegistryId) headers["X-Registry-Id"] = String(chosenRegistryId);
+    prepared = await apiPostBytes("/api/receipt/prepare", lastFile.bytes, lastFile.name, headers);
     renderPrepared(prepared);
     setSteps();
   } catch (err) {
@@ -947,23 +1042,56 @@ async function prepareReceipt() {
   }
 }
 
-/* Registry-line status in the prepare result (round 2, P0-2): a warning,
-   never a blocker — the engineering boolean comes from the server's text
-   extraction of the exact uploaded bytes. */
-function buildReglineStatus(found) {
+/* Registry-line status in the prepare result (round 2, P0-2; v1.2.0 tiers):
+   a warning, never a blocker — the tier comes from the server's text
+   extraction of the exact uploaded bytes. "id" = the canonical #id is in
+   the document; "name" = only the name (a weak pointer, since names are
+   not unique on chain); "none" = neither. */
+function buildReglineStatus(tier) {
   const box = clear($("regline-status"));
+  const found = tier === "id";
   const d = el("div", "regline-status " + (found ? "regline-found" : "regline-missing"));
   d.appendChild(icon(found ? "i-seal" : "i-alert"));
   const body = el("div");
   if (found) {
-    body.appendChild(el("strong", null, "Registry line found in the document."));
+    body.appendChild(el("strong", null, "Registry line (with its #id) found in the document."));
     body.appendChild(el("p", null, "The filing already carries its registry line; anchoring this exact file keeps the fingerprint match intact."));
+  } else if (tier === "name") {
+    body.appendChild(el("strong", null, "The document names the registry but not its #id."));
+    body.appendChild(el("p", null, "Registry names are not unique on this chain — a verifier needs the #id. Add the full line, re-export, and re-check the final file before anchoring."));
   } else {
     body.appendChild(el("strong", null, "Registry line not found in the document."));
     body.appendChild(el("p", null, "You can still anchor — but if you add the line afterwards, the filed document will no longer match this receipt. Add it now, re-export, and re-check the final file."));
   }
   d.appendChild(body);
   box.appendChild(d);
+}
+
+/* Same-name ambiguity (v1.2.0): the server never picks among same-name
+   registries; the human does. */
+function renderAmbiguous(p) {
+  const meta = clear($("prepare-meta"));
+  clear($("regline-status"));
+  clear($("prepare-tally"));
+  $("receipt-json").querySelector("code").textContent = "";
+  $("setup-box").classList.add("hidden");
+  clear($("probe-box"));
+  $("anchor-btn").disabled = true;
+
+  const c = el("div", "callout callout-warn");
+  c.appendChild(icon("i-alert"));
+  const d = el("div");
+  d.appendChild(el("strong", null, `This wallet created ${p.candidates.length} registries named “${p.registry}”.`));
+  d.appendChild(el("p", null, "Registry names are not unique on chain. Pick the #id that is printed on this matter's filings:"));
+  p.candidates.forEach((cand) => {
+    const b = el("button", "btn btn-outline", `Use #${cand.id} (created ${String(cand.created_at).slice(0, 10)})`);
+    b.type = "button";
+    b.addEventListener("click", () => { chosenRegistryId = cand.id; prepareReceipt(); });
+    d.appendChild(b);
+  });
+  c.appendChild(d);
+  meta.appendChild(c);
+  show("prepare-result");
 }
 
 /* Receipt size meter (round-1 design, adopted in round 2): the locked v1
@@ -985,13 +1113,22 @@ function setSizeMeter(bytes, cap) {
 }
 
 function renderPrepared(p) {
+  if (p.ambiguous) { renderAmbiguous(p); return; }
+
   const meta = clear($("prepare-meta"));
+  const regDisplay = p.registry_id ? `#${p.registry_id} — ${p.registry}` : p.registry;
   const regV = el("span");
-  regV.appendChild(el("span", "mono", p.registry));
+  regV.appendChild(el("span", "mono", regDisplay));
   kvRow(meta, "Receipt registry", regV, {
-    copy: p.registry,
-    hint: p.registry_exists ? "exists on chain — your wallet writes the receipt" : "will be created — your wallet becomes its admin",
+    copy: regDisplay,
+    hint: p.registry_exists
+      ? "exists on chain — your wallet writes the receipt"
+      : "will be created — your wallet becomes its admin; the chain assigns its #id on confirmation",
   });
+  if (p.name_matches === false) {
+    meta.appendChild(el("p", "hint",
+      "⚠ The chain's name for this #id differs from <firm>--<case>. Double-check the id if that is unexpected."));
+  }
   kvRow(meta, "Attesting as", p.agent.address, { mono: true, copy: p.agent.address });
   kvRow(meta, "Checked at block", p.checked_at_block.toLocaleString("en-US"), { mono: true });
   kvRow(meta, "Registries read", (p.registries_read || []).map((r) => `${r.name} (id ${r.id})`).join(" · ") || "—", { mono: true });
@@ -1001,7 +1138,8 @@ function renderPrepared(p) {
     meta.appendChild(el("p", "hint", "A receipt for this exact document already exists in this registry. Anchoring again records a new version; the prior one stays."));
   }
 
-  buildReglineStatus(!!p.registry_line_found);
+  if (p.registry_id) buildReglineStatus(p.registry_line_found || "none");
+  else clear($("regline-status"));
   renderTally($("prepare-tally"), p.receipt.summary);
 
   $("receipt-json").querySelector("code").textContent = p.receipt.json;
@@ -1039,10 +1177,10 @@ function renderPrepared(p) {
       const box = el("div", "probe-ok");
       box.appendChild(icon("i-shield"));
       const d = el("div");
-      d.appendChild(el("strong", null, `This wallet may write to ${p.registry}.`));
+      d.appendChild(el("strong", null, `This wallet may write to ${regDisplay}.`));
       const para = el("p", null, "Simulation passed. Estimated cost: ");
-      para.appendChild(el("span", "mono", `~${probe.gas.toLocaleString("en-US")} gas ≈ ${(probe.gas * 45e-9).toFixed(4)} wmantraUSD`));
-      para.appendChild(document.createTextNode(" at 45 gwei."));
+      para.appendChild(el("span", "mono", gasCostText(probe.gas)));
+      para.appendChild(document.createTextNode("."));
       d.appendChild(para);
       box.appendChild(d);
       probeBox.appendChild(box);
@@ -1115,18 +1253,20 @@ async function sendTx(tx, statusBoxId, onMined) {
 async function createReceiptRegistry() {
   if (!prepared || !prepared.setup) return;
   await sendTx(prepared.setup.tx, "anchor-status", (box, info) => {
-    if (info.success) {
-      // The receipt and its record calldata were built at prepare time and do
-      // NOT change when the registry is created. Don't re-run the whole check
-      // (slow, and the just-created registry can take a beat to be readable on
-      // the public RPC — re-preparing then re-offers "create registry" and
-      // dead-ends the flow). Just mark the registry ready and enable anchoring.
-      prepared.registry_exists = true;
-      prepared.setup = null;
+    if (info.success && info.registry_id) {
+      // v1.2.0: the record calldata keys on the numeric #id, which only
+      // exists NOW — the server decoded it from the AddRegistry event in
+      // this tx's receipt. Pin it and genuinely re-prepare: the next
+      // prepare builds the id-keyed addRecord and the full registry line.
+      chosenRegistryId = info.registry_id;
       $("setup-box").classList.add("hidden");
-      $("anchor-btn").disabled = false;
-      box.appendChild(banner("ok", "i-seal", `Registry ${prepared.registry} created`,
-        `Confirmed in block ${info.block.toLocaleString("en-US")}. You can now sign & anchor the receipt below.`));
+      box.appendChild(banner("ok", "i-seal",
+        `Registry #${info.registry_id} (${prepared.registry}) created`,
+        `Confirmed in block ${info.block.toLocaleString("en-US")}. Put the registry line (with #${info.registry_id}) on the filing, then the receipt below re-prepares against the new registry.`));
+      prepareReceipt();
+    } else if (info.success) {
+      box.appendChild(banner("bad", "i-alert", "Created, but the id could not be read",
+        "The creation confirmed but no AddRegistry event was found in the receipt. Use “My registries” to find the new #id, then prepare again."));
     } else {
       box.appendChild(banner("bad", "i-alert", "Registry creation failed",
         "The creation transaction reverted. Check the chain status and try again."));
@@ -1151,26 +1291,34 @@ async function anchorReceipt() {
     }
     outcome = "ok";
     const sha = prepared.document_sha256;
-    const registry = prepared.registry;
+    const registryRef = `#${prepared.registry_id}`;
+    const regDisplay = `${registryRef} — ${prepared.registry}`;
     const b = banner("ok", "i-seal", "Verification recorded on NVNM Chain",
       "The receipt below is now immutable and publicly verifiable.");
     const kv = el("div", "kv");
-    kvRow(kv, "Receipt registry", registry, { mono: true, copy: registry });
+    kvRow(kv, "Receipt registry", regDisplay, { mono: true, copy: regDisplay });
+    if (prepared.registry_line) {
+      kvRow(kv, "Filing line", prepared.registry_line, { mono: true, copy: prepared.registry_line });
+    }
     kvRow(kv, "Transaction", hash, { mono: true, copy: hash });
     kvRow(kv, "Block · time", `${info.block.toLocaleString("en-US")} · ${info.block_time}`, { mono: true, hint: "the immutable timestamp" });
     kvRow(kv, "Document SHA-256", sha, { mono: true, copy: sha });
     if (info.gas_used) {
-      kvRow(kv, "Gas", `${info.gas_used.toLocaleString("en-US")} @ ${info.gas_price_gwei} gwei (≈ ${(info.gas_used * info.gas_price_gwei * 1e-9).toFixed(4)} wmantraUSD)`, { mono: true });
+      kvRow(kv, "Gas", gasCostText(info.gas_used, info.gas_price_gwei), { mono: true });
     }
     b.appendChild(kv);
 
     // Round 2, P0-2: confirmation, never instruction. The registry line was
     // taught BEFORE anchoring; here we only confirm (or warn) about what the
     // anchored bytes actually contain.
-    const note = el("div", "rb-note " + (prepared.registry_line_found ? "rb-note-ok" : "rb-note-warn"));
-    if (prepared.registry_line_found) {
+    const lineOk = prepared.registry_line_found === "id";
+    const note = el("div", "rb-note " + (lineOk ? "rb-note-ok" : "rb-note-warn"));
+    if (lineOk) {
       note.appendChild(el("strong", null, "Your filing already carries the registry line."));
       note.appendChild(el("p", null, "File the document exactly as anchored — no further edits."));
+    } else if (prepared.registry_line_found === "name") {
+      note.appendChild(el("strong", null, "The anchored file names the registry but not its #id."));
+      note.appendChild(el("p", null, "A verifier needs the #id (names are not unique on chain). If you add it now, the filed document will no longer match this receipt — add the full line, re-export, then re-check and re-anchor the final file."));
     } else {
       note.appendChild(el("strong", null, "The anchored file does not contain the registry line."));
       note.appendChild(el("p", null, "If you add it now, the filed document will no longer match this receipt. Add the line, re-export, then re-check and re-anchor the final file."));
@@ -1185,9 +1333,9 @@ async function anchorReceipt() {
     const a2 = el("button", "btn btn-outline", "Verify it now (free lookup)"); a2.type = "button";
     a2.addEventListener("click", () => {
       activateTab("verify");
-      $("verify-registry").value = registry;
+      $("verify-registry").value = registryRef;
       $("hash-input").value = sha;
-      lookupHash(registry, sha);
+      lookupHash(registryRef, sha);
     });
     actions.appendChild(a2);
     const a3 = el("button", "btn btn-outline", "Decode the transaction"); a3.type = "button";
@@ -1201,13 +1349,46 @@ async function anchorReceipt() {
   else stepState("step-anchor-state", "", "waiting"); // declined or still pending
 }
 
+async function showMyRegistries() {
+  const box = clear($("my-registries-box"));
+  if (!wallet.address) return;
+  box.appendChild(el("p", "hint", "Looking up this wallet's registries…"));
+  let res;
+  try {
+    res = await apiGet(`/api/receipt/registries?creator=${encodeURIComponent(wallet.address)}`);
+  } catch (err) {
+    clear(box);
+    box.appendChild(el("p", "hint", `Could not list registries: ${err.message || err}`));
+    return;
+  }
+  clear(box);
+  if (!res.registries.length) {
+    box.appendChild(el("p", "hint", "This wallet has not created any registries on this chain yet — the one-time setup below will create this matter's."));
+    return;
+  }
+  const kv = el("div", "kv");
+  res.registries.forEach((r) => {
+    const v = el("span");
+    v.appendChild(el("span", "mono", r.name));
+    v.appendChild(el("span", "hint", ` created ${String(r.created_at).slice(0, 10)} `));
+    const use = el("button", "btn btn-outline", "Use this");
+    use.type = "button";
+    use.addEventListener("click", () => { chosenRegistryId = r.id; updRegline(); prepareReceipt(); });
+    v.appendChild(use);
+    kvRow(kv, `#${r.id}`, v);
+  });
+  box.appendChild(kv);
+}
+
 function initRecord() {
   $("record-gocheck").addEventListener("click", () => activateTab("check"));
   $("paste-gocheck").addEventListener("click", () => activateTab("check"));
   $("prepare-btn").addEventListener("click", prepareReceipt);
   $("anchor-btn").addEventListener("click", anchorReceipt);
-  $("firm-input").addEventListener("input", updRegline);
-  $("case-input").addEventListener("input", updRegline);
+  const myRegBtn = $("my-registries-btn");
+  if (myRegBtn) myRegBtn.addEventListener("click", showMyRegistries);
+  $("firm-input").addEventListener("input", () => { chosenRegistryId = null; updRegline(); });
+  $("case-input").addEventListener("input", () => { chosenRegistryId = null; updRegline(); });
   $("regline-copy").addEventListener("click", () => {
     if (navigator.clipboard) navigator.clipboard.writeText($("regline-text").textContent);
     $("regline-copy").textContent = "Copied";
@@ -1264,10 +1445,37 @@ function receiptCard(v, latestIndex, total) {
 
 function renderLookup(res) {
   const box = clear($("verify-result"));
+  const regLabel = res.registry_id != null
+    ? `#${res.registry_id}${res.registry ? " — " + res.registry : ""}`
+    : `“${res.registry}”`;
+
+  if (res.ambiguous) {
+    const b = banner("warn", "i-alert", "Several registries share this name", "");
+    const sub = b.querySelector(".rb-sub");
+    sub.appendChild(document.createTextNode(
+      `${res.candidates.length} registries are named “${res.registry}” — names are not unique on this chain. ` +
+      "Pick the #id from the filing's verification line:"));
+    b.appendChild(sub);
+    const actions = el("div", "rb-actions");
+    res.candidates.forEach((cand) => {
+      const btn = el("button", "btn btn-outline",
+        `#${cand.id} · created ${String(cand.created_at).slice(0, 10)}`);
+      btn.type = "button";
+      btn.addEventListener("click", () => {
+        $("verify-registry").value = `#${cand.id}`;
+        lookupHash(`#${cand.id}`, res.sha256);
+      });
+      actions.appendChild(btn);
+    });
+    b.appendChild(actions);
+    box.appendChild(b);
+    show("verify-result");
+    return;
+  }
 
   if (!res.registry_exists) {
     const b = banner("warn", "i-info", "No such registry on this chain",
-      `No registry named “${res.registry}” exists on NVNM Chain, so no receipt can be found there. Check the citation-verification link printed on the filing.`);
+      `Registry ${regLabel} does not exist on this chain, so no receipt can be found there. Check the citation-verification line printed on the filing — it carries the registry #id.`);
     box.appendChild(b);
   } else if (res.found) {
     const latestIndex = Math.max(...res.versions.map((v) => v.index));
@@ -1277,17 +1485,18 @@ function renderLookup(res) {
     sub.appendChild(el("span", "mono", `${res.sha256.slice(0, 12)}…${res.sha256.slice(-8)}`));
     sub.appendChild(document.createTextNode(
       ` has ${latestIndex} recorded citation-check receipt${latestIndex > 1 ? " versions" : ""} in registry `));
-    sub.appendChild(el("span", "mono", res.registry));
+    sub.appendChild(el("span", "mono", regLabel));
     sub.appendChild(document.createTextNode(` (chain head ${res.head_block.toLocaleString("en-US")} at lookup).`));
     box.appendChild(b);
+    if (res.note) box.appendChild(el("p", "hint", res.note));
     [...res.versions].sort((a, c) => c.index - a.index).forEach((v) => box.appendChild(receiptCard(v, latestIndex, res.versions.length)));
     box.appendChild(el("p", "honesty-line",
       "A receipt proves this exact document was citation-checked at a point in time — existence, not good law. Whether each authority still stands is the reader’s judgment."));
   } else {
     const b = banner("bad", "i-alert", "No receipt for this fingerprint",
-      `No citation-check receipt exists in registry “${res.registry}” for this exact file. A one-byte change — re-saving, stamping, flattening — produces a different fingerprint and breaks the match. If you expected a receipt, confirm you have the file as filed and the correct registry.`);
+      `No citation-check receipt exists in registry ${regLabel} for this exact file. A one-byte change — re-saving, stamping, flattening — produces a different fingerprint and breaks the match. If you expected a receipt, confirm you have the file as filed and the correct registry #id.`);
     const kv = el("div", "kv");
-    kvRow(kv, "Registry", res.registry, { mono: true });
+    kvRow(kv, "Registry", regLabel, { mono: true });
     kvRow(kv, "Fingerprint", res.sha256, { mono: true, copy: res.sha256 });
     kvRow(kv, "Chain head at lookup", res.head_block.toLocaleString("en-US"), { mono: true });
     b.appendChild(kv);
@@ -1315,9 +1524,12 @@ async function lookupHash(registry, sha) {
 }
 
 function verifyRegistryOrError() {
-  const registry = $("verify-registry").value.trim().toLowerCase();
+  // The canonical reference is the registry #id from the filing's
+  // verification line; the raw input goes to the server as-is — it accepts
+  // "#4711", "4711", the whole pasted line, or a legacy registry name.
+  const registry = $("verify-registry").value.trim();
   if (!registry) {
-    showError("verify-error", new Error("Enter the citation-verification registry from the filing first."));
+    showError("verify-error", new Error("Enter the registry #id from the filing's verification line first."));
     return null;
   }
   return registry;
@@ -1360,7 +1572,7 @@ function renderInspect(info) {
   const box = clear($("inspect-result"));
   if (!info.found) {
     box.appendChild(banner("warn", "i-info", "Transaction not found",
-      `No transaction with this hash exists on chain ${CHAIN_ID}. It may belong to another network, or it may not have been broadcast.`));
+      `No transaction with this hash exists on chain ${netChainId() || "…"}. It may belong to another network, or it may not have been broadcast.`));
     show("inspect-result");
     return;
   }
@@ -1378,7 +1590,7 @@ function renderInspect(info) {
   if (info.is_anchoring_precompile) to.appendChild(el("span", "precompile-tag", "NVNM anchoring precompile"));
   kvRow(kv, "To", to);
   if (info.gas_used) {
-    kvRow(kv, "Gas", `${info.gas_used.toLocaleString("en-US")} @ ${info.gas_price_gwei} gwei (≈ ${(info.gas_used * info.gas_price_gwei * 1e-9).toFixed(4)} wmantraUSD)`, { mono: true });
+    kvRow(kv, "Gas", gasCostText(info.gas_used, info.gas_price_gwei), { mono: true });
   }
   box.appendChild(kv);
 
@@ -1390,7 +1602,7 @@ function renderInspect(info) {
     const dkv = el("div", "kv");
     if (d.function === "addRecord" && d.args && d.args.record) {
       const rec = d.args.record;
-      kvRow(dkv, "registry", rec.registry, { mono: true });
+      kvRow(dkv, "registryId", `#${rec.registryId}`, { mono: true });
       kvRow(dkv, "uri", rec.uri, { mono: true });
       kvRow(dkv, "checksum", rec.checksum, { mono: true, hint: DECODE_HINTS[rec.checksumAlgo] });
       kvRow(dkv, "checksumAlgo", rec.checksumAlgo, { mono: true });
@@ -1403,6 +1615,11 @@ function renderInspect(info) {
     } else if (d.function === "addRegistry" && d.args) {
       kvRow(dkv, "name", d.args.name, { mono: true });
       kvRow(dkv, "description", d.args.description);
+      if (info.registry_id) {
+        kvRow(dkv, "assigned #id", `#${info.registry_id}`, {
+          mono: true, hint: "from the AddRegistry event in this tx's receipt",
+        });
+      }
       sec.appendChild(dkv);
       sec.appendChild(el("h3", "overline", "Metadata"));
       const pre = el("pre", "codeblock");

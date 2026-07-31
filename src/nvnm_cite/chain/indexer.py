@@ -4,8 +4,17 @@ rebuild-index is the public-auditability story made executable: anyone with
 an RPC URL can reconstruct a registry's contents without trusting us. sync
 continues from the stored row offset.
 
+Schema v2 (anchoring v1.2.0, 2026-07-31): rows key on the numeric
+registry_id — registry names are non-unique on chain and cannot key
+anything; the name is stored denormalized for display only. A v1
+(name-keyed) database cannot be migrated meaningfully (it never recorded
+ids) and this is a rebuildable cache by design: delete the file and
+rebuild-index. NOTE: the 2026-07-30 mainnet state migration emitted no
+events, so offset-paged records() reads are the ONLY way to rebuild —
+log scans will never see the migrated corpus.
+
 Measured precompile behavior this module is built around (DECISIONS
-2026-06-10, experiments (g)/(h)):
+2026-06-10, re-verified under v1.2.0 2026-07-31):
 - every page is capped at 200 rows server-side regardless of the requested
   limit; end of data is detected by a SHORT page, never by countTotal or
   nextKey (both unreliable, totals must be counted client-side);
@@ -16,14 +25,10 @@ Measured precompile behavior this module is built around (DECISIONS
 - the public RPC serves archive state, so a whole sync is pinned to one
   block height and the index is a consistent snapshot "as of block H".
 
-Incremental sync assumes the registries are append-mostly (true for the
-bulk load): a new VERSION of an already-synced record changes a list row
-behind the stored offset and is only caught by re-fetching one overlap page
-and, ultimately, by rebuild-index. Reconcile against a fresh rebuild is the
-audit path.
-
 Run:  uv run python -m nvnm_cite.chain.indexer sync --registries us-scotus,us-ca11
       uv run python -m nvnm_cite.chain.indexer rebuild-index --registries us-scotus
+      (names resolve through the pinned manifest for --network; bare numeric
+      ids are accepted as-is)
 """
 
 from __future__ import annotations
@@ -47,13 +52,16 @@ from nvnm_cite.chain.rpc import EvmRpc, RpcError
 
 PAGE_LIMIT = 200  # measured server cap; larger requests still return 200
 
+INDEX_SCHEMA_VERSION = "2"
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS records (
-    registry      TEXT NOT NULL,
+    registry_id   INTEGER NOT NULL,
+    registry_name TEXT NOT NULL,
     checksum      TEXT NOT NULL,
     record_id     INTEGER NOT NULL,
     idx           INTEGER NOT NULL,
@@ -63,39 +71,67 @@ CREATE TABLE IF NOT EXISTS records (
     metadata      TEXT NOT NULL,
     timestamp     TEXT NOT NULL,
     status        TEXT NOT NULL,
-    PRIMARY KEY (registry, checksum, idx)
+    PRIMARY KEY (registry_id, checksum, idx)
 );
 CREATE INDEX IF NOT EXISTS idx_records_latest
-    ON records(registry, is_latest, checksum);
+    ON records(registry_id, is_latest, checksum);
 CREATE TABLE IF NOT EXISTS sync_state (
-    registry   TEXT PRIMARY KEY,
-    row_offset INTEGER NOT NULL,
-    head_block INTEGER NOT NULL,
-    synced_at  TEXT NOT NULL
+    registry_id   INTEGER PRIMARY KEY,
+    registry_name TEXT NOT NULL,
+    row_offset    INTEGER NOT NULL,
+    head_block    INTEGER NOT NULL,
+    synced_at     TEXT NOT NULL
 );
 """
 
-# fetch_page(registry, offset, limit) -> list of Record (chain order)
-FetchPage = Callable[[str, int, int], list[Record]]
+# fetch_page(registry_id, offset, limit) -> list of Record (chain order)
+FetchPage = Callable[[int, int, int], list[Record]]
 
 
 def open_index(db_path: Path) -> sqlite3.Connection:
     db = sqlite3.connect(db_path)
-    db.executescript(SCHEMA)
+    db.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    row = db.execute("SELECT value FROM meta WHERE key = 'index_schema'").fetchone()
+    if row is None:
+        legacy = db.execute(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'records'"
+        ).fetchone()
+        if legacy is not None:
+            db.close()
+            raise RuntimeError(
+                f"{db_path} is a pre-v1.2.0 name-keyed index and cannot be "
+                "migrated (it never recorded registry ids). Delete the file "
+                "and run rebuild-index."
+            )
+        db.executescript(SCHEMA)
+        db.execute(
+            "INSERT OR REPLACE INTO meta VALUES ('index_schema', ?)",
+            (INDEX_SCHEMA_VERSION,),
+        )
+        db.commit()
+    elif row[0] != INDEX_SCHEMA_VERSION:
+        db.close()
+        raise RuntimeError(
+            f"{db_path} has index_schema={row[0]}, this build expects "
+            f"{INDEX_SCHEMA_VERSION}. Delete the file and run rebuild-index."
+        )
+    else:
+        db.executescript(SCHEMA)
     return db
 
 
-def upsert_records(db: sqlite3.Connection, rows: list[Record]) -> None:
+def upsert_records(db: sqlite3.Connection, registry_name: str, rows: list[Record]) -> None:
     """Store the rows as the latest observed versions of their keys."""
     for rec in rows:
         db.execute(
-            "UPDATE records SET is_latest = 0 WHERE registry = ? AND checksum = ?",
-            (rec.registry, rec.checksum),
+            "UPDATE records SET is_latest = 0 WHERE registry_id = ? AND checksum = ?",
+            (rec.registry_id, rec.checksum),
         )
         db.execute(
-            "INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "INSERT OR REPLACE INTO records VALUES (?,?,?,?,?,?,?,?,?,?,?)",
             (
-                rec.registry,
+                rec.registry_id,
+                registry_name,
                 rec.checksum,
                 rec.record_id,
                 rec.index,
@@ -111,7 +147,8 @@ def upsert_records(db: sqlite3.Connection, rows: list[Record]) -> None:
 
 def sync_registry(
     db: sqlite3.Connection,
-    registry: str,
+    registry_id: int,
+    registry_name: str,
     fetch_page: FetchPage,
     head_block: int,
     from_offset: int | None = None,
@@ -119,9 +156,10 @@ def sync_registry(
 ) -> int:
     """Page one registry from from_offset (default: stored, minus one overlap
     page) until a short page. Returns rows fetched."""
+    label = f"{registry_name} (#{registry_id})"
     if from_offset is None:
         row = db.execute(
-            "SELECT row_offset FROM sync_state WHERE registry = ?", (registry,)
+            "SELECT row_offset FROM sync_state WHERE registry_id = ?", (registry_id,)
         ).fetchone()
         # Re-fetch one full page behind the stored cursor: cheap insurance
         # against versions/boundary movement just behind the high-water mark.
@@ -131,29 +169,29 @@ def sync_registry(
     fetched = 0
     started = time.monotonic()
     while True:
-        rows = fetch_page(registry, offset, PAGE_LIMIT)
-        upsert_records(db, rows)
+        rows = fetch_page(registry_id, offset, PAGE_LIMIT)
+        upsert_records(db, registry_name, rows)
         offset += len(rows)
         fetched += len(rows)
         db.execute(
-            "INSERT OR REPLACE INTO sync_state VALUES (?,?,?,?)",
-            (registry, offset, head_block, time.strftime("%Y-%m-%dT%H:%M:%S%z")),
+            "INSERT OR REPLACE INTO sync_state VALUES (?,?,?,?,?)",
+            (registry_id, registry_name, offset, head_block, time.strftime("%Y-%m-%dT%H:%M:%S%z")),
         )
         db.commit()
         if fetched and fetched % 10_000 == 0:
             rate = fetched / max(time.monotonic() - started, 1e-9)
-            log(f"  {registry}: {offset:,} rows ({rate:,.0f} rows/s)")
+            log(f"  {label}: {offset:,} rows ({rate:,.0f} rows/s)")
         if len(rows) < PAGE_LIMIT:
             break
-    log(f"  {registry}: synced to offset {offset:,} at block {head_block:,}")
+    log(f"  {label}: synced to offset {offset:,} at block {head_block:,}")
     return fetched
 
 
 def rpc_fetch_page(rpc: EvmRpc, block_tag: str) -> FetchPage:
     """The production fetcher: records() eth_call pinned to one block."""
 
-    def fetch(registry: str, offset: int, limit: int) -> list[Record]:
-        calldata = build_records_query(registry=registry, offset=offset, limit=limit)
+    def fetch(registry_id: int, offset: int, limit: int) -> list[Record]:
+        calldata = build_records_query(registry_id=registry_id, offset=offset, limit=limit)
         try:
             raw = rpc.eth_call(PRECOMPILE_ADDRESS, calldata, block=block_tag)
         except RpcError as err:
@@ -169,27 +207,29 @@ def rpc_fetch_page(rpc: EvmRpc, block_tag: str) -> FetchPage:
     return fetch
 
 
-def registry_exists(rpc: EvmRpc, name: str) -> bool:
+def registry_exists(rpc: EvmRpc, registry_id: int) -> bool:
     try:
         registries, _ = decode_registries_result(
-            rpc.eth_call(PRECOMPILE_ADDRESS, build_registries_query(name=name))
+            rpc.eth_call(PRECOMPILE_ADDRESS, build_registries_query(registry_id=registry_id))
         )
     except RpcError as err:
         if "not found" in err.message:
             return False
         raise
-    return any(r.name == name for r in registries)
+    return any(r.id == registry_id for r in registries)
 
 
-def index_stats(db: sqlite3.Connection) -> dict[str, tuple[int, int, int]]:
-    """registry -> (latest rows, total rows, sync head block)."""
-    stats: dict[str, tuple[int, int, int]] = {}
-    for registry, head in db.execute("SELECT registry, head_block FROM sync_state"):
+def index_stats(db: sqlite3.Connection) -> dict[str, tuple[int, int, int, int]]:
+    """registry name -> (registry_id, latest rows, total rows, sync head block)."""
+    stats: dict[str, tuple[int, int, int, int]] = {}
+    for registry_id, name, head in db.execute(
+        "SELECT registry_id, registry_name, head_block FROM sync_state"
+    ):
         latest, total = db.execute(
-            "SELECT SUM(is_latest), COUNT(*) FROM records WHERE registry = ?",
-            (registry,),
+            "SELECT SUM(is_latest), COUNT(*) FROM records WHERE registry_id = ?",
+            (registry_id,),
         ).fetchone()
-        stats[registry] = (latest or 0, total or 0, head)
+        stats[name] = (registry_id, latest or 0, total or 0, head)
     return stats
 
 
@@ -197,20 +237,29 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Sync NVNM registries into a local index.")
     parser.add_argument("command", choices=["sync", "rebuild-index"])
     parser.add_argument("--db", type=Path, default=Path("data/chain_index.sqlite"))
-    parser.add_argument("--registries", required=True, help="comma-separated registry names")
-    parser.add_argument("--rpc", default=None, help="RPC URL (default: testnet from config)")
+    parser.add_argument(
+        "--registries",
+        required=True,
+        help="comma-separated registry names (resolved via the pinned manifest) or numeric ids",
+    )
+    parser.add_argument("--network", choices=["mainnet", "testnet"], default=None)
+    parser.add_argument("--rpc", default=None, help="RPC URL (default: the network's)")
     args = parser.parse_args(argv)
 
-    from nvnm_cite.config import load_dotenv, testnet_rpc
+    from nvnm_cite.config import get_network, load_dotenv
 
     load_dotenv()
-    # A full pull is ~1,300+ sequential eth_calls through Cloudflare; a
+    network = get_network(args.network)
+    from nvnm_cite.chain.registrymap import load_manifest
+
+    manifest = load_manifest(network.key)
+    # A full pull is many sequential eth_calls through Cloudflare; a
     # mid-stream truncation or timeout on any one of them must NOT abort the
     # whole sync (it did, on the first task-2.6 run: IncompleteRead at
     # ~113k/260k rows). Opt into aggressive transport retry; the sync is
     # resumable, so worst case we re-page from the last committed offset.
     rpc = EvmRpc(
-        args.rpc or testnet_rpc(),
+        args.rpc or network.rpc_url(),
         max_attempts=8,
         backoff_base=1.0,
         backoff_cap=30.0,
@@ -224,22 +273,35 @@ def main(argv: list[str] | None = None) -> int:
     fetch = rpc_fetch_page(rpc, block_tag)
     db = open_index(args.db)
 
-    names = [n.strip() for n in args.registries.split(",") if n.strip()]
-    for name in names:
-        if not registry_exists(rpc, name):
-            print(f"  {name}: registry does not exist on chain; skipping")
+    targets: list[tuple[int, str]] = []
+    for token in (t.strip() for t in args.registries.split(",")):
+        if not token:
+            continue
+        if token.isdigit():
+            rid = int(token)
+            targets.append((rid, manifest.registry_name(rid) or f"#{rid}"))
+        else:
+            rid = manifest.registry_id(token)
+            if rid is None:
+                print(f"  {token}: not in the {network.key} registry manifest; skipping")
+                continue
+            targets.append((rid, token))
+
+    for rid, name in targets:
+        if not registry_exists(rpc, rid):
+            print(f"  {name} (#{rid}): registry does not exist on chain; skipping")
             continue
         if args.command == "rebuild-index":
-            db.execute("DELETE FROM records WHERE registry = ?", (name,))
-            db.execute("DELETE FROM sync_state WHERE registry = ?", (name,))
+            db.execute("DELETE FROM records WHERE registry_id = ?", (rid,))
+            db.execute("DELETE FROM sync_state WHERE registry_id = ?", (rid,))
             db.commit()
-            sync_registry(db, name, fetch, head, from_offset=0)
+            sync_registry(db, rid, name, fetch, head, from_offset=0)
         else:
-            sync_registry(db, name, fetch, head)
+            sync_registry(db, rid, name, fetch, head)
 
     print(f"\nindex stats ({args.db}):")
-    for registry, (latest, total, head_block) in sorted(index_stats(db).items()):
-        print(f"  {registry}: {latest:,} records ({total:,} versions) as of block {head_block:,}")
+    for name, (rid, latest, total, head_block) in sorted(index_stats(db).items()):
+        print(f"  {name} (#{rid}): {latest:,} records ({total:,} versions) as of block {head_block:,}")
     db.close()
     return 0
 

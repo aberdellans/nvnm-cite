@@ -25,24 +25,61 @@ class ChainReader:
     def head_block(self) -> int:
         return self._rpc_factory().block_number()
 
-    def registry(self, name: str) -> dict | None:
-        """Registry facts by name, or None when it does not exist."""
+    def registry(self, registry_id: int) -> dict | None:
+        """Registry facts by id, or None when it does not exist. Names are
+        non-unique under v1.2.0, so the id is the only keyed lookup."""
         try:
             raw = self._rpc_factory().eth_call(
-                pc.PRECOMPILE_ADDRESS, pc.build_registries_query(name=name)
+                pc.PRECOMPILE_ADDRESS, pc.build_registries_query(registry_id=registry_id)
             )
-            reg = pc.decode_registries_result(raw)[0][0]
+            rows = pc.decode_registries_result(raw)[0]
         except RpcError as err:
             if pc.is_keyed_miss(err):
                 return None
             raise
+        if not rows:
+            return None
+        reg = rows[0]
         return {"id": reg.id, "name": reg.name, "creator": reg.creator, "created_at": reg.created_at}
 
-    def keyed_record(self, registry: str, checksum: str, block: str = "latest") -> pc.Record | None:
-        """Latest record for (registry, checksum), or None on a keyed miss."""
+    def registries_by_creator(self, creator: str) -> list[dict]:
+        """All registries created by ``creator`` (bech32 nvnm1... string), via
+        a full offset-paged enumeration — the only name/owner search v1.2.0
+        allows. Same-named duplicates are all returned; callers must surface
+        ambiguity, never pick a row silently."""
+        rpc = self._rpc_factory()
+        out: list[dict] = []
+        offset = 0
+        while True:
+            raw = rpc.eth_call(
+                pc.PRECOMPILE_ADDRESS,
+                pc.build_registries_query(offset=offset, limit=200),
+            )
+            rows, _ = pc.decode_registries_result(raw)
+            if not rows:
+                break
+            for reg in rows:
+                if reg.creator == creator:
+                    out.append(
+                        {
+                            "id": reg.id,
+                            "name": reg.name,
+                            "creator": reg.creator,
+                            "created_at": reg.created_at,
+                        }
+                    )
+            offset += len(rows)
+            if len(rows) < 200:
+                break
+        return out
+
+    def keyed_record(self, registry_id: int, checksum: str, block: str = "latest") -> pc.Record | None:
+        """Latest record for (registry_id, checksum), or None on a keyed miss."""
         try:
             raw = self._rpc_factory().eth_call(
-                pc.PRECOMPILE_ADDRESS, pc.build_records_query(registry=registry, checksum=checksum), block=block
+                pc.PRECOMPILE_ADDRESS,
+                pc.build_records_query(registry_id=registry_id, checksum=checksum),
+                block=block,
             )
         except RpcError as err:
             if pc.is_keyed_miss(err):

@@ -55,7 +55,7 @@ def reconcile(state_path: Path, index_path: Path, registries: list[str]) -> Repo
         SELECT s.registry, s.checksum
         FROM state.load_state s
         LEFT JOIN idx.records r
-            ON r.registry = s.registry AND r.checksum = s.checksum AND r.is_latest = 1
+            ON r.registry_name = s.registry AND r.checksum = s.checksum AND r.is_latest = 1
         WHERE s.registry IN ({marks}) AND s.status = 'confirmed' AND r.checksum IS NULL
         ORDER BY s.registry, s.checksum
         """,
@@ -76,12 +76,12 @@ def reconcile(state_path: Path, index_path: Path, registries: list[str]) -> Repo
 
     report.extra = db.execute(
         f"""
-        SELECT r.registry, r.checksum
+        SELECT r.registry_name, r.checksum
         FROM idx.records r
         LEFT JOIN state.load_state s
-            ON s.registry = r.registry AND s.checksum = r.checksum
-        WHERE r.registry IN ({marks}) AND r.is_latest = 1 AND s.checksum IS NULL
-        ORDER BY r.registry, r.checksum
+            ON s.registry = r.registry_name AND s.checksum = r.checksum
+        WHERE r.registry_name IN ({marks}) AND r.is_latest = 1 AND s.checksum IS NULL
+        ORDER BY r.registry_name, r.checksum
         """,
         registries,
     ).fetchall()
@@ -92,7 +92,7 @@ def reconcile(state_path: Path, index_path: Path, registries: list[str]) -> Repo
                r.uri, r.metadata, r.checksum_algo, r.status
         FROM state.load_state s
         JOIN idx.records r
-            ON r.registry = s.registry AND r.checksum = s.checksum AND r.is_latest = 1
+            ON r.registry_name = s.registry AND r.checksum = s.checksum AND r.is_latest = 1
         WHERE s.registry IN ({marks})
         """,
         registries,

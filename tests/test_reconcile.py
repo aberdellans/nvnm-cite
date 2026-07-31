@@ -12,7 +12,6 @@ from nvnm_cite.loader.reconcile import reconcile
 
 def chain_record(checksum: str, metadata: str, uri: str = "u", algo: str = "cite-canonical-v1", status: str = "Active") -> Record:
     return Record(
-        registry="us-ca11",
         uri=uri,
         checksum=checksum,
         checksum_algo=algo,
@@ -22,6 +21,7 @@ def chain_record(checksum: str, metadata: str, uri: str = "u", algo: str = "cite
         record_id=1,
         index=1,
         is_latest=True,
+        registry_id=738,
     )
 
 
@@ -51,6 +51,7 @@ def test_reconcile_classes(tmp_path: Path) -> None:
     idx = open_index(index_path)
     upsert_records(
         idx,
+        "us-ca11",
         [
             chain_record("1 F.3d 1", "m1"),
             chain_record("4 F.3d 4", "DIFFERENT"),
@@ -74,7 +75,7 @@ def test_reconcile_clean(tmp_path: Path) -> None:
     index_path = tmp_path / "index.sqlite"
     seed(state_path, [("1 F.3d 1", "u", "m1", "confirmed")])
     idx = open_index(index_path)
-    upsert_records(idx, [chain_record("1 F.3d 1", "m1")])
+    upsert_records(idx, "us-ca11", [chain_record("1 F.3d 1", "m1")])
     idx.commit()
     idx.close()
     report = reconcile(state_path, index_path, ["us-ca11"])

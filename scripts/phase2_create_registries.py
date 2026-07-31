@@ -1,3 +1,5 @@
+# NOTE: pre-v1.2.0 ABI (name-keyed records/registries/addRecord); historical
+# record of the pilot probes/load — non-functional against current chains.
 """Phase 2 task 2.6 step 1: create the court registries on testnet.
 
 Creation strings are FIXED in docs/record-schema.md section 2 (locked

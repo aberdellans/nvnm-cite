@@ -12,23 +12,27 @@ from __future__ import annotations
 import pytest
 
 from nvnm_cite.chain import precompile as pc
+from nvnm_cite.chain.registrymap import load_manifest
 from nvnm_cite.chain.rpc import EvmRpc
-from nvnm_cite.config import TESTNET_CHAIN_ID, load_dotenv
-from nvnm_cite.config import testnet_rpc as _testnet_rpc  # aliased: 'test*' would be collected
+from nvnm_cite.config import TESTNET, load_dotenv
 from nvnm_cite.verifier.check import check_document
 from nvnm_cite.verifier.resolver import ChainResolver
+
+# Coverage for the live run: the pinned TESTNET manifest (pilot pair,
+# us-scotus=737 / us-ca11=738), id-keyed reads under anchoring v1.2.0.
+REGISTRY_IDS = load_manifest("testnet").all_registries()
 
 
 @pytest.fixture(scope="module")
 def rpc_url() -> str:
     load_dotenv()
-    url = _testnet_rpc()
+    url = TESTNET.rpc_url()
     try:
         chain_id = EvmRpc(url, timeout=8).chain_id()
     except Exception as exc:  # offline / RPC down: skip, do not fail
         pytest.skip(f"NVNM testnet RPC unreachable: {exc}")
-    if chain_id != TESTNET_CHAIN_ID:
-        pytest.skip(f"unexpected chain id {chain_id} (wanted {TESTNET_CHAIN_ID})")
+    if chain_id != TESTNET.chain_id:
+        pytest.skip(f"unexpected chain id {chain_id} (wanted {TESTNET.chain_id})")
     return url
 
 
@@ -47,11 +51,14 @@ And a court-less reporter cite, Foo v. Bar, 12 F.3d 34, ends it.
 
 def test_live_check_exercises_all_statuses(rpc_url: str):
     resolver = ChainResolver(lambda: EvmRpc(rpc_url))
-    report = check_document(LIVE_BRIEF.encode(), "synthetic.txt", resolver)
+    report = check_document(
+        LIVE_BRIEF.encode(), "synthetic.txt", resolver, registry_ids=REGISTRY_IDS
+    )
     by = {c["canonical"] or c["as_written"]: c for c in report["citations"]}
 
-    # VERIFIED against live chain state
+    # VERIFIED against live chain state, id-keyed
     assert by["410 U.S. 113"]["status"] == "VERIFIED"
+    assert by["410 U.S. 113"]["registry_id"] == 737
     assert by["410 U.S. 113"]["record"]["cases"], "a verified cite names a real case"
     # the exact, replayable query rides back with the verdict (non-repudiation)
     assert by["410 U.S. 113"]["query"]["params"][0]["to"] == pc.PRECOMPILE_ADDRESS

@@ -70,15 +70,24 @@ class LocalIndex:
         if not self.chain_index_path.is_file():
             return {}
         out: dict[str, dict] = {}
+        try:
+            return self._chain_synced_query(out)
+        except sqlite3.OperationalError:
+            # A pre-v1.2.0 (name-keyed) index file: treat as absent — it is a
+            # rebuildable cache; delete it and rebuild-index.
+            return {}
+
+    def _chain_synced_query(self, out: dict[str, dict]) -> dict[str, dict]:
         with _ro(self.chain_index_path) as conn:
             for row in conn.execute(
-                """SELECT s.registry, s.head_block, s.synced_at,
+                """SELECT s.registry_id, s.registry_name, s.head_block, s.synced_at,
                           (SELECT COUNT(*) FROM records r
-                            WHERE r.registry = s.registry AND r.is_latest = 1) AS n
+                            WHERE r.registry_id = s.registry_id AND r.is_latest = 1) AS n
                      FROM sync_state s"""
             ):
                 if row["n"]:
-                    out[row["registry"]] = {
+                    out[row["registry_name"]] = {
+                        "registry_id": row["registry_id"],
                         "records": row["n"],
                         "synced_block": row["head_block"],
                         "synced_at": row["synced_at"],
@@ -147,9 +156,12 @@ class LocalIndex:
         if chain_keys and self.chain_index_path.is_file():
             with _ro(self.chain_index_path) as conn:
                 for registry, canonical in chain_keys:
+                    # The local index only holds manifest registries, whose
+                    # names are unique within it, so name-keyed local queries
+                    # stay unambiguous (the CHAIN is queried by id only).
                     row = conn.execute(
                         """SELECT uri, metadata FROM records
-                            WHERE registry = ? AND checksum = ? AND is_latest = 1""",
+                            WHERE registry_name = ? AND checksum = ? AND is_latest = 1""",
                         (registry, canonical),
                     ).fetchone()
                     if row:

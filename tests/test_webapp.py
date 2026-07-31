@@ -20,6 +20,7 @@ import pytest
 
 from nvnm_cite.chain import abi
 from nvnm_cite.chain import precompile as pc
+from nvnm_cite.config import TESTNET
 from nvnm_cite.loader.records import compact_json
 from nvnm_cite.normalizer import NORMALIZER_VERSION
 from nvnm_cite.receipts.anchor import AnchorPlan
@@ -41,34 +42,39 @@ from nvnm_cite.webapp.service import (
 class FakeResolver:
     """Duck-typed verifier Resolver: canned chain records, no network."""
 
-    def __init__(self, records: dict[tuple[str, str], pc.Record]):
+    def __init__(self, records: dict[tuple[int, str], pc.Record]):
         self.records = records
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[int, str]] = []
 
-    def resolve(self, registry: str, checksum: str) -> Resolution:
-        self.calls.append((registry, checksum))
-        _, query = records_query(registry, checksum)
-        return Resolution(record=self.records.get((registry, checksum)), query=query)
+    def resolve(self, registry_id: int, checksum: str, registry_name=None) -> Resolution:
+        self.calls.append((registry_id, checksum))
+        _, query = records_query(registry_id, checksum)
+        return Resolution(record=self.records.get((registry_id, checksum)), query=query)
 
 
-def _case_record(registry: str, checksum: str, metadata: str, uri: str = "https://cl/x/") -> pc.Record:
+def _case_record(registry_id: int, checksum: str, metadata: str, uri: str = "https://cl/x/") -> pc.Record:
     return pc.Record(
-        registry=registry, uri=uri, checksum=checksum, checksum_algo="cite-canonical-v1",
-        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1, is_latest=True,
+        uri=uri, checksum=checksum, checksum_algo="cite-canonical-v1",
+        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1,
+        is_latest=True, registry_id=registry_id,
     )
 
 
+# Fixtures use the TESTNET pilot ids (flows are simulated where real anchors
+# happen: the testnet).
+TEST_REGISTRY_IDS = {"us-scotus": 737, "us-ca11": 738}
+
 # Mirrors the corpus fixture rows, but as on-chain records the resolver returns.
 CHAIN_RECORDS = {
-    ("us-scotus", "410 U.S. 113"): _case_record(
-        "us-scotus", "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
+    (737, "410 U.S. 113"): _case_record(
+        737, "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
         "https://www.courtlistener.com/opinion/108713/roe-v-wade/",
     ),
-    ("us-ca11", "950 F.3d 1000"): _case_record(
-        "us-ca11", "950 F.3d 1000", '{"cluster":77001,"name":"Acme Corp. v. Zenith Ltd.","year":2020}',
+    (738, "950 F.3d 1000"): _case_record(
+        738, "950 F.3d 1000", '{"cluster":77001,"name":"Acme Corp. v. Zenith Ltd.","year":2020}',
     ),
-    ("us-ca11", "111 F.3d 897"): _case_record(
-        "us-ca11", "111 F.3d 897",
+    (738, "111 F.3d 897"): _case_record(
+        738, "111 F.3d 897",
         '{"cases":[{"cluster":88001,"name":"First Order Co. v. Second Order Co.","year":1997},'
         '{"cluster":88002,"name":"Third Pet. v. Fourth Resp.","year":1997}]}',
     ),
@@ -200,21 +206,24 @@ def test_localindex_prefers_chain_index_when_synced(data_dir: Path):
         """
         CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
         CREATE TABLE records (
-            registry TEXT NOT NULL, checksum TEXT NOT NULL, record_id INTEGER NOT NULL,
+            registry_id INTEGER NOT NULL, registry_name TEXT NOT NULL,
+            checksum TEXT NOT NULL, record_id INTEGER NOT NULL,
             idx INTEGER NOT NULL, is_latest INTEGER NOT NULL, uri TEXT NOT NULL,
             checksum_algo TEXT NOT NULL, metadata TEXT NOT NULL, timestamp TEXT NOT NULL,
-            status TEXT NOT NULL, PRIMARY KEY (registry, checksum, idx));
+            status TEXT NOT NULL, PRIMARY KEY (registry_id, checksum, idx));
         CREATE TABLE sync_state (
-            registry TEXT PRIMARY KEY, row_offset INTEGER NOT NULL,
+            registry_id INTEGER PRIMARY KEY, registry_name TEXT NOT NULL,
+            row_offset INTEGER NOT NULL,
             head_block INTEGER NOT NULL, synced_at TEXT NOT NULL);
         """
     )
+    chain.execute("INSERT INTO meta VALUES ('index_schema', '2')")
     chain.execute(
-        "INSERT INTO records VALUES ('us-ca11', '950 F.3d 1000', 9, 1, 1, "
+        "INSERT INTO records VALUES (738, 'us-ca11', '950 F.3d 1000', 9, 1, 1, "
         "'https://www.courtlistener.com/opinion/77001/acme-v-zenith/', 'cite-canonical-v1', "
         "'{\"cluster\":77001,\"name\":\"Acme Corp. v. Zenith Ltd.\",\"year\":2020}', 't', 'Active')"
     )
-    chain.execute("INSERT INTO sync_state VALUES ('us-ca11', 1, 1600000, '2026-06-12T00:00:00Z')")
+    chain.execute("INSERT INTO sync_state VALUES (738, 'us-ca11', 1, 1600000, '2026-06-12T00:00:00Z')")
     chain.commit()
     chain.close()
 
@@ -257,7 +266,7 @@ mislabeled but real citation appears as Totally Fabricated v. Name,
 
 
 def test_check_exercises_all_five_statuses():
-    service = CheckService(FakeResolver(CHAIN_RECORDS))
+    service = CheckService(FakeResolver(CHAIN_RECORDS), TEST_REGISTRY_IDS)
     report = service.check(BRIEF.encode(), "brief.txt")
 
     assert report["document"]["sha256"] == hashlib.sha256(BRIEF.encode()).hexdigest()
@@ -284,7 +293,7 @@ def test_check_exercises_all_five_statuses():
 
 def test_check_canonicalizes_spacing_variant():
     # "410 U. S. 113" (line-broken/space-mangled form) must hit the registry key
-    service = CheckService(FakeResolver(CHAIN_RECORDS))
+    service = CheckService(FakeResolver(CHAIN_RECORDS), TEST_REGISTRY_IDS)
     report = service.check(b"Roe v. Wade, 410 U. S.\n113 (1973).", "x.txt")
     assert report["citations"][0]["canonical"] == "410 U.S. 113"
     assert report["citations"][0]["status"] == "VERIFIED"
@@ -300,11 +309,15 @@ DOC_SHA = "a" * 64
 AGENT_ADDR = "0x" + "ab" * 20
 
 
-def fake_record(registry: str, checksum: str, metadata: str, index: int = 1, latest: bool = True) -> pc.Record:
+REG_ID = 901
+
+
+def fake_record(registry_id: int, checksum: str, metadata: str, index: int = 1, latest: bool = True) -> pc.Record:
     return pc.Record(
-        registry=registry, uri=RECEIPT_URI, checksum=checksum, checksum_algo="sha256",
+        uri=RECEIPT_URI, checksum=checksum, checksum_algo="sha256",
         metadata=metadata, timestamp="2026-06-15 15:00:00.000000001 +0000 UTC",
         status="Active", record_id=41, index=index, is_latest=latest,
+        registry_id=registry_id,
     )
 
 
@@ -329,17 +342,19 @@ class FakeGateway:
     """Duck-typed ChainGateway: canned registries and keyed records, no network.
 
     ``prepare_anchor`` is monkeypatched in the prepare tests, so the gateway is
-    used only for the write-probe estimate and for the lookup path's reads.
+    used only for the creator search, the write-probe estimate, and the lookup
+    path's id-keyed reads.
     """
 
     def __init__(self, registries: dict | None = None, receipt_versions: dict | None = None,
-                 estimate_result: dict | None = None):
-        # registries: {name: id}. Default = the two court registries; there is
+                 estimate_result: dict | None = None, creator_registries: list | None = None):
+        # registries: {id: name}. Default = the two court registries; there is
         # NO global receipts registry in the per-firm-per-case model.
-        self._registries = registries if registries is not None else {"us-scotus": 737, "us-ca11": 738}
-        self.receipt_versions = receipt_versions or {}  # {(registry, checksum): latest pc.Record}
+        self._registries = registries if registries is not None else {737: "us-scotus", 738: "us-ca11"}
+        self.receipt_versions = receipt_versions or {}  # {(registry_id, checksum): latest pc.Record}
         self.estimate_result = estimate_result or {"ok": True, "gas": 123456}
         self.estimates: list[bytes] = []
+        self._creator_registries = creator_registries or []
 
     def head_block(self) -> int:
         return 1_700_000
@@ -347,20 +362,32 @@ class FakeGateway:
     def chain_id(self) -> int:
         return 787111
 
-    def registry(self, name: str, max_age: float = 30.0):
-        if name not in self._registries:
+    def registry(self, registry_id: int, max_age: float = 30.0):
+        if registry_id not in self._registries:
             return None
-        return {"id": self._registries[name], "name": name, "creator": "nvnm1fake",
+        return {"id": registry_id, "name": self._registries[registry_id], "creator": "nvnm1fake",
                 "created_at": "2026-06-15", "description": "", "metadata": ""}
 
-    def keyed_record(self, registry: str, checksum: str, block: str = "latest", index: int = 0):
-        latest = self.receipt_versions.get((registry, checksum))
+    def all_registries(self, max_age: float = 60.0):
+        return [
+            {"id": rid, "name": name, "creator": "nvnm1fake", "created_at": "2026-06-15"}
+            for rid, name in self._registries.items()
+        ] + self._creator_registries
+
+    def find_by_name(self, name: str):
+        return [r for r in self.all_registries() if r["name"] == name]
+
+    def registries_by_creator(self, creator: str):
+        return list(self._creator_registries)
+
+    def keyed_record(self, registry_id: int, checksum: str, block: str = "latest", index: int = 0):
+        latest = self.receipt_versions.get((registry_id, checksum))
         if latest is None:
             return None
         if index == 0:
             return latest
         if 1 <= index < latest.index:
-            return fake_record(registry, checksum, latest.metadata, index=index, latest=False)
+            return fake_record(registry_id, checksum, latest.metadata, index=index, latest=False)
         return None
 
     def estimate(self, from_addr: str, calldata: bytes) -> dict:
@@ -372,20 +399,31 @@ class FakeGateway:
         return lambda: None  # prepare_anchor is monkeypatched, so this is never called
 
 
+def make_service(gw: FakeGateway) -> ReceiptService:
+    return ReceiptService(gw, TESTNET, TEST_REGISTRY_IDS)
+
+
 def make_plan(*, registry_exists: bool = True, already_anchored: bool = False, create: bool = False) -> AnchorPlan:
     receipt = minimal_receipt(DOC_SHA, block=1_700_000)
     receipt_json = compact_json(receipt)
-    record_calldata = pc.build_add_record(
-        registry=REG, uri=RECEIPT_URI, checksum=DOC_SHA, checksum_algo="sha256", metadata=receipt_json,
-    )
+    record_calldata = None
+    if not create:
+        record_calldata = pc.build_add_record(
+            registry_id=REG_ID, uri=RECEIPT_URI, checksum=DOC_SHA,
+            checksum_algo="sha256", metadata=receipt_json,
+        )
     create_registry = create_calldata = None
     if create:
         name, description, metadata = receipt_registry_strings(FIRM, CASE)
         create_registry = {"name": name, "description": description, "metadata": metadata}
         create_calldata = pc.build_add_registry(name, description, metadata)
     return AnchorPlan(
-        registry=REG, registry_exists=registry_exists, document_sha256=DOC_SHA,
-        checked_at_block=1_700_000, registries_read=receipt["registries"],
+        registry=REG, registry_id=None if create else REG_ID,
+        registry_exists=registry_exists,
+        name_matches=None if create else True,
+        document_sha256=DOC_SHA,
+        checked_at_block=1_700_000, chain_id=787111,
+        registries_read=receipt["registries"],
         receipt=receipt, receipt_json=receipt_json, record_calldata=record_calldata,
         create_registry=create_registry, create_calldata=create_calldata,
         already_anchored=already_anchored, report={},
@@ -394,12 +432,17 @@ def make_plan(*, registry_exists: bool = True, already_anchored: bool = False, c
 
 def test_receipt_prepare_builds_minimal_v1(monkeypatch):
     monkeypatch.setattr(service_mod, "prepare_anchor", lambda *a, **k: make_plan())
-    gw = FakeGateway()
-    out = ReceiptService(gw).prepare(b"%PDF-fake", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
+    gw = FakeGateway(
+        creator_registries=[{"id": REG_ID, "name": REG, "creator": "nvnm1fake", "created_at": "t"}]
+    )
+    out = make_service(gw).prepare(b"%PDF-fake", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
 
     assert out["registry"] == REG
+    assert out["registry_id"] == REG_ID
     assert out["registry_exists"] is True
     assert out["agent"] == {"address": AGENT_ADDR}
+    assert f"registry #{REG_ID}" in out["registry_line"]
+    assert out["chain"]["chain_id"] == 787111
 
     receipt = json.loads(out["receipt"]["json"])
     assert receipt["schema"] == "nvnm-cite-receipt/v1"  # LOCKED, not -draft
@@ -419,7 +462,7 @@ def test_receipt_prepare_builds_minimal_v1(monkeypatch):
     decoded = decode_call(bytes.fromhex(out["tx"]["data"][2:]))
     record = decoded["args"]["record"]
     assert decoded["function"] == "addRecord"
-    assert record["registry"] == REG
+    assert record["registryId"] == REG_ID
     assert record["checksum"] == DOC_SHA
     assert record["checksumAlgo"] == "sha256"
     assert record["uri"] == RECEIPT_URI
@@ -430,10 +473,12 @@ def test_receipt_prepare_builds_minimal_v1(monkeypatch):
 
 def test_receipt_prepare_offers_setup_when_registry_missing(monkeypatch):
     monkeypatch.setattr(service_mod, "prepare_anchor", lambda *a, **k: make_plan(registry_exists=False, create=True))
-    out = ReceiptService(FakeGateway()).prepare(b"%PDF", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
+    out = make_service(FakeGateway()).prepare(b"%PDF", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
 
     assert out["registry_exists"] is False
-    assert "write_probe" not in out
+    assert out["registry_id"] is None
+    # v1.2.0: no record tx before the id exists — setup only
+    assert "write_probe" not in out and "tx" not in out
     setup = out["setup"]
     assert setup["name"] == REG
     decoded = decode_call(bytes.fromhex(setup["tx"]["data"][2:]))
@@ -443,8 +488,21 @@ def test_receipt_prepare_offers_setup_when_registry_missing(monkeypatch):
     assert setup["probe"]["ok"] is True
 
 
+def test_receipt_prepare_surfaces_same_name_ambiguity():
+    # Two same-name registries by the same wallet: the service must return
+    # the candidate list, never pick one silently.
+    gw = FakeGateway(creator_registries=[
+        {"id": 901, "name": REG, "creator": "nvnm1fake", "created_at": "t1"},
+        {"id": 902, "name": REG, "creator": "nvnm1fake", "created_at": "t2"},
+    ])
+    out = make_service(gw).prepare(b"%PDF", "brief.pdf", firm=FIRM, case=CASE, agent_address=AGENT_ADDR)
+    assert out["ambiguous"] is True
+    assert [c["id"] for c in out["candidates"]] == [901, 902]
+    assert "tx" not in out and "setup" not in out
+
+
 def test_receipt_prepare_validates_input():
-    svc = ReceiptService(FakeGateway())
+    svc = make_service(FakeGateway())
     with pytest.raises(WebAppError):  # bad agent address
         svc.prepare(b"x", "f.pdf", firm=FIRM, case=CASE, agent_address="nope")
     with pytest.raises(WebAppError):  # missing firm
@@ -462,18 +520,18 @@ def test_receipt_prepare_maps_receipt_errors(monkeypatch):
 
     monkeypatch.setattr(service_mod, "prepare_anchor", boom)
     with pytest.raises(WebAppError) as ei:
-        ReceiptService(FakeGateway()).prepare(b"x", "f.pdf", firm="!!!", case="???", agent_address=AGENT_ADDR)
+        make_service(FakeGateway()).prepare(b"x", "f.pdf", firm="a-firm", case="a-case", agent_address=AGENT_ADDR)
     assert ei.value.http_status == 422
 
 
-def test_receipt_lookup_found_versions_and_missing():
+def test_receipt_lookup_by_id_found_versions_and_missing():
     sha = "b" * 64
     receipt_meta = compact_json(minimal_receipt(sha, block=5))
     gw = FakeGateway(
-        registries={"us-scotus": 737, "us-ca11": 738, REG: 901},
-        receipt_versions={(REG, sha): fake_record(REG, sha, receipt_meta, index=2)},
+        registries={737: "us-scotus", 738: "us-ca11", 901: REG},
+        receipt_versions={(901, sha): fake_record(901, sha, receipt_meta, index=2)},
     )
-    out = ReceiptService(gw).lookup(REG.upper(), sha.upper())  # (registry + hash), case-insensitive
+    out = make_service(gw).lookup("#901", sha.upper())  # (id + hash), id from the filing line
     assert out["registry"] == REG
     assert out["found"] is True and out["registry_exists"] is True
     assert out["registry_id"] == 901 and out["registry_owner"] == "nvnm1fake"
@@ -482,19 +540,45 @@ def test_receipt_lookup_found_versions_and_missing():
     assert "results" not in out["versions"][-1]["receipt"]  # non-enumerating
     assert out["proof"]["request"]["method"] == "eth_call"
 
+    # a whole pasted discovery line also works
+    line = f"Citation verifications: NVNM Chain (chain 787111) registry #901 — {REG}"
+    assert make_service(gw).lookup(line, sha)["found"] is True
+
     # registry exists but no receipt for this document → found False (the tamper signal)
-    no_doc = ReceiptService(FakeGateway(registries={REG: 901})).lookup(REG, "c" * 64)
+    no_doc = make_service(FakeGateway(registries={901: REG})).lookup("901", "c" * 64)
     assert no_doc["registry_exists"] is True and no_doc["found"] is False
 
-    # registry itself absent → registry_exists False (bad/unknown discovery link)
-    no_reg = ReceiptService(FakeGateway(registries={})).lookup(REG, "c" * 64)
+    # registry id absent → registry_exists False (bad/unknown discovery link)
+    no_reg = make_service(FakeGateway(registries={})).lookup("4711", "c" * 64)
     assert no_reg["registry_exists"] is False and no_reg["found"] is False
 
     # bad inputs
     with pytest.raises(WebAppError):
-        ReceiptService(gw).lookup(REG, "not-a-hash")
+        make_service(gw).lookup("901", "not-a-hash")
     with pytest.raises(WebAppError):
-        ReceiptService(gw).lookup("Bad Registry Name!!", sha)
+        make_service(gw).lookup("Bad Registry Name!!", sha)
+
+
+def test_receipt_lookup_legacy_name_fallback():
+    sha = "b" * 64
+    receipt_meta = compact_json(minimal_receipt(sha, block=5))
+    gw = FakeGateway(
+        registries={901: REG},
+        receipt_versions={(901, sha): fake_record(901, sha, receipt_meta)},
+    )
+    out = make_service(gw).lookup(REG, sha)  # legacy name, one match
+    assert out["found"] is True and out["registry_id"] == 901
+    assert "legacy" in out["note"]
+
+    # two same-name registries: candidates surfaced, never first-row
+    gw2 = FakeGateway(registries={901: REG, 902: REG})
+    amb = make_service(gw2).lookup(REG, sha)
+    assert amb["ambiguous"] is True
+    assert sorted(c["id"] for c in amb["candidates"]) == [901, 902]
+
+    # unknown name
+    none = make_service(FakeGateway(registries={})).lookup("no--such", sha)
+    assert none["registry_exists"] is False
 
 
 # ---------------------------------------------------------------- decode
@@ -502,7 +586,7 @@ def test_receipt_lookup_found_versions_and_missing():
 
 def test_decode_call_roundtrips_the_codec():
     calldata = pc.build_add_record(
-        registry="us-scotus", uri="https://www.courtlistener.com/opinion/108713/roe-v-wade/",
+        registry_id=82, uri="https://www.courtlistener.com/opinion/108713/roe-v-wade/",
         checksum="410 U.S. 113", checksum_algo="cite-canonical-v1",
         metadata='{"cluster":108713,"name":"Roe v. Wade","year":1973}',
     )
@@ -522,7 +606,7 @@ def test_decode_call_roundtrips_the_codec():
 def live_server(data_dir: Path):
     from nvnm_cite.webapp.server import build_server
 
-    server = build_server("127.0.0.1", 0, "http://127.0.0.1:9", data_dir)  # RPC unroutable on purpose
+    server = build_server("127.0.0.1", 0, TESTNET, "http://127.0.0.1:9", data_dir)  # RPC unroutable on purpose
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     yield server.server_address

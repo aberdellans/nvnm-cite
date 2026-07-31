@@ -1,19 +1,25 @@
-"""Run the web demo: ``uv run python -m nvnm_cite.webapp``"""
+"""Run the web app: ``uv run python -m nvnm_cite.webapp``"""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-from nvnm_cite.config import load_dotenv, testnet_rpc
+from nvnm_cite.config import get_network, load_dotenv
 from nvnm_cite.webapp.server import build_server
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="nvnm-cite web demo server")
+    parser = argparse.ArgumentParser(description="nvnm-cite web server")
     parser.add_argument("--host", default="127.0.0.1", help="bind address (default 127.0.0.1)")
     parser.add_argument("--port", type=int, default=8787, help="port (default 8787)")
-    parser.add_argument("--rpc", default=None, help="EVM RPC URL (default: NVNM_TESTNET_RPC or the public testnet RPC)")
+    parser.add_argument(
+        "--network",
+        choices=["mainnet", "testnet"],
+        default=None,
+        help="which NVNM Chain network to serve against (default: mainnet, or NVNM_NETWORK)",
+    )
+    parser.add_argument("--rpc", default=None, help="EVM RPC URL (default: the selected network's)")
     parser.add_argument("--data-dir", default="data", help="directory holding corpus.sqlite / chain_index.sqlite")
     parser.add_argument(
         "--telemetry",
@@ -25,13 +31,17 @@ def main() -> None:
     args = parser.parse_args()
 
     load_dotenv()
-    rpc_url = args.rpc or testnet_rpc()
+    network = get_network(args.network)
+    rpc_url = args.rpc or network.rpc_url()
     data_dir = Path(args.data_dir)
     telemetry_path = Path(args.telemetry) if args.telemetry else None
 
-    server = build_server(args.host, args.port, rpc_url, data_dir, telemetry_path=telemetry_path)
-    print(f"nvnm-cite web demo: http://{args.host}:{args.port}/")
-    print(f"  RPC: {rpc_url} (chain 787111, NVNM testnet)")
+    server = build_server(
+        args.host, args.port, network, rpc_url, data_dir, telemetry_path=telemetry_path
+    )
+    print(f"nvnm-cite web: http://{args.host}:{args.port}/")
+    print(f"  network: {network.label} (chain {network.chain_id})")
+    print(f"  RPC: {rpc_url}")
     print(f"  data: {data_dir.resolve()}")
     print("  uploads are processed in memory and discarded with the response;")
     print("  drafting checks read NVNM Chain live (item 0) — point-to-point, never published")

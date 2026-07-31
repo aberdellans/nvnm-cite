@@ -1,3 +1,5 @@
+# NOTE: pre-v1.2.0 ABI (name-keyed records/registries/addRecord); historical
+# record of the pilot probes/load — non-functional against current chains.
 """Phase 0 task 0.6: first live round-trip on NVNM testnet.
 
 Pre-flight (read-only, free): verify chain id 787111, derive the wallet

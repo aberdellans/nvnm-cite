@@ -21,16 +21,20 @@ from nvnm_cite.verifier.check import check_document
 from nvnm_cite.verifier.resolver import Resolution, records_query
 
 
-def _rec(registry: str, checksum: str, metadata: str) -> pc.Record:
+def _rec(registry_id: int, checksum: str, metadata: str) -> pc.Record:
     return pc.Record(
-        registry=registry, uri="https://cl/x/", checksum=checksum, checksum_algo="cite-canonical-v1",
-        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1, is_latest=True,
+        uri="https://cl/x/", checksum=checksum, checksum_algo="cite-canonical-v1",
+        metadata=metadata, timestamp="t", status="Active", record_id=1, index=1,
+        is_latest=True, registry_id=registry_id,
     )
 
 
+# CLI tests run with --network testnet, so the fixture ids are the pilot pair.
+TEST_REGISTRY_IDS = {"us-scotus": 737, "us-ca11": 738}
+
 RECORDS = {
-    ("us-scotus", "410 U.S. 113"): _rec(
-        "us-scotus", "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}'
+    (737, "410 U.S. 113"): _rec(
+        737, "410 U.S. 113", '{"cluster":108713,"name":"Roe v. Wade","year":1973}'
     ),
 }
 
@@ -39,9 +43,9 @@ class FakeResolver:
     def __init__(self, records):
         self.records = records
 
-    def resolve(self, registry: str, checksum: str) -> Resolution:
-        _, query = records_query(registry, checksum)
-        return Resolution(record=self.records.get((registry, checksum)), query=query)
+    def resolve(self, registry_id: int, checksum: str, registry_name=None) -> Resolution:
+        _, query = records_query(registry_id, checksum)
+        return Resolution(record=self.records.get((registry_id, checksum)), query=query)
 
 
 BRIEF = "Roe v. Wade, 410 U.S. 113 (1973). Varghese, 925 F.3d 1339 (11th Cir. 2019)."
@@ -56,7 +60,7 @@ def brief_file(tmp_path):
 
 def test_check_renders_table(brief_file, monkeypatch, capsys):
     monkeypatch.setattr(cli, "ChainResolver", lambda *a, **k: FakeResolver(RECORDS))
-    rc = cli.main(["check", str(brief_file)])
+    rc = cli.main(["check", str(brief_file), "--network", "testnet"])
     out = capsys.readouterr().out
     assert rc == 0
     assert "nvnm-cite check" in out
@@ -67,7 +71,7 @@ def test_check_renders_table(brief_file, monkeypatch, capsys):
 
 def test_check_json_output(brief_file, monkeypatch, capsys):
     monkeypatch.setattr(cli, "ChainResolver", lambda *a, **k: FakeResolver(RECORDS))
-    rc = cli.main(["check", str(brief_file), "--json"])
+    rc = cli.main(["check", str(brief_file), "--network", "testnet", "--json"])
     out = capsys.readouterr().out
     assert rc == 0
     report = json.loads(out)
@@ -86,11 +90,11 @@ def test_check_missing_file(capsys):
 
 def test_check_dead_rpc_exits_nonzero(brief_file, monkeypatch, capsys):
     class Down:
-        def resolve(self, registry, checksum):
+        def resolve(self, registry_id, checksum, registry_name=None):
             raise ConnectionRefusedError("refused")
 
     monkeypatch.setattr(cli, "ChainResolver", lambda *a, **k: Down())
-    rc = cli.main(["check", str(brief_file)])
+    rc = cli.main(["check", str(brief_file), "--network", "testnet"])
     assert rc == 2
     err = capsys.readouterr().err
     assert "could not reach" in err and "NVNM Chain" in err
@@ -105,18 +109,22 @@ def test_no_subcommand_errors(capsys):
 
 
 def _fake_plan():
-    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(RECORDS))
+    report = check_document(BRIEF.encode(), "brief.txt", FakeResolver(RECORDS), registry_ids=TEST_REGISTRY_IDS)
     sha = report["document"]["sha256"]
     regs = [{"id": 737, "name": "us-scotus", "head_block": 1_700_000}]
     receipt, rj = build_receipt(
         document_sha256=sha, checked_at_block=1_700_000, registries=regs,
         summary=summary_tally(report), agent_address="0x" + "ab" * 20, timestamp="t",
+        chain_id=787111,
     )
     reg = "inveniam--mata-v-avianca"
+    # create path: the id (and record calldata) exist only after the create
+    # tx confirms.
     return AnchorPlan(
-        registry=reg, registry_exists=False, document_sha256=sha, checked_at_block=1_700_000,
+        registry=reg, registry_id=None, registry_exists=False, name_matches=None,
+        document_sha256=sha, checked_at_block=1_700_000, chain_id=787111,
         registries_read=regs, receipt=receipt, receipt_json=rj,
-        record_calldata=pc.build_add_record(reg, RECEIPT_URI, sha, RECEIPT_CHECKSUM_ALGO, rj),
+        record_calldata=None,
         create_registry={"name": reg}, create_calldata=pc.build_add_registry(reg, "d", '{"k":1}'),
         already_anchored=False, report=report,
     )
@@ -124,6 +132,7 @@ def _fake_plan():
 
 def test_anchor_dry_run_does_not_send(brief_file, monkeypatch, capsys):
     monkeypatch.setattr(cli, "prepare_anchor", lambda *a, **k: _fake_plan())
+    monkeypatch.setattr(cli, "find_receipt_registries", lambda *a, **k: [])
     # --agent avoids needing the signing key; no --anchor means dry run
     rc = cli.main(["anchor", str(brief_file), "--firm", "Inveniam", "--case", "Mata v. Avianca", "--agent", "0x" + "ab" * 20])
     out = capsys.readouterr().out
@@ -131,11 +140,24 @@ def test_anchor_dry_run_does_not_send(brief_file, monkeypatch, capsys):
     assert "Dry run" in out and "Receipt to anchor" in out
     assert "inveniam--mata-v-avianca" in out
     assert "addRecord" in out and "VERIFIED" in out  # shows the check + the plan
+    assert "will be CREATED" in out
+
+
+def test_anchor_ambiguous_registries_require_explicit_id(brief_file, monkeypatch, capsys):
+    matches = [
+        {"id": 900, "name": "inveniam--mata-v-avianca", "creator": "nvnm1x", "created_at": "t1"},
+        {"id": 901, "name": "inveniam--mata-v-avianca", "creator": "nvnm1x", "created_at": "t2"},
+    ]
+    monkeypatch.setattr(cli, "find_receipt_registries", lambda *a, **k: matches)
+    rc = cli.main(["anchor", str(brief_file), "--firm", "Inveniam", "--case", "Mata v. Avianca", "--agent", "0x" + "ab" * 20])
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "--registry-id" in err and "#900" in err and "#901" in err
 
 
 def _verify_result(verdict, found=True):
     return VerifyResult(
-        registry="inveniam--mata-v-avianca", registry_exists=True, document_sha256="a" * 64,
+        registry_id=900, registry_name="inveniam--mata-v-avianca", registry_exists=True, document_sha256="a" * 64,
         found=found, verdict=verdict,
         receipt={"agent": {"address": "0x" + "ab" * 20}, "summary": {"checked": 2}, "timestamp": "t"} if found else None,
         recomputed_summary={"checked": 2} if found else None, summary_matches=(verdict == "verified") or None,
@@ -146,14 +168,14 @@ def _verify_result(verdict, found=True):
 
 def test_verify_exit_code_verified(brief_file, monkeypatch, capsys):
     monkeypatch.setattr(cli, "verify_document", lambda *a, **k: _verify_result("verified"))
-    rc = cli.main(["verify", str(brief_file), "--registry", "inveniam--mata-v-avianca"])
+    rc = cli.main(["verify", str(brief_file), "--registry", "#900"])
     assert rc == 0
     assert "VERIFIED" in capsys.readouterr().out
 
 
 def test_verify_exit_code_not_found(brief_file, monkeypatch, capsys):
     monkeypatch.setattr(cli, "verify_document", lambda *a, **k: _verify_result("not_found", found=False))
-    rc = cli.main(["verify", str(brief_file), "--registry", "inveniam--mata-v-avianca"])
+    rc = cli.main(["verify", str(brief_file), "--registry", "900"])
     assert rc == 1  # nonzero when not cleanly verified
     assert "NO RECEIPT" in capsys.readouterr().out
 
@@ -166,15 +188,16 @@ def _seed_index(path):
     conn.executescript(
         """
         CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-        CREATE TABLE records (registry TEXT, checksum TEXT, record_id INTEGER, idx INTEGER,
+        CREATE TABLE records (registry_id INTEGER, registry_name TEXT, checksum TEXT, record_id INTEGER, idx INTEGER,
             is_latest INTEGER, uri TEXT, checksum_algo TEXT, metadata TEXT, timestamp TEXT, status TEXT);
-        CREATE TABLE sync_state (registry TEXT PRIMARY KEY, row_offset INTEGER, head_block INTEGER, synced_at TEXT);
+        CREATE TABLE sync_state (registry_id INTEGER PRIMARY KEY, registry_name TEXT, row_offset INTEGER, head_block INTEGER, synced_at TEXT);
         """
     )
-    conn.execute("INSERT INTO records VALUES ('us-scotus','410 U.S. 113',1,1,1,'u','cite-canonical-v1','{}','t','Active')")
-    conn.execute("INSERT INTO records VALUES ('us-ca11','950 F.3d 1000',2,1,1,'u','cite-canonical-v1','{}','t','Active')")
-    conn.execute("INSERT INTO sync_state VALUES ('us-scotus',1,1693000,'2026-06-13T00:00:00Z')")
-    conn.execute("INSERT INTO sync_state VALUES ('us-ca11',1,1693000,'2026-06-13T00:00:00Z')")
+    conn.execute("INSERT INTO meta VALUES ('index_schema','2')")
+    conn.execute("INSERT INTO records VALUES (737,'us-scotus','410 U.S. 113',1,1,1,'u','cite-canonical-v1','{}','t','Active')")
+    conn.execute("INSERT INTO records VALUES (738,'us-ca11','950 F.3d 1000',2,1,1,'u','cite-canonical-v1','{}','t','Active')")
+    conn.execute("INSERT INTO sync_state VALUES (737,'us-scotus',1,1693000,'2026-06-13T00:00:00Z')")
+    conn.execute("INSERT INTO sync_state VALUES (738,'us-ca11',1,1693000,'2026-06-13T00:00:00Z')")
     conn.commit()
     conn.close()
 

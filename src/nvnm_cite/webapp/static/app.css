@@ -267,6 +267,12 @@ a:hover { text-decoration-color: var(--navy); }
   color: #7a4e1c;
 }
 
+.badge-mainnet {
+  background: #e8f3ec;
+  border-color: #9ec7ab;
+  color: #1e5c38;
+}
+
 .badge-muted { background: var(--mute-tint); border-color: var(--mute-line); color: var(--mute); }
 
 .badge-ok {

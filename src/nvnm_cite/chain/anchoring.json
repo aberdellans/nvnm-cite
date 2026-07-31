@@ -8,7 +8,6 @@
         "name": "record",
         "type": "tuple",
         "components": [
-          { "name": "registry", "type": "string" },
           { "name": "uri", "type": "string" },
           { "name": "checksum", "type": "string" },
           { "name": "checksumAlgo", "type": "string" },
@@ -17,7 +16,8 @@
           { "name": "status", "type": "string" },
           { "name": "recordId", "type": "uint64" },
           { "name": "index", "type": "uint64" },
-          { "name": "isLatest", "type": "bool" }
+          { "name": "isLatest", "type": "bool" },
+          { "name": "registryId", "type": "uint64" }
         ]
       }
     ],
@@ -55,7 +55,7 @@
     "name": "records",
     "stateMutability": "view",
     "inputs": [
-      { "name": "registry", "type": "string" },
+      { "name": "registryId", "type": "uint64" },
       { "name": "checksum", "type": "string" },
       { "name": "recordId", "type": "uint64" },
       { "name": "index", "type": "uint64" },
@@ -76,7 +76,6 @@
         "name": "records",
         "type": "tuple[]",
         "components": [
-          { "name": "registry", "type": "string" },
           { "name": "uri", "type": "string" },
           { "name": "checksum", "type": "string" },
           { "name": "checksumAlgo", "type": "string" },
@@ -85,7 +84,8 @@
           { "name": "status", "type": "string" },
           { "name": "recordId", "type": "uint64" },
           { "name": "index", "type": "uint64" },
-          { "name": "isLatest", "type": "bool" }
+          { "name": "isLatest", "type": "bool" },
+          { "name": "registryId", "type": "uint64" }
         ]
       },
       {
@@ -104,7 +104,6 @@
     "stateMutability": "view",
     "inputs": [
       { "name": "registryId", "type": "uint64" },
-      { "name": "name", "type": "string" },
       {
         "name": "pagination",
         "type": "tuple",
@@ -163,5 +162,58 @@
       { "name": "status", "type": "string" }
     ],
     "outputs": []
+  },
+  {
+    "type": "event",
+    "name": "AddRegistry",
+    "inputs": [
+      { "name": "caller", "type": "address", "indexed": true },
+      { "name": "registryId", "type": "uint64", "indexed": false },
+      { "name": "name", "type": "string", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "AddRecord",
+    "inputs": [
+      { "name": "caller", "type": "address", "indexed": true },
+      { "name": "registryId", "type": "uint64", "indexed": false },
+      { "name": "recordId", "type": "uint64", "indexed": false },
+      { "name": "index", "type": "uint64", "indexed": false },
+      { "name": "checksum", "type": "string", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "UpdateRecordStatus",
+    "inputs": [
+      { "name": "caller", "type": "address", "indexed": true },
+      { "name": "registryId", "type": "uint64", "indexed": false },
+      { "name": "recordId", "type": "uint64", "indexed": false },
+      { "name": "index", "type": "uint64", "indexed": false },
+      { "name": "status", "type": "string", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "GrantRole",
+    "inputs": [
+      { "name": "caller", "type": "address", "indexed": true },
+      { "name": "registryId", "type": "uint64", "indexed": false },
+      { "name": "checksum", "type": "string", "indexed": false },
+      { "name": "account", "type": "address", "indexed": false },
+      { "name": "role", "type": "string", "indexed": false }
+    ]
+  },
+  {
+    "type": "event",
+    "name": "RevokeRole",
+    "inputs": [
+      { "name": "caller", "type": "address", "indexed": true },
+      { "name": "registryId", "type": "uint64", "indexed": false },
+      { "name": "checksum", "type": "string", "indexed": false },
+      { "name": "account", "type": "address", "indexed": false },
+      { "name": "role", "type": "string", "indexed": false }
+    ]
   }
 ]

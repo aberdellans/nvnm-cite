@@ -33,7 +33,7 @@
       </span>
     </div>
     <div class="masthead-status">
-      <span id="net-badge" class="badge badge-testnet">Testnet</span>
+      <span id="net-badge" class="badge badge-testnet">…</span>
       <span id="chain-badge" class="badge badge-muted">chain …</span>
       <button id="wallet-btn" class="btn btn-outline btn-wallet" type="button">Connect wallet</button>
     </div>
@@ -136,7 +136,7 @@
         <dl>
           <div><dt><span class="chip chip-VERIFIED">Verified</span></dt><dd>A registry record exists for this citation. Existence only — it may still have been overruled, vacated, or superseded.</dd></div>
           <div><dt><span class="chip chip-NOT_FOUND">Not found</span></dt><dd>No record in the covering registry. Treat as presumptively fabricated until proven otherwise.</dd></div>
-          <div><dt><span class="chip chip-NOT_COVERED">Not covered</span></dt><dd>The cited reporter or court is outside pilot coverage (<span id="legend-coverage">us-scotus, us-ca11</span>). No conclusion either way.</dd></div>
+          <div><dt><span class="chip chip-NOT_COVERED">Not covered</span></dt><dd>The cited reporter or court is outside coverage (<span id="legend-coverage">the covered court registries</span>). No conclusion either way.</dd></div>
           <div><dt><span class="chip chip-AMBIGUOUS_JURISDICTION">Ambiguous</span></dt><dd>The citation alone cannot place the court. Add the court parenthetical and re-check.</dd></div>
           <div><dt><span class="chip chip-UNPARSEABLE">Unparseable</span></dt><dd>Not recognized as a citation — often an orphan short form (<em>Id.</em>, <em>supra</em>) with no resolved antecedent.</dd></div>
         </dl>
@@ -206,6 +206,13 @@
         </div>
       </div>
 
+      <div class="action-row">
+        <button id="my-registries-btn" class="btn btn-outline" type="button" disabled>My registries</button>
+        <p class="hint">Lists the receipt registries this wallet already created on this chain, with their
+        permanent #ids — registry names are not unique, so the #id is what identifies a registry.</p>
+      </div>
+      <div id="my-registries-box" aria-live="polite"></div>
+
       <div id="regline-callout" class="regline">
         <div class="regline-head">
           <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
@@ -261,9 +268,10 @@
           <svg class="ic" aria-hidden="true"><use href="#i-alert"></use></svg>
           <div>
             <strong>One-time setup: this matter's receipt registry does not exist yet.</strong>
-            <p>Receipts for this matter live in their own registry, named from the filer and case. It has not
-            been created on this chain yet. Creating it is a single transaction; the creating wallet becomes its
-            admin (self-sovereign — no NVNM gatekeeper):</p>
+            <p>Receipts for this matter live in their own registry, named from the filer and case. No registry
+            with this name is owned by your wallet on this chain yet. Creating it is a single transaction; the
+            creating wallet becomes its admin (self-sovereign — no NVNM gatekeeper), and the chain assigns the
+            registry its permanent <strong>#id</strong> on confirmation — that #id goes on the filing:</p>
             <pre class="codeblock"><code></code></pre>
             <button class="btn btn-outline" type="button">Create this registry with wallet</button>
           </div>
@@ -271,8 +279,8 @@
 
         <div class="action-row">
           <button id="anchor-btn" class="btn btn-primary" type="button" disabled>Sign &amp; anchor with wallet</button>
-          <p class="hint">Your wallet shows the exact transaction before anything is sent. Gas on testnet is
-          paid in wmantraUSD; an anchor costs roughly 0.005–0.01&nbsp;wmantraUSD.</p>
+          <p class="hint">Your wallet shows the exact transaction before anything is sent. Gas is paid in the
+          chain’s USD-pegged token; an anchor costs well under a cent.</p>
         </div>
         <div id="anchor-status" aria-live="polite"></div>
       </div>
@@ -313,8 +321,8 @@
     </div>
 
     <div class="field-row">
-      <label for="verify-registry">Citation-verification registry</label>
-      <input type="text" id="verify-registry" class="mono" maxlength="64" placeholder="e.g. inveniam--mata-v-avianca" spellcheck="false">
+      <label for="verify-registry">Citation-verification registry #id</label>
+      <input type="text" id="verify-registry" class="mono" maxlength="120" placeholder="e.g. #4711 — or paste the whole verification line from the filing" spellcheck="false">
       <p class="hint">Copy it from the “Citation verifications” link printed on the filing. It points to the
       registry that holds the receipt.</p>
     </div>
@@ -344,7 +352,7 @@
     <details class="json-details replay-details hidden" id="replay-details">
       <summary>Don’t trust this page? Replay the lookup yourself</summary>
       <p class="hint">The registry is public. This exact query — generated from your lookup —
-      returns the same record from any NVNM testnet RPC; this page adds nothing you cannot reproduce:</p>
+      returns the same record from any NVNM Chain RPC; this page adds nothing you cannot reproduce:</p>
       <pre class="codeblock"><code id="replay-curl"></code></pre>
     </details>
   </section>
@@ -472,7 +480,7 @@
         <p>Not to check or verify. Recording a receipt uses a wallet, typically managed for you by the firm or
         its agent.</p></details>
       <details><summary>How much does it cost?</summary>
-        <p>Checking and verifying are free. Recording costs a small network fee (fractions of a cent on testnet
+        <p>Checking and verifying are free. Recording costs a small network fee (fractions of a cent
         today).</p></details>
     </div>
 
@@ -492,7 +500,7 @@
 
 <footer class="footer">
   <div class="shell footer-grid">
-    <p><strong>NVNM Cite</strong> · pilot on NVNM Chain testnet · chain id <span class="mono">787111</span></p>
+    <p><strong>NVNM Cite</strong> · <span id="footer-chain" class="mono">NVNM Chain</span></p>
     <p>Anchoring precompile <span class="mono">0x0000…0A00</span></p>
     <p class="footer-ethic">Provenance, not truth.</p>
     <p>Case data: CourtListener / Free Law Project</p>

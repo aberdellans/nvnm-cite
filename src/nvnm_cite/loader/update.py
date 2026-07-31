@@ -372,15 +372,19 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.submit and not args.dry_run and total_appended:
         print(f"\n--submit: loading {total_appended:,} newly-appended records to chain")
+        from nvnm_cite.chain.registrymap import load_manifest
         from nvnm_cite.chain.rpc import EvmRpc
         from nvnm_cite.chain.secp256k1 import address_from_private_key
-        from nvnm_cite.config import testnet_private_key, testnet_rpc
+        from nvnm_cite.config import get_network, signing_context
         from nvnm_cite.loader.bulk_load import print_status, run_load
 
-        rpc = EvmRpc(testnet_rpc())
-        key = testnet_private_key()
-        run_load(db, rpc, key)
-        print_status(db, rpc, address_from_private_key(key))
+        # Writes default to testnet; mainnet needs the signing opt-in pair.
+        network = get_network(default="testnet")
+        rpc = EvmRpc(network.rpc_url())
+        key, chain_id = signing_context(network)
+        registry_ids = load_manifest(network.key).all_registries()
+        run_load(db, rpc, key, chain_id, registry_ids)
+        print_status(db, rpc, address_from_private_key(key), token=network.gas_token)
     elif args.submit and not total_appended:
         print("\n--submit: nothing new to load")
 

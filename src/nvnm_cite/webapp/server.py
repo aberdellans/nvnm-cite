@@ -17,7 +17,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
 from pathlib import Path
 
+from nvnm_cite.chain.registrymap import load_manifest
 from nvnm_cite.chain.rpc import EvmRpc, RpcError
+from nvnm_cite.config import Network
 from nvnm_cite.verifier.resolver import ChainResolver
 from nvnm_cite.verifier.telemetry import SqliteTelemetry
 from nvnm_cite.webapp.localindex import LocalIndex
@@ -56,9 +58,25 @@ _CSP = (
 
 
 class Services:
-    def __init__(self, rpc_url: str, data_dir: Path, telemetry_path: Path | None = None):
+    def __init__(
+        self,
+        network: Network,
+        rpc_url: str,
+        data_dir: Path,
+        telemetry_path: Path | None = None,
+    ):
+        self.network = network
         self.rpc_url = rpc_url
         index = LocalIndex(data_dir)  # status panel only; not the check authority
+        # The pinned name->id manifest: coverage AND the trust anchor for
+        # court-registry resolution (names are non-unique under v1.2.0).
+        manifest = load_manifest(network.key)
+        registry_ids = manifest.all_registries()
+        # Fail fast on a network/manifest mismatch rather than serving wrong ids.
+        if manifest.chain_id != network.chain_id:
+            raise RuntimeError(
+                f"manifest chain_id {manifest.chain_id} != network {network.chain_id}"
+            )
         # Receipt prepare/lookup + tx polling go through this gateway; a moderate
         # timeout keeps a slow RPC from freezing the anchor flow.
         gateway = ChainGateway(lambda: EvmRpc(rpc_url, timeout=INTERACTIVE_RPC_TIMEOUT))
@@ -69,15 +87,16 @@ class Services:
         # Drafting checks read the chain LIVE (item 0): a fresh EvmRpc per call
         # keeps the resolver safe under the threaded server.
         self.check = CheckService(
-            ChainResolver(lambda: EvmRpc(rpc_url), telemetry=self.telemetry)
+            ChainResolver(lambda: EvmRpc(rpc_url), telemetry=self.telemetry),
+            registry_ids,
         )
-        self.receipt = ReceiptService(gateway)
-        self.tx = TxService(gateway)
+        self.receipt = ReceiptService(gateway, network, registry_ids)
+        self.tx = TxService(gateway, network)
         # The status panel probes through a SHORT-timeout gateway so a dead or
         # slow RPC fails fast instead of stalling page load (task 4.5e).
         status_gateway = ChainGateway(lambda: EvmRpc(rpc_url, timeout=STATUS_RPC_TIMEOUT))
         self.status = StatusService(
-            status_gateway, index, data_dir, rpc_url=rpc_url,
+            status_gateway, index, data_dir, network, manifest, rpc_url=rpc_url,
             telemetry_enabled=telemetry_path is not None,
         )
 
@@ -85,7 +104,7 @@ class Services:
 class Handler(BaseHTTPRequestHandler):
     services: Services  # injected by build_server
     protocol_version = "HTTP/1.1"
-    server_version = "nvnm-cite-web/0.1.0"
+    server_version = "nvnm-cite-web/0.2.0"
 
     # --- plumbing ---
 
@@ -177,6 +196,9 @@ class Handler(BaseHTTPRequestHandler):
             registry = (query.get("registry") or [""])[0]
             sha = (query.get("sha256") or [""])[0]
             self._send_json(self.services.receipt.lookup(registry, sha))
+        elif route == "/api/receipt/registries":
+            creator = (query.get("creator") or [""])[0]
+            self._send_json(self.services.receipt.registries_for_creator(creator))
         elif route == "/api/tx":
             tx_hash = (query.get("hash") or [""])[0]
             self._send_json(self.services.tx.inspect(tx_hash))
@@ -205,9 +227,15 @@ class Handler(BaseHTTPRequestHandler):
                 firm = urllib.parse.unquote(self.headers.get("X-Firm", ""))
                 case = urllib.parse.unquote(self.headers.get("X-Case", ""))
                 agent = urllib.parse.unquote(self.headers.get("X-Agent", ""))
+                # X-Registry-Id pins the target receipts registry (set after
+                # the setup tx confirms, or when the picker chose one). Absent
+                # means: resolve by creator+name, or return the setup step.
+                raw_id = self.headers.get("X-Registry-Id", "").strip()
+                registry_id = int(raw_id) if raw_id.isdigit() else None
                 self._send_json(
                     self.services.receipt.prepare(
-                        body, filename, firm=firm, case=case, agent_address=agent
+                        body, filename, firm=firm, case=case, agent_address=agent,
+                        registry_id=registry_id,
                     )
                 )
             else:
@@ -228,9 +256,14 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def build_server(
-    host: str, port: int, rpc_url: str, data_dir: Path, telemetry_path: Path | None = None
+    host: str,
+    port: int,
+    network: Network,
+    rpc_url: str,
+    data_dir: Path,
+    telemetry_path: Path | None = None,
 ) -> ThreadingHTTPServer:
-    services = Services(rpc_url, data_dir, telemetry_path=telemetry_path)
+    services = Services(network, rpc_url, data_dir, telemetry_path=telemetry_path)
     handler = type("BoundHandler", (Handler,), {"services": services})
     server = ThreadingHTTPServer((host, port), handler)
     server.daemon_threads = True

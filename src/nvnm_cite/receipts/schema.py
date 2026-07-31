@@ -14,7 +14,9 @@ Receipts live in a registry owned by the FILING PARTY'S OWN WALLET, one per
 (firm, case) (item 3): no global registry, so NVNM is never a write-
 gatekeeper. The registry name is filer-chosen and human-readable (Albert
 2026-06-15), format ``<firm>--<case>``; discovery is the registry LINK
-printed on the filing, established when the matter opens.
+printed on the filing, established when the matter opens. Since anchoring
+v1.2.0 (2026-07-31 amendment) the link carries the numeric registryId —
+names are NOT unique on chain, so only the id identifies a registry.
 
 Pure module: no chain access, no I/O. anchor.py assembles the registries
 table and tally (which need chain reads) and calls build_receipt here.
@@ -25,7 +27,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from nvnm_cite.config import TESTNET_CHAIN_ID
 from nvnm_cite.loader.records import METADATA_CAP, compact_json
 from nvnm_cite.normalizer import NORMALIZER_VERSION
 
@@ -34,8 +35,9 @@ RECEIPT_URI = "urn:nvnm-cite:receipt:v1"  # fixed; schema doc section 4 rational
 RECEIPT_CHECKSUM_ALGO = "sha256"
 SPEC = "cite-canonical-v1"
 
-# Registry names are unique on chain. We keep receipt registry names modest
-# and to a defined charset so they stay legible and collision-resistant.
+# Registry names are NOT unique on chain (v1.2.0); the id identifies a
+# registry. We still keep receipt registry names modest and to a defined
+# charset so they stay legible on a filing.
 REGISTRY_NAME_CAP = 64
 _PARTY_CAP = 200  # raw firm/case text kept in description + metadata
 
@@ -114,6 +116,22 @@ def summary_tally(report: dict) -> dict:
     return tally
 
 
+def registries_read_from_report(report: dict, head_block: int) -> list[dict]:
+    """The court registries actually READ for this document — the distinct
+    (id, name) pairs behind the report's chain-resolved citations, sorted by
+    id. With manifest-wide coverage (2,114 registries) the receipt records
+    what was consulted, never the whole coverage set."""
+    seen: dict[int, str] = {}
+    for cit in report.get("citations", []):
+        rid = cit.get("registry_id")
+        if rid is not None and cit.get("status") in ("VERIFIED", "NOT_FOUND"):
+            seen[int(rid)] = str(cit.get("registry") or "")
+    return [
+        {"head_block": head_block, "id": rid, "name": seen[rid]}
+        for rid in sorted(seen)
+    ]
+
+
 def build_receipt(
     *,
     document_sha256: str,
@@ -122,13 +140,18 @@ def build_receipt(
     summary: dict,
     agent_address: str,
     timestamp: str,
-    chain_id: int = TESTNET_CHAIN_ID,
+    chain_id: int,
 ) -> tuple[dict, str]:
     """The locked receipt v1 object and its canonical compact JSON.
 
     ``registries`` is the court registries READ during the check, each
     {id, name, head_block}; ``summary`` is summary_tally()'s output.
-    Validates inputs and the (always-satisfied) 2048 B cap.
+    ``chain_id`` comes from the active network — a receipt states where it
+    was anchored. Validates inputs and the 2048 B cap; a many-court brief
+    that would overflow gets its registries table deterministically
+    truncated (sorted by id, trailing entries dropped) with the count in
+    the additive optional field ``registries_omitted`` (2026-07-31
+    amendment to the schema doc — the tally and hash are never touched).
     """
     sha = (document_sha256 or "").lower()
     if not _SHA256_RE.match(sha):
@@ -147,19 +170,28 @@ def build_receipt(
         except (KeyError, TypeError, ValueError) as exc:
             raise ReceiptError(f"each registry needs int id, int head_block, name: {exc}") from exc
 
-    receipt = {
-        "agent": {"address": agent_address.lower()},
-        "chain_id": chain_id,
-        "checked_at_block": checked_at_block,
-        "document_sha256": sha,
-        "normalizer_version": NORMALIZER_VERSION,
-        "registries": reg_table,
-        "schema": RECEIPT_SCHEMA,
-        "summary": {k: int(summary[k]) for k in TALLY_KEYS},
-        "timestamp": timestamp,
-    }
-    serialized = compact_json(receipt)
+    def assemble(table: list[dict], omitted: int) -> tuple[dict, str]:
+        receipt = {
+            "agent": {"address": agent_address.lower()},
+            "chain_id": chain_id,
+            "checked_at_block": checked_at_block,
+            "document_sha256": sha,
+            "normalizer_version": NORMALIZER_VERSION,
+            "registries": table,
+            "schema": RECEIPT_SCHEMA,
+            "summary": {k: int(summary[k]) for k in TALLY_KEYS},
+            "timestamp": timestamp,
+        }
+        if omitted:
+            receipt["registries_omitted"] = omitted
+        return receipt, compact_json(receipt)
+
+    table = list(reg_table)
+    receipt, serialized = assemble(table, 0)
+    while len(serialized.encode("utf-8")) > METADATA_CAP and table:
+        table = table[:-1]
+        receipt, serialized = assemble(table, len(reg_table) - len(table))
     if len(serialized.encode("utf-8")) > METADATA_CAP:
-        # The minimal receipt cannot reach the cap; this guards a future change.
+        # Even an empty registries table over the cap means something else broke.
         raise ReceiptError("receipt exceeds the 2048 B metadata cap (unexpected for a minimal receipt)")
     return receipt, serialized

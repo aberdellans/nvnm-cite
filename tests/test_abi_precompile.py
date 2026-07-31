@@ -5,6 +5,8 @@ import pytest
 
 from nvnm_cite.chain import abi
 from nvnm_cite.chain.precompile import (
+    EVENT_TOPICS,
+    PRECOMPILE_ADDRESS,
     SELECTORS,
     Page,
     Record,
@@ -17,24 +19,26 @@ from nvnm_cite.chain.precompile import (
     build_revoke_role,
     build_update_record_status,
     decode_add_record_result,
+    decode_add_registry_log,
     decode_add_registry_result,
+    decode_event_logs,
     decode_records_result,
     decode_registries_result,
 )
 
 GOLDEN = Path(__file__).parent / "golden" / "abi" / "vectors.json"
 
-# Independently published selectors (ethers and our keccak both derive them
-# from the vendored ABI): the first three came from the chain's own
-# documentation via the original build plan; revokeRole and updateRecordStatus
-# come from MANTRA's anchoring-abi.sol @dev comments (received 2026-07-07),
-# additionally confirmed by live dispatch on both networks (DECISIONS
-# 2026-07-07: recognized selectors answer with auth/decode errors, unknown
-# ones with "unknown method id").
+# Anchoring-module v1.2.0 selectors. records/registries/addRecord changed with
+# the id-keyed interface (published in the v1.2.0 module doc and verified by
+# live dispatch on both networks 2026-07-31: these answer, the old name-keyed
+# selectors return "unknown method id"). addRegistry/grantRole/revokeRole/
+# updateRecordStatus are unchanged from the pre-v1.2.0 interface.
 PUBLISHED_SELECTORS = {
-    "addRecord": "0x9b7b7869",
+    "addRecord": "0x64d25295",
     "addRegistry": "0x318b38b1",
-    "records": "0x02abafdf",
+    "grantRole": "0xb8fdd1a7",
+    "records": "0xc7be5e37",
+    "registries": "0x17bd3e65",
     "revokeRole": "0xacd58bc7",
     "updateRecordStatus": "0x97b40c25",
 }
@@ -45,14 +49,14 @@ BUILDERS = {
         "us-scotus", "Canonical citations: Supreme Court of the United States", ""
     ),
     "addRecord-roe": lambda: build_add_record(
-        "us-scotus",
+        82,
         "https://www.courtlistener.com/c/US/410/113/",
         "410 U.S. 113",
         "cite-canonical-v1",
         '{"cluster":108713,"name":"Roe v. Wade","year":1973}',
     ),
     "addRecord-unicode": lambda: build_add_record(
-        "dev-probe",
+        733,
         "",
         "925 F.3d 1339",
         "cite-canonical-v1",
@@ -62,12 +66,17 @@ BUILDERS = {
         3, "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "editor"
     ),
     "records-keyed-existence": lambda: build_records_query(
-        registry="us-scotus", checksum="410 U.S. 113", count_total=True
+        registry_id=82, checksum="410 U.S. 113", count_total=True
     ),
     "records-paged-resume": lambda: build_records_query(
-        page_key=bytes.fromhex("deadbeef00aa"), offset=7, limit=50, reverse=True
+        registry_id=82,
+        page_key=bytes.fromhex("deadbeef00aa"),
+        offset=7,
+        limit=50,
+        reverse=True,
     ),
-    "registries-by-name": lambda: build_registries_query(name="us-ca11", limit=25),
+    "registries-by-id": lambda: build_registries_query(registry_id=71, limit=25),
+    "registries-enumerate": lambda: build_registries_query(offset=400, limit=200),
     "revokeRole-editor": lambda: build_revoke_role(
         3, "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", "editor"
     ),
@@ -83,8 +92,12 @@ def load_golden() -> dict:
 
 def test_selectors_match_ethers_and_published() -> None:
     assert SELECTORS == load_golden()["selectors"]
-    for name, selector in PUBLISHED_SELECTORS.items():
-        assert SELECTORS[name] == selector
+    assert SELECTORS == PUBLISHED_SELECTORS
+
+
+def test_event_topics_match_ethers() -> None:
+    golden = load_golden()["eventTopics"]
+    assert {EVENT_TOPICS[t]: t for t in EVENT_TOPICS} == golden
 
 
 @pytest.mark.parametrize("call", load_golden()["calls"], ids=lambda c: c["desc"])
@@ -105,7 +118,6 @@ def test_decode_records_result() -> None:
     records, page = decode_records_result(data)
     assert page == Page(next_key=b"next", total=999)
     assert records[0] == Record(
-        registry="us-scotus",
         uri="https://www.courtlistener.com/c/US/410/113/",
         checksum="410 U.S. 113",
         checksum_algo="cite-canonical-v1",
@@ -115,10 +127,12 @@ def test_decode_records_result() -> None:
         record_id=42,
         index=0,
         is_latest=True,
+        registry_id=82,
     )
     assert records[1].checksum == "347 U.S. 483"
     assert records[1].metadata == "unicode: Brown v. Board ☺ §483"
     assert records[1].is_latest is False
+    assert records[1].registry_id == 82
 
     empty = bytes.fromhex(blobs["records-result-empty"]["blob"].removeprefix("0x"))
     assert decode_records_result(empty) == ([], Page(next_key=b"", total=0))
@@ -131,22 +145,44 @@ def test_decode_registries_result() -> None:
     )
     assert registries == [
         Registry(
-            id=11,
+            id=82,
             name="us-scotus",
             description="Canonical citations: SCOTUS",
             creator="nvnm1creator",
-            created_at="2026-06-10",
+            created_at="2026-07-30",
             metadata="",
         )
     ]
     assert page == Page(next_key=b"", total=3)
 
 
+def test_decode_add_registry_log_from_golden() -> None:
+    golden_log = load_golden()["logs"][0]
+    assert golden_log["event"] == "AddRegistry"
+    caller = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"
+    receipt_log = {
+        "address": PRECOMPILE_ADDRESS.lower(),
+        "topics": [
+            next(t for t, n in EVENT_TOPICS.items() if n == "AddRegistry"),
+            "0x" + "00" * 12 + caller.removeprefix("0x").lower(),
+        ],
+        "data": golden_log["data"],
+    }
+    decoded = decode_add_registry_log([receipt_log])
+    assert decoded == {
+        "registry_id": golden_log["values"]["registryId"],
+        "name": golden_log["values"]["name"],
+        "caller": caller.lower(),
+    }
+    # Foreign-address and unknown-topic logs are skipped, never an error.
+    assert decode_event_logs([{"address": "0x" + "11" * 20, "topics": [], "data": "0x"}]) == []
+    assert decode_add_registry_log([]) is None
+
+
 def test_encode_decode_roundtrip_on_record_tuple() -> None:
     record_entry = {
         "type": "tuple[]",
         "components": [
-            {"name": "registry", "type": "string"},
             {"name": "uri", "type": "string"},
             {"name": "checksum", "type": "string"},
             {"name": "checksumAlgo", "type": "string"},
@@ -156,11 +192,12 @@ def test_encode_decode_roundtrip_on_record_tuple() -> None:
             {"name": "recordId", "type": "uint64"},
             {"name": "index", "type": "uint64"},
             {"name": "isLatest", "type": "bool"},
+            {"name": "registryId", "type": "uint64"},
         ],
     }
     rows = [
-        ["us-ca11", "", "925 F.3d 1291", "cite-canonical-v1", "ñ", "", "Active", 7, 2, True],
-        ["us-ca11", "u", "", "", "", "", "", 0, 0, False],
+        ["", "925 F.3d 1291", "cite-canonical-v1", "ñ", "", "Active", 7, 2, True, 71],
+        ["u", "", "", "", "", "", 0, 0, False, 1],
     ]
     blob = abi.encode_values([record_entry], [rows])
     assert abi.decode_values([record_entry], blob) == [rows]
@@ -168,9 +205,9 @@ def test_encode_decode_roundtrip_on_record_tuple() -> None:
 
 def test_builder_validation() -> None:
     with pytest.raises(ValueError):
-        build_add_record("", "u", "c", "a")  # registry required
+        build_add_record(0, "u", "c", "a")  # registry_id required
     with pytest.raises(ValueError):
-        build_add_record("r", "u", "", "a")  # checksum required
+        build_add_record(1, "u", "", "a")  # checksum required
     with pytest.raises(ValueError):
         build_grant_role(1, "0x" + "11" * 20, "owner")  # bad role
     with pytest.raises(ValueError):
