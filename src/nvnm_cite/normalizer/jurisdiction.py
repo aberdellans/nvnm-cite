@@ -5,22 +5,44 @@ The mapping never guesses: a citation whose court cannot be determined from
 the reporter edition or the court parenthetical returns (None, reason) and
 the caller reports AMBIGUOUS_JURISDICTION.
 
-Mapping rules, in order:
+Mapping rules, in order (an explicit court signal always outranks a
+reporter-derived default):
 1. Reporter edition in SCOTUS_EDITIONS -> us-scotus. Needed because eyecite
    sets court='scotus' for bare U.S. and S. Ct. cites but NOT for bare
    L. Ed. / L. Ed. 2d cites (measured against eyecite 2.7.6).
 2. eyecite's metadata.court (already a courts-db ID, parsed from the court
    parenthetical) -> us-<id>, after validating the ID against courts-db.
-3. Anything else is ambiguous. This includes F.2d/F.3d/F.4th/F. App'x with
-   no recognizable parenthetical, state reporters with no parenthetical, and
-   early nominative reporters cited without their U.S. volume (reporters-db
-   tags them scotus_early, but e.g. "Cranch" is also a D.C. reporter, so
-   mapping them to us-scotus would be a guess).
+3. Closed-set federal-circuit parenthetical fallback ("(3d Cir. 1999)" and
+   ordinal variants eyecite misses).
+4. General court-parenthetical fallback: exact longest-prefix match of the
+   parenthetical's content against courts-db citation_strings — measured
+   globally unique (1,959/1,959 map to exactly one court) — plus the closed
+   set of New York Appellate Division forms ("App. Div.", "1st Dep't" …
+   "4th Dep't"), which are definitionally us-nyappdiv (courts-db models the
+   four departments as one court).
+5. Reporter-edition inference from the corpus-derived table
+   (reporter_registries.json, built by scripts/build_reporter_map.py):
+   editions that one registry dominates >= 99.5% across the 11.9M-record
+   mainnet corpus, guarded (single reporters-db reporter, non-vendor,
+   curated adjudications in DECISIONS 2026-08-01). This is what makes bare
+   "212 A.D.2d 331", "248 N.Y. 339" or "T.C. Memo. 1976-300" resolvable.
+6. Anything else is ambiguous. This includes F.2d/F.3d/F.4th/F. App'x and
+   regional reporters (S.W.2d, N.E.2d, …) with no recognizable
+   parenthetical, genuinely multi-court reporters (M.J.), and shared
+   nominatives ("Cranch" is both scotus_early and a D.C. reporter).
+
+Vendor identifiers (Westlaw "2019 WL 1439098", LEXIS) are not jurisdiction
+questions at all: they are never registry keys (the corpus scope excludes
+them by design), so vendor_kind() lets the caller report them as outside
+coverage without a chain read.
 """
 
 from __future__ import annotations
 
+import json
 import re
+from functools import lru_cache
+from importlib import resources
 
 import courts_db
 from eyecite.models import CaseCitation
@@ -67,6 +89,111 @@ def _circuit_from_following_text(following_text: str) -> str | None:
     return _CIRCUIT_BY_ORDINAL[match.group("ordinal")]
 
 
+# General parenthetical fallback (rule 4): the first parenthetical right
+# after the cite (same pin-cite-only guard as the circuit fallback, so a
+# neighboring citation's parenthetical is never misattributed).
+_ANY_PARENTHETICAL = re.compile(
+    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.]*)\((?P<content>[^)]{1,80})\)"
+)
+
+# "App. Div." / department parentheticals are STATE-GATED on the reporter:
+# both New York and New Jersey have an Appellate Division, so the bare form
+# identifies a court only in combination with the citation's own reporter
+# family. Within a state the synonym is definitional, not a guess (courts-db
+# models N.Y.'s four departments as the single court nyappdiv).
+_NY_EDITION_PREFIXES = ("A.D.", "N.Y.", "Misc.", "How. Pr.", "Hun", "Barb.")
+_NJ_EDITION_PREFIXES = ("N.J.",)
+_APPDIV_FORMS: tuple[str, ...] = (
+    "App. Div.",
+    "1st Dep't", "2d Dep't", "2nd Dep't", "3d Dep't", "3rd Dep't", "4th Dep't",
+    "1st Dept.", "2d Dept.", "2nd Dept.", "3d Dept.", "3rd Dept.", "4th Dept.",
+)
+
+_BOUNDARY_CHARS = " ,—–[(0123456789"
+
+
+@lru_cache(maxsize=1)
+def _citation_string_index() -> tuple[dict[str, str], list[str]]:
+    """courts-db citation_string -> court id, longest-first key list.
+
+    Measured against courts-db 0.10.x: every non-empty citation_string maps
+    to exactly one court, so an exact prefix match cannot be ambiguous. If a
+    future courts-db release ever introduces a duplicate, both courts are
+    dropped here (refuse rather than guess).
+    """
+    seen: dict[str, list[str]] = {}
+    for court in courts_db.courts:
+        s = (court.get("citation_string") or "").strip()
+        if s:
+            seen.setdefault(s, []).append(court["id"])
+    index = {s: ids[0] for s, ids in seen.items() if len(ids) == 1}
+    return index, sorted(index, key=len, reverse=True)
+
+
+def _prefix_match(content: str, key: str) -> bool:
+    return content == key or (
+        content.startswith(key) and content[len(key) : len(key) + 1] in _BOUNDARY_CHARS
+    )
+
+
+def _court_from_parenthetical(following_text: str, edition: str | None = None) -> str | None:
+    match = _ANY_PARENTHETICAL.match(following_text)
+    if not match:
+        return None
+    content = match.group("content").strip()
+    ed = edition or ""
+    if any(_prefix_match(content, form) for form in _APPDIV_FORMS):
+        if ed.startswith(_NY_EDITION_PREFIXES):
+            return "nyappdiv"
+        if ed.startswith(_NJ_EDITION_PREFIXES):
+            return "njsuperctappdiv"
+        return None  # "App. Div." without a state-identifying reporter: refuse
+    index, keys_longest_first = _citation_string_index()
+    for key in keys_longest_first:
+        if _prefix_match(content, key):
+            return index[key]
+    return None
+
+
+# Reporter-edition inference table (rule 5): corpus-derived, guarded,
+# curated; see scripts/build_reporter_map.py and DECISIONS 2026-08-01.
+@lru_cache(maxsize=1)
+def _reporter_registries_doc() -> dict:
+    raw = resources.files("nvnm_cite.normalizer").joinpath("reporter_registries.json").read_text()
+    return json.loads(raw)
+
+
+@lru_cache(maxsize=1)
+def _reporter_registry_table() -> dict[str, str]:
+    return {ed: e["registry"] for ed, e in _reporter_registries_doc()["editions"].items()}
+
+
+@lru_cache(maxsize=1)
+def _lexis_editions_present() -> frozenset[str]:
+    return frozenset(_reporter_registries_doc().get("lexis_editions_present", []))
+
+
+def vendor_kind(edition: str | None) -> str | None:
+    """"Westlaw"/"LEXIS" when the edition is a vendor database identifier."""
+    if not edition:
+        return None
+    if edition == "WL":
+        return "Westlaw"
+    if edition == "LEXIS" or edition.endswith(" LEXIS"):
+        return "LEXIS"
+    return None
+
+
+def vendor_in_key_space(edition: str | None) -> bool:
+    """True when this vendor edition holds records in the corpus (measured
+    2026-08-01: 92+ court-specific LEXIS editions, 3.28M parallel keys).
+    These behave as reporters — the inference table or a court parenthetical
+    can map them and a keyed lookup can genuinely hit. WL and the generic /
+    federal LEXIS families hold ZERO records, so a lookup can never hit and
+    the verifier reports them as outside coverage without a chain read."""
+    return bool(edition) and edition in _lexis_editions_present()
+
+
 def registry_for_court(court_id: str) -> str:
     """Registry name for a courts-db court ID. Raises if the ID is unknown."""
     if court_id not in _VALID_COURT_IDS:
@@ -88,17 +215,38 @@ def map_citation(
     if edition in SCOTUS_EDITIONS:
         return REGISTRY_PREFIX + "scotus", None
 
+    table_default = _reporter_registry_table().get(edition or "")
+
     court = (citation.metadata.court or "").strip()
     if court:
-        if court in _VALID_COURT_IDS:
-            return REGISTRY_PREFIX + court, None
-        # eyecite court IDs come from courts-db, so this branch should be
-        # unreachable; if the libraries ever skew, refuse rather than guess.
-        return None, f"court id {court!r} not found in courts-db"
+        if court not in _VALID_COURT_IDS:
+            # eyecite court IDs come from courts-db, so this branch should be
+            # unreachable; if the libraries ever skew, refuse rather than guess.
+            return None, f"court id {court!r} not found in courts-db"
+        claimed = REGISTRY_PREFIX + court
+        if table_default is None or claimed == table_default:
+            return claimed, None
+        # eyecite's court CONTRADICTS the citation's own reporter. eyecite's
+        # forward parenthetical scan can overreach across a neighboring
+        # citation in a string cite (measured: "54 Cal. 3d 868. ... LEXIS
+        # 7085 (N.Y. App. Div. 1912)" gets court='nyappdiv'). Accept the
+        # claimed court only when the ADJACENT parenthetical corroborates
+        # it; otherwise the reporter's own default wins — the reporter is
+        # part of the citation itself, the strongest local signal.
+        if _court_from_parenthetical(following_text, edition) == court:
+            return claimed, None
+        return table_default, None
 
     fallback = _circuit_from_following_text(following_text)
     if fallback is not None:
         return REGISTRY_PREFIX + fallback, None
+
+    paren_court = _court_from_parenthetical(following_text, edition)
+    if paren_court is not None:
+        return REGISTRY_PREFIX + paren_court, None
+
+    if table_default is not None:
+        return table_default, None
 
     if edition in AMBIGUOUS_FEDERAL_REPORTERS:
         return None, f"{edition} citation with no recognizable court parenthetical"

@@ -16,6 +16,7 @@ from pathlib import Path
 
 OK = "ok"
 AMB = "ambiguous_jurisdiction"
+VEN = "vendor"
 UNR = "unresolved"
 
 VECTORS: list[dict] = []
@@ -443,6 +444,155 @@ vec(
     "noise_robustness",
     "Affirmed. Sigma v. Tau, 412 F.3d 88, 90 (2d Cir. 2005) (per curiam) (collecting cases).",
     [full("412 F.3d 88", "412 F.3d 88", "us-ca2")],
+)
+
+# --- 12. Normalizer 1.1.0 (2026-08-01): expanded jurisdiction mapping ------
+# N.Y. Appellate Division: A.D. editions infer us-nyappdiv from the reporter
+# table (bare), and the department / "App. Div." parenthetical forms are a
+# definitional closed set (courts-db models the four departments as one
+# court). Adjudications in DECISIONS 2026-08-01.
+vec(
+    "ny_appdiv",
+    "Podraza v. Carriero, 212 A.D.2d 331 (4th Dep't 1995).",
+    [full("212 A.D.2d 331", "212 A.D.2d 331", "us-nyappdiv")],
+)
+vec(
+    "ny_appdiv",
+    "Kingsland Land Co. v. Newman, 1 A.D. 1 (App. Div. 1896).",
+    [full("1 A.D. 1", "1 A.D. 1", "us-nyappdiv")],
+)
+vec(
+    "ny_appdiv",
+    "Bare edition, no parenthetical: Matter of Smith, 100 A.D.3d 500.",
+    [full("100 A.D.3d 500", "100 A.D.3d 500", "us-nyappdiv")],
+)
+vec(
+    "ny_appdiv",
+    "People v. Jones, 45 N.Y.S.3d 200 (App. Div. 2017).",
+    [full("45 N.Y.S.3d 200", "45 N.Y.S.3d 200", "us-nyappdiv")],
+)
+vec(
+    "ny_appdiv",
+    # N.Y.S. genuinely spans courts: bare stays ambiguous (never guess).
+    "People v. Jones, 45 N.Y.S.3d 200.",
+    [full("45 N.Y.S.3d 200", "45 N.Y.S.3d 200", None, AMB)],
+)
+vec(
+    "ny_appdiv",
+    "Bare official reporter infers the Court of Appeals: Palsgraf v. Long Island R.R. Co., 248 N.Y. 339.",
+    [full("248 N.Y. 339", "248 N.Y. 339", "us-ny")],
+)
+
+# Tax Court: T.C. (curated), T.C. No. and T.C. Memo. (corpus-dominant).
+# eyecite reads "T.C. Memo. 1976-300" as volume 1976 / page 300, matching
+# the corpus key format exactly.
+vec(
+    "tax_court",
+    "Fehrs v. Commissioner, 65 T.C. 346 (1975).",
+    [full("65 T.C. 346", "65 T.C. 346", "us-tax")],
+)
+vec(
+    "tax_court",
+    "Smith v. Commissioner, T.C. Memo. 1976-300.",
+    [full("T.C. Memo. 1976-300", "1976 T.C. Memo. 300", "us-tax")],
+)
+vec(
+    "tax_court",
+    "Jones v. Commissioner, 100 T.C. No. 11 (1993).",
+    [full("100 T.C. No. 11", "100 T.C. No. 11", "us-tax")],
+)
+
+# Vendor identifiers OUTSIDE the registry key space (WL and the generic /
+# federal LEXIS families hold zero corpus records): the verifier reports
+# them as outside coverage with no chain read (disposition VENDOR).
+vec(
+    "vendor_cites",
+    "LAM Wholesale, LLC v. United Airlines, Inc., 2019 WL 1439098 (E.D.N.Y. 2019).",
+    [full("2019 WL 1439098", "2019 WL 1439098", None, VEN)],
+)
+vec(
+    "vendor_cites",
+    "Doe v. Roe, 2019 U.S. App. LEXIS 12345 (1st Cir. 2019).",
+    [full("2019 U.S. App. LEXIS 12345", "2019 U.S. App. LEXIS 12345", None, VEN)],
+)
+vec(
+    "vendor_cites",
+    # Court-specific LEXIS editions ARE corpus keys (3.28M parallel records
+    # on chain): dominance-clean ones map from the table like any reporter.
+    "State v. Doe, 1894 La. LEXIS 577.",
+    [full("1894 La. LEXIS 577", "1894 La. LEXIS 577", "us-la")],
+)
+vec(
+    "vendor_cites",
+    # A corpus-present LEXIS edition the dominance guard keeps OUT of the
+    # table (a real us-nysupct second population): bare stays VENDOR...
+    "Doe v. Roe, 1912 N.Y. App. Div. LEXIS 7085.",
+    [full("1912 N.Y. App. Div. LEXIS 7085", "1912 N.Y. App. Div. LEXIS 7085", None, VEN)],
+)
+vec(
+    "vendor_cites",
+    # ...but an explicit court parenthetical still maps it (a lookup there
+    # can genuinely hit — the keys are on chain).
+    "Doe v. Roe, 1912 N.Y. App. Div. LEXIS 7085 (N.Y. App. Div. 1912).",
+    [full("1912 N.Y. App. Div. LEXIS 7085", "1912 N.Y. App. Div. LEXIS 7085", "us-nyappdiv")],
+)
+
+# Reporter-edition inference across court classes (corpus-dominant table).
+vec(
+    "reporter_inference",
+    "Bare state officials: People v. A, 61 Cal. 2d 529; Baker v. B, 37 Ill. 2d 111; C v. D, 219 Ga. 555.",
+    [
+        full("61 Cal. 2d 529", "61 Cal. 2d 529", "us-cal"),
+        full("37 Ill. 2d 111", "37 Ill. 2d 111", "us-ill"),
+        full("219 Ga. 555", "219 Ga. 555", "us-ga"),
+    ],
+)
+vec(
+    "reporter_inference",
+    "Neutral formats: In re T, 2013 IL App (1st) 111279-U; State v. U, 2019 OK 5.",
+    [
+        full("2013 IL App (1st) 111279-U", "2013 IL App (1st) 111279-U", "us-illappct"),
+        full("2019 OK 5", "2019 OK 5", "us-okla"),
+    ],
+)
+vec(
+    "reporter_inference",
+    "Intermediate courts: E v. F, 300 Ill. App. 3d 673; G v. H, 45 Cal. App. 4th 100.",
+    [
+        full("300 Ill. App. 3d 673", "300 Ill. App. 3d 673", "us-illappct"),
+        full("45 Cal. App. 4th 100", "45 Cal. App. 4th 100", "us-calctapp"),
+    ],
+)
+
+# The general court-parenthetical fallback (courts-db citation strings are
+# globally unique) and its precedence over the reporter default.
+vec(
+    "parenthetical_index",
+    "State v. Brown, 100 Ohio St. 3d 500 (Ohio Ct. App. 2003).",
+    [full("100 Ohio St. 3d 500", "100 Ohio St. 3d 500", "us-ohioctapp")],
+)
+vec(
+    "parenthetical_index",
+    "Doe v. Agency, 50 F. Supp. 3d 10 (D. Mass. 2014).",
+    [full("50 F. Supp. 3d 10", "50 F. Supp. 3d 10", "us-mad")],
+)
+
+# What must STAY ambiguous under 1.1.0: multi-court reporters with no court
+# signal (never guess).
+vec(
+    "still_ambiguous",
+    "Baz v. Qux, 500 S.W.3d 100.",
+    [full("500 S.W.3d 100", "500 S.W.3d 100", None, AMB)],
+)
+vec(
+    "still_ambiguous",
+    "United States v. Smith, 54 M.J. 783.",
+    [full("54 M.J. 783", "54 M.J. 783", None, AMB)],
+)
+vec(
+    "still_ambiguous",
+    "Foo v. Bar, 100 F.3d 200.",
+    [full("100 F.3d 200", "100 F.3d 200", None, AMB)],
 )
 
 

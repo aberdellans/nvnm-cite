@@ -189,6 +189,8 @@ def _group_occurrences(citations: list) -> dict[tuple, dict]:
             key = ("ok", occ.registry, occ.canonical)
         elif occ.disposition is Disposition.AMBIGUOUS_JURISDICTION:
             key = ("ambiguous", occ.canonical or occ.as_written)
+        elif occ.disposition is Disposition.VENDOR:
+            key = ("vendor", occ.canonical or occ.as_written)
         else:
             key = ("unresolved", occ.as_written.strip().lower())
         entry = entries.get(key)
@@ -284,6 +286,12 @@ def check_text(
                 )
         elif kind == "ambiguous":
             status, reason = AMBIGUOUS, entry["reason"]
+        elif kind == "vendor":
+            # Westlaw/LEXIS identifiers are never registry keys (corpus scope
+            # excludes them by design): outside coverage, no chain read, and
+            # crucially NOT a "not found" — a real case may well sit behind a
+            # vendor-only citation.
+            status, reason = NOT_COVERED, entry["reason"]
         else:
             status, reason = UNPARSEABLE, entry["reason"]
         counts[status] += 1

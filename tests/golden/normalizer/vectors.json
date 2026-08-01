@@ -3,8 +3,8 @@
   "spec": "cite-canonical-v1",
   "generator": "generate_vectors.py",
   "note": "Expectations hand-derived from docs/canonical-citation-spec.md; adjudications recorded in DECISIONS.md. Compared fields: as_written, canonical, registry, disposition, kind.",
-  "vector_count": 214,
-  "expectation_rows": 230
+  "vector_count": 236,
+  "expectation_rows": 256
  },
  "vectors": [
   {
@@ -3101,6 +3101,342 @@
      "canonical": "412 F.3d 88",
      "registry": "us-ca2",
      "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-001",
+   "category": "ny_appdiv",
+   "text": "Podraza v. Carriero, 212 A.D.2d 331 (4th Dep't 1995).",
+   "expect": [
+    {
+     "as_written": "212 A.D.2d 331",
+     "canonical": "212 A.D.2d 331",
+     "registry": "us-nyappdiv",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-002",
+   "category": "ny_appdiv",
+   "text": "Kingsland Land Co. v. Newman, 1 A.D. 1 (App. Div. 1896).",
+   "expect": [
+    {
+     "as_written": "1 A.D. 1",
+     "canonical": "1 A.D. 1",
+     "registry": "us-nyappdiv",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-003",
+   "category": "ny_appdiv",
+   "text": "Bare edition, no parenthetical: Matter of Smith, 100 A.D.3d 500.",
+   "expect": [
+    {
+     "as_written": "100 A.D.3d 500",
+     "canonical": "100 A.D.3d 500",
+     "registry": "us-nyappdiv",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-004",
+   "category": "ny_appdiv",
+   "text": "People v. Jones, 45 N.Y.S.3d 200 (App. Div. 2017).",
+   "expect": [
+    {
+     "as_written": "45 N.Y.S.3d 200",
+     "canonical": "45 N.Y.S.3d 200",
+     "registry": "us-nyappdiv",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-005",
+   "category": "ny_appdiv",
+   "text": "People v. Jones, 45 N.Y.S.3d 200.",
+   "expect": [
+    {
+     "as_written": "45 N.Y.S.3d 200",
+     "canonical": "45 N.Y.S.3d 200",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "ny_appdiv-006",
+   "category": "ny_appdiv",
+   "text": "Bare official reporter infers the Court of Appeals: Palsgraf v. Long Island R.R. Co., 248 N.Y. 339.",
+   "expect": [
+    {
+     "as_written": "248 N.Y. 339",
+     "canonical": "248 N.Y. 339",
+     "registry": "us-ny",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "tax_court-001",
+   "category": "tax_court",
+   "text": "Fehrs v. Commissioner, 65 T.C. 346 (1975).",
+   "expect": [
+    {
+     "as_written": "65 T.C. 346",
+     "canonical": "65 T.C. 346",
+     "registry": "us-tax",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "tax_court-002",
+   "category": "tax_court",
+   "text": "Smith v. Commissioner, T.C. Memo. 1976-300.",
+   "expect": [
+    {
+     "as_written": "T.C. Memo. 1976-300",
+     "canonical": "1976 T.C. Memo. 300",
+     "registry": "us-tax",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "tax_court-003",
+   "category": "tax_court",
+   "text": "Jones v. Commissioner, 100 T.C. No. 11 (1993).",
+   "expect": [
+    {
+     "as_written": "100 T.C. No. 11",
+     "canonical": "100 T.C. No. 11",
+     "registry": "us-tax",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "vendor_cites-001",
+   "category": "vendor_cites",
+   "text": "LAM Wholesale, LLC v. United Airlines, Inc., 2019 WL 1439098 (E.D.N.Y. 2019).",
+   "expect": [
+    {
+     "as_written": "2019 WL 1439098",
+     "canonical": "2019 WL 1439098",
+     "registry": null,
+     "disposition": "vendor",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "vendor_cites-002",
+   "category": "vendor_cites",
+   "text": "Doe v. Roe, 2019 U.S. App. LEXIS 12345 (1st Cir. 2019).",
+   "expect": [
+    {
+     "as_written": "2019 U.S. App. LEXIS 12345",
+     "canonical": "2019 U.S. App. LEXIS 12345",
+     "registry": null,
+     "disposition": "vendor",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "vendor_cites-003",
+   "category": "vendor_cites",
+   "text": "State v. Doe, 1894 La. LEXIS 577.",
+   "expect": [
+    {
+     "as_written": "1894 La. LEXIS 577",
+     "canonical": "1894 La. LEXIS 577",
+     "registry": "us-la",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "vendor_cites-004",
+   "category": "vendor_cites",
+   "text": "Doe v. Roe, 1912 N.Y. App. Div. LEXIS 7085.",
+   "expect": [
+    {
+     "as_written": "1912 N.Y. App. Div. LEXIS 7085",
+     "canonical": "1912 N.Y. App. Div. LEXIS 7085",
+     "registry": null,
+     "disposition": "vendor",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "vendor_cites-005",
+   "category": "vendor_cites",
+   "text": "Doe v. Roe, 1912 N.Y. App. Div. LEXIS 7085 (N.Y. App. Div. 1912).",
+   "expect": [
+    {
+     "as_written": "1912 N.Y. App. Div. LEXIS 7085",
+     "canonical": "1912 N.Y. App. Div. LEXIS 7085",
+     "registry": "us-nyappdiv",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "reporter_inference-001",
+   "category": "reporter_inference",
+   "text": "Bare state officials: People v. A, 61 Cal. 2d 529; Baker v. B, 37 Ill. 2d 111; C v. D, 219 Ga. 555.",
+   "expect": [
+    {
+     "as_written": "61 Cal. 2d 529",
+     "canonical": "61 Cal. 2d 529",
+     "registry": "us-cal",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "37 Ill. 2d 111",
+     "canonical": "37 Ill. 2d 111",
+     "registry": "us-ill",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "219 Ga. 555",
+     "canonical": "219 Ga. 555",
+     "registry": "us-ga",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "reporter_inference-002",
+   "category": "reporter_inference",
+   "text": "Neutral formats: In re T, 2013 IL App (1st) 111279-U; State v. U, 2019 OK 5.",
+   "expect": [
+    {
+     "as_written": "2013 IL App (1st) 111279-U",
+     "canonical": "2013 IL App (1st) 111279-U",
+     "registry": "us-illappct",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "2019 OK 5",
+     "canonical": "2019 OK 5",
+     "registry": "us-okla",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "reporter_inference-003",
+   "category": "reporter_inference",
+   "text": "Intermediate courts: E v. F, 300 Ill. App. 3d 673; G v. H, 45 Cal. App. 4th 100.",
+   "expect": [
+    {
+     "as_written": "300 Ill. App. 3d 673",
+     "canonical": "300 Ill. App. 3d 673",
+     "registry": "us-illappct",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "45 Cal. App. 4th 100",
+     "canonical": "45 Cal. App. 4th 100",
+     "registry": "us-calctapp",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parenthetical_index-001",
+   "category": "parenthetical_index",
+   "text": "State v. Brown, 100 Ohio St. 3d 500 (Ohio Ct. App. 2003).",
+   "expect": [
+    {
+     "as_written": "100 Ohio St. 3d 500",
+     "canonical": "100 Ohio St. 3d 500",
+     "registry": "us-ohioctapp",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "parenthetical_index-002",
+   "category": "parenthetical_index",
+   "text": "Doe v. Agency, 50 F. Supp. 3d 10 (D. Mass. 2014).",
+   "expect": [
+    {
+     "as_written": "50 F. Supp. 3d 10",
+     "canonical": "50 F. Supp. 3d 10",
+     "registry": "us-mad",
+     "disposition": "ok",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "still_ambiguous-001",
+   "category": "still_ambiguous",
+   "text": "Baz v. Qux, 500 S.W.3d 100.",
+   "expect": [
+    {
+     "as_written": "500 S.W.3d 100",
+     "canonical": "500 S.W.3d 100",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "still_ambiguous-002",
+   "category": "still_ambiguous",
+   "text": "United States v. Smith, 54 M.J. 783.",
+   "expect": [
+    {
+     "as_written": "54 M.J. 783",
+     "canonical": "54 M.J. 783",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "still_ambiguous-003",
+   "category": "still_ambiguous",
+   "text": "Foo v. Bar, 100 F.3d 200.",
+   "expect": [
+    {
+     "as_written": "100 F.3d 200",
+     "canonical": "100 F.3d 200",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
      "kind": "full"
     }
    ]

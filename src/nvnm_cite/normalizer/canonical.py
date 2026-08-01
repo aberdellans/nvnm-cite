@@ -41,9 +41,14 @@ from eyecite.models import (
     UnknownCitation,
 )
 
-from nvnm_cite.normalizer.jurisdiction import map_citation
+from nvnm_cite.normalizer.jurisdiction import map_citation, vendor_in_key_space, vendor_kind
 
-NORMALIZER_VERSION = "1.0.0"
+# 1.1.0 (2026-08-01): jurisdiction mapping expanded — general court-
+# parenthetical fallback via courts-db citation strings, corpus-derived
+# reporter-edition inference (reporter_registries.json), and the VENDOR
+# disposition for Westlaw/LEXIS identifiers. The cite-canonical/v1 KEY
+# format is unchanged.
+NORMALIZER_VERSION = "1.1.0"
 CANONICAL_SPEC = "cite-canonical-v1"
 
 # all_whitespace repairs line-break-mangled cites ("410\nU. S. 113");
@@ -55,13 +60,16 @@ class Disposition(str, Enum):
     """Normalizer-level outcome per occurrence (not the verifier status enum).
 
     OK maps to a registry lookup in the verifier; AMBIGUOUS_JURISDICTION maps
-    1:1 onto the verifier status of the same name; UNRESOLVED covers
+    1:1 onto the verifier status of the same name; VENDOR marks Westlaw/LEXIS
+    database identifiers, which are never registry keys — the verifier
+    reports them as outside coverage without a chain read; UNRESOLVED covers
     occurrences with no canonical (orphan short forms, unrecognized or
     pending-publication cites) which the verifier reports without a lookup.
     """
 
     OK = "ok"
     AMBIGUOUS_JURISDICTION = "ambiguous_jurisdiction"
+    VENDOR = "vendor"
     UNRESOLVED = "unresolved"
 
 
@@ -192,8 +200,23 @@ def normalize(text: str, *, clean_steps: tuple[str, ...] = CLEAN_STEPS) -> Norma
 
         if anchor is not None:
             canonical, reason = canonical_citation(anchor)
+            edition = anchor.corrected_reporter()
+            vendor = vendor_kind(edition)
             if canonical is None:
                 registry, disposition = None, Disposition.UNRESOLVED
+            elif vendor is not None and not vendor_in_key_space(edition):
+                # A vendor number with ZERO presence in the registry key
+                # space (WL, generic/federal LEXIS): a lookup can never hit,
+                # so no jurisdiction question or chain read arises — even
+                # with a court parenthetical, which would only manufacture a
+                # false "not found" for a possibly-real case.
+                registry = None
+                disposition = Disposition.VENDOR
+                reason = (
+                    f"{vendor} database identifier — not a registry key; "
+                    "check this case by its official reporter citation or "
+                    "docket number"
+                )
             else:
                 # Window after the anchor's span feeds the mapper's
                 # circuit-parenthetical fallback; 64 chars spans pin-cite
@@ -202,10 +225,20 @@ def normalize(text: str, *, clean_steps: tuple[str, ...] = CLEAN_STEPS) -> Norma
                 registry, ambiguity = map_citation(
                     anchor, cleaned[anchor_end : anchor_end + 64]
                 )
-                if registry is None:
-                    disposition, reason = Disposition.AMBIGUOUS_JURISDICTION, ambiguity
-                else:
+                if registry is not None:
                     disposition, reason = Disposition.OK, None
+                elif vendor is not None:
+                    # A corpus-present LEXIS edition that still failed to map
+                    # (e.g. dominance-refused with no parenthetical): report
+                    # it as a vendor identifier, not jurisdictional ambiguity.
+                    disposition = Disposition.VENDOR
+                    reason = (
+                        f"{vendor} database identifier without a resolvable "
+                        "court — check this case by its official reporter "
+                        "citation or docket number"
+                    )
+                else:
+                    disposition, reason = Disposition.AMBIGUOUS_JURISDICTION, ambiguity
             court = anchor.metadata.court or None
             year = _int_year(anchor.metadata.year)
             plaintiff = _clean_name(anchor.metadata.plaintiff)

@@ -24,6 +24,8 @@ from nvnm_cite.normalizer.jurisdiction import (
     SCOTUS_EDITIONS,
     map_citation,
     registry_for_court,
+    vendor_in_key_space,
+    vendor_kind,
 )
 
 __all__ = [
@@ -41,4 +43,6 @@ __all__ = [
     "map_citation",
     "normalize",
     "registry_for_court",
+    "vendor_in_key_space",
+    "vendor_kind",
 ]

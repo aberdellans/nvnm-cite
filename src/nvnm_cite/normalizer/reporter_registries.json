@@ -1,0 +1,2303 @@
+{
+ "schema": "nvnm-cite-reporter-registries/v1",
+ "generated_at": "2026-08-01T12:13:26Z",
+ "source": "data/mainnet-full-export (mainnet corpus, manifest block 2070234)",
+ "guards": {
+  "min_records": 100,
+  "dominance": 0.995,
+  "single_reporters_db_entry": true,
+  "vendor_excluded": true
+ },
+ "curated_excluded": [
+  "Fla. L. Weekly Supp.",
+  "M.J."
+ ],
+ "curated_added": [
+  "T.C."
+ ],
+ "lexis_editions_present": [
+  "Ala. App. LEXIS",
+  "Ala. Civ. App. LEXIS",
+  "Ala. Crim. App. LEXIS",
+  "Ala. LEXIS",
+  "Alas. App. LEXIS",
+  "Alas. LEXIS",
+  "Ariz. App. LEXIS",
+  "Ariz. App. Unpub. LEXIS",
+  "Ariz. LEXIS",
+  "Ariz. Tax LEXIS",
+  "Ark. App. LEXIS",
+  "Ark. LEXIS",
+  "Cal. App. LEXIS",
+  "Cal. App. Unpub. LEXIS",
+  "Cal. Comm. Jud. Perform. LEXIS",
+  "Cal. LEXIS",
+  "Colo. App. LEXIS",
+  "Colo. Discipl. LEXIS",
+  "Colo. LEXIS",
+  "Conn. App. LEXIS",
+  "Conn. Cir. LEXIS",
+  "Conn. LEXIS",
+  "Conn. Super. LEXIS",
+  "D.C. App. LEXIS",
+  "Dakota LEXIS",
+  "Del. Ch. LEXIS",
+  "Del. Fam. Ct. LEXIS",
+  "Del. LEXIS",
+  "Del. Super. LEXIS",
+  "Fla. App. LEXIS",
+  "Fla. LEXIS",
+  "Ga. App. LEXIS",
+  "Ga. LEXIS",
+  "Haw. App. LEXIS",
+  "Haw. LEXIS",
+  "Ida. App. LEXIS",
+  "Ida. LEXIS",
+  "Ill. App. LEXIS",
+  "Ill. App. Unpub. LEXIS",
+  "Ill. Ct. Cl. LEXIS",
+  "Ill. LEXIS",
+  "Ind. App. LEXIS",
+  "Ind. App. Unpub. LEXIS",
+  "Ind. LEXIS",
+  "Ind. Tax LEXIS",
+  "Indian Terr. LEXIS",
+  "Iowa App. LEXIS",
+  "Iowa Sup. LEXIS",
+  "Kan. App. LEXIS",
+  "Kan. App. Unpub. LEXIS",
+  "Kan. LEXIS",
+  "Kan. Unpub. LEXIS",
+  "Ky. App. LEXIS",
+  "Ky. App. Unpub. LEXIS",
+  "Ky. LEXIS",
+  "La. App. LEXIS",
+  "La. App. Unpub. LEXIS",
+  "La. LEXIS",
+  "Mass. App. Div. LEXIS",
+  "Mass. App. LEXIS",
+  "Mass. App. Unpub. LEXIS",
+  "Mass. LEXIS",
+  "Mass. Super. LEXIS",
+  "Md. App. LEXIS",
+  "Md. LEXIS",
+  "Me. LEXIS",
+  "Mich. App. LEXIS",
+  "Mich. LEXIS",
+  "Minn. App. LEXIS",
+  "Minn. App. Unpub. LEXIS",
+  "Minn. LEXIS",
+  "Miss. App. LEXIS",
+  "Miss. LEXIS",
+  "Mo. App. LEXIS",
+  "Mo. LEXIS",
+  "Mont. LEXIS",
+  "N. Mar. I. LEXIS",
+  "N.C. App. LEXIS",
+  "N.C. LEXIS",
+  "N.D. App. LEXIS",
+  "N.D. LEXIS",
+  "N.H. LEXIS",
+  "N.J. Ch. LEXIS",
+  "N.J. LEXIS",
+  "N.J. Misc. LEXIS",
+  "N.J. Prerog. Ct. LEXIS",
+  "N.J. Sup. Ct. LEXIS",
+  "N.J. Super. LEXIS",
+  "N.M. App. LEXIS",
+  "N.M. LEXIS",
+  "N.Y. App. Div. LEXIS",
+  "N.Y. LEXIS",
+  "N.Y. Misc. LEXIS",
+  "Neb. App. LEXIS",
+  "Neb. LEXIS",
+  "Nev. LEXIS",
+  "Ohio App. LEXIS",
+  "Ohio LEXIS",
+  "Ohio Misc. LEXIS",
+  "Okla. Civ. App. LEXIS",
+  "Okla. Crim. App. LEXIS",
+  "Okla. JUD LEXIS",
+  "Okla. LEXIS",
+  "Ore. App. LEXIS",
+  "Ore. LEXIS",
+  "Ore. Tax LEXIS",
+  "PR App. LEXIS",
+  "PR Sup. LEXIS",
+  "Pa. Commw. LEXIS",
+  "Pa. Commw. Unpub. LEXIS",
+  "Pa. Dist. & Cnty. Dec. LEXIS",
+  "Pa. Jud. Disc. LEXIS",
+  "Pa. LEXIS",
+  "Pa. Super. LEXIS",
+  "R.I. LEXIS",
+  "S.C. App. LEXIS",
+  "S.C. App. Unpub. LEXIS",
+  "S.C. LEXIS",
+  "S.C. Unpub. LEXIS",
+  "S.D. LEXIS",
+  "Tenn. App. LEXIS",
+  "Tenn. Crim. App. LEXIS",
+  "Tenn. LEXIS",
+  "Tex. App. LEXIS",
+  "Tex. Crim. App. LEXIS",
+  "Tex. Crim. App. Unpub. LEXIS",
+  "Tex. LEXIS",
+  "Utah App. LEXIS",
+  "Utah LEXIS",
+  "V.I. LEXIS",
+  "V.I. Supreme LEXIS",
+  "Va. App. LEXIS",
+  "Va. Cir. LEXIS",
+  "Va. LEXIS",
+  "Va. Unpub. LEXIS",
+  "Vt. LEXIS",
+  "Vt. Super. LEXIS",
+  "Vt. Unpub. LEXIS",
+  "W. Va. LEXIS",
+  "Wash. App. LEXIS",
+  "Wash. LEXIS",
+  "Wash. Terr. LEXIS",
+  "Wisc. App. LEXIS",
+  "Wisc. LEXIS",
+  "Wyo. LEXIS"
+ ],
+ "editions": {
+  "A.D.": {
+   "registry": "us-nyappdiv",
+   "records": 72299,
+   "share": 0.99939,
+   "cite_type": "state"
+  },
+  "A.D.2d": {
+   "registry": "us-nyappdiv",
+   "records": 177540,
+   "share": 0.99995,
+   "cite_type": "state"
+  },
+  "A.D.3d": {
+   "registry": "us-nyappdiv",
+   "records": 121112,
+   "share": 0.99995,
+   "cite_type": "state"
+  },
+  "A.K. Marsh.": {
+   "registry": "us-kyctapp",
+   "records": 597,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Abb. Ct. App.": {
+   "registry": "us-ny",
+   "records": 412,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Adv. S.": {
+   "registry": "us-miss",
+   "records": 613,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Aik.": {
+   "registry": "us-vt",
+   "records": 185,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ala.": {
+   "registry": "us-ala",
+   "records": 45634,
+   "share": 0.99991,
+   "cite_type": "state"
+  },
+  "Ala. App. LEXIS": {
+   "registry": "us-alactapp",
+   "records": 11334,
+   "share": 0.99974,
+   "cite_type": "state"
+  },
+  "Ala. Crim. App. LEXIS": {
+   "registry": "us-alacrimapp",
+   "records": 13831,
+   "share": 0.99877,
+   "cite_type": "state"
+  },
+  "Ala. LEXIS": {
+   "registry": "us-ala",
+   "records": 39472,
+   "share": 0.99975,
+   "cite_type": "state"
+  },
+  "Alas. App. LEXIS": {
+   "registry": "us-alaskactapp",
+   "records": 2471,
+   "share": 0.99838,
+   "cite_type": "state"
+  },
+  "Alas. LEXIS": {
+   "registry": "us-alaska",
+   "records": 6658,
+   "share": 0.99955,
+   "cite_type": "state"
+  },
+  "Allen": {
+   "registry": "us-mass",
+   "records": 255,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Am. Samoa 2d": {
+   "registry": "us-amsamoa",
+   "records": 1053,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Am. Samoa 3d": {
+   "registry": "us-amsamoa",
+   "records": 502,
+   "share": 0.99801,
+   "cite_type": "state"
+  },
+  "Ariz. App.": {
+   "registry": "us-arizctapp",
+   "records": 4457,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ariz. App. LEXIS": {
+   "registry": "us-arizctapp",
+   "records": 13557,
+   "share": 0.99757,
+   "cite_type": "state"
+  },
+  "Ariz. LEXIS": {
+   "registry": "us-ariz",
+   "records": 12816,
+   "share": 0.99938,
+   "cite_type": "state"
+  },
+  "Ark. LEXIS": {
+   "registry": "us-ark",
+   "records": 43661,
+   "share": 0.99883,
+   "cite_type": "state"
+  },
+  "B. Mon.": {
+   "registry": "us-kyctapp",
+   "records": 1553,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Barb.": {
+   "registry": "us-nysupct",
+   "records": 5791,
+   "share": 0.99879,
+   "cite_type": "state"
+  },
+  "Barb. Ch.": {
+   "registry": "us-nychanct",
+   "records": 249,
+   "share": 0.996,
+   "cite_type": "state"
+  },
+  "Bedell": {
+   "registry": "us-ny",
+   "records": 1738,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Beeler": {
+   "registry": "us-tenn",
+   "records": 2720,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Bibb": {
+   "registry": "us-kyctapp",
+   "records": 747,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Black": {
+   "registry": "us-scotus",
+   "records": 114,
+   "share": 1.0,
+   "cite_type": "scotus_early"
+  },
+  "Blackf.": {
+   "registry": "us-ind",
+   "records": 1958,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Blume Sup. Ct. Trans.": {
+   "registry": "us-mich",
+   "records": 1203,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Bosw.": {
+   "registry": "us-nysuperctnyc",
+   "records": 665,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Brayt.": {
+   "registry": "us-vt",
+   "records": 133,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Bush": {
+   "registry": "us-kyctapp",
+   "records": 1856,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "CIT": {
+   "registry": "us-cit",
+   "records": 2720,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "CO": {
+   "registry": "us-colo",
+   "records": 986,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "COA": {
+   "registry": "us-coloctapp",
+   "records": 1677,
+   "share": 0.99821,
+   "cite_type": "neutral"
+  },
+  "Cal.": {
+   "registry": "us-cal",
+   "records": 27513,
+   "share": 0.99989,
+   "cite_type": "state"
+  },
+  "Cal. 2d": {
+   "registry": "us-cal",
+   "records": 6428,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cal. 3d": {
+   "registry": "us-cal",
+   "records": 3048,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cal. 5th": {
+   "registry": "us-cal",
+   "records": 386,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cal. App.": {
+   "registry": "us-calctapp",
+   "records": 19938,
+   "share": 0.99845,
+   "cite_type": "state"
+  },
+  "Cal. App. 3d": {
+   "registry": "us-calctapp",
+   "records": 21242,
+   "share": 0.99972,
+   "cite_type": "state"
+  },
+  "Cal. App. 4th": {
+   "registry": "us-calctapp",
+   "records": 21848,
+   "share": 0.99635,
+   "cite_type": "state"
+  },
+  "Cal. LEXIS": {
+   "registry": "us-cal",
+   "records": 33412,
+   "share": 0.99958,
+   "cite_type": "state"
+  },
+  "Cal. Unrep.": {
+   "registry": "us-cal",
+   "records": 1981,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Chand.": {
+   "registry": "us-wis",
+   "records": 150,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cin. Sup. Ct. Rep.": {
+   "registry": "us-ohsuperctcinci",
+   "records": 241,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cl. Ch.": {
+   "registry": "us-nychanct",
+   "records": 121,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Cole. & Cai. Cas.": {
+   "registry": "us-nysupct",
+   "records": 289,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Colo.": {
+   "registry": "us-colo",
+   "records": 19780,
+   "share": 0.99995,
+   "cite_type": "state"
+  },
+  "Colo. App.": {
+   "registry": "us-coloctapp",
+   "records": 3735,
+   "share": 0.99866,
+   "cite_type": "state"
+  },
+  "Colo. App. LEXIS": {
+   "registry": "us-coloctapp",
+   "records": 9827,
+   "share": 0.99878,
+   "cite_type": "state"
+  },
+  "Colo. Discipl. LEXIS": {
+   "registry": "us-colo",
+   "records": 149,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Colo. LEXIS": {
+   "registry": "us-colo",
+   "records": 16775,
+   "share": 0.99988,
+   "cite_type": "state"
+  },
+  "Conn.": {
+   "registry": "us-conn",
+   "records": 27155,
+   "share": 0.99783,
+   "cite_type": "state"
+  },
+  "Conn. App.": {
+   "registry": "us-connappct",
+   "records": 16030,
+   "share": 0.99994,
+   "cite_type": "state"
+  },
+  "Conn. App. LEXIS": {
+   "registry": "us-connappct",
+   "records": 15242,
+   "share": 0.99987,
+   "cite_type": "state"
+  },
+  "Conn. L. Rptr.": {
+   "registry": "us-connsuperct",
+   "records": 5800,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Conn. LEXIS": {
+   "registry": "us-conn",
+   "records": 24281,
+   "share": 0.99975,
+   "cite_type": "state"
+  },
+  "Connoly": {
+   "registry": "us-nysurct",
+   "records": 182,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ct. Int'l Trade": {
+   "registry": "us-cit",
+   "records": 4732,
+   "share": 1.0,
+   "cite_type": "specialty"
+  },
+  "Cust. Ct.": {
+   "registry": "us-cusc",
+   "records": 19140,
+   "share": 0.99979,
+   "cite_type": "federal"
+  },
+  "D. Chip.": {
+   "registry": "us-vt",
+   "records": 152,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "D. Haw.": {
+   "registry": "us-hid",
+   "records": 360,
+   "share": 1.0,
+   "cite_type": "federal"
+  },
+  "D.C. App. LEXIS": {
+   "registry": "us-dc",
+   "records": 15631,
+   "share": 0.99866,
+   "cite_type": "state"
+  },
+  "DNH": {
+   "registry": "us-nhd",
+   "records": 4274,
+   "share": 0.9993,
+   "cite_type": "federal"
+  },
+  "DTA": {
+   "registry": "us-prapp",
+   "records": 2657,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Dakota": {
+   "registry": "us-dakotasup",
+   "records": 309,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Dakota LEXIS": {
+   "registry": "us-dakotasup",
+   "records": 139,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Dallam": {
+   "registry": "us-tex",
+   "records": 117,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Daly": {
+   "registry": "us-nyctcompl",
+   "records": 1925,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Dana": {
+   "registry": "us-kyctapp",
+   "records": 1094,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Dem. Sur.": {
+   "registry": "us-nysurct",
+   "records": 674,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Disney (Ohio)": {
+   "registry": "us-ohsuperctcinci",
+   "records": 218,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Doug.": {
+   "registry": "us-mich",
+   "records": 119,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Duer": {
+   "registry": "us-nysuperctnyc",
+   "records": 547,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Duv.": {
+   "registry": "us-kyctapp",
+   "records": 287,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "E.D. Smith": {
+   "registry": "us-nyctcompl",
+   "records": 580,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "E.H. Smith": {
+   "registry": "us-ny",
+   "records": 947,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Edw. Ch.": {
+   "registry": "us-nychanct",
+   "records": 579,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Fla.": {
+   "registry": "us-fla",
+   "records": 21650,
+   "share": 0.99991,
+   "cite_type": "state"
+  },
+  "Fla. App. LEXIS": {
+   "registry": "us-fladistctapp",
+   "records": 163445,
+   "share": 0.99987,
+   "cite_type": "state"
+  },
+  "Fla. LEXIS": {
+   "registry": "us-fla",
+   "records": 22999,
+   "share": 0.99904,
+   "cite_type": "state"
+  },
+  "G. & J.": {
+   "registry": "us-md",
+   "records": 527,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ga.": {
+   "registry": "us-ga",
+   "records": 65460,
+   "share": 0.99973,
+   "cite_type": "state"
+  },
+  "Ga. App.": {
+   "registry": "us-gactapp",
+   "records": 93926,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ga. App. LEXIS": {
+   "registry": "us-gactapp",
+   "records": 96783,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ga. L. Rep.": {
+   "registry": "us-ga",
+   "records": 347,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ga. LEXIS": {
+   "registry": "us-ga",
+   "records": 51475,
+   "share": 0.99986,
+   "cite_type": "state"
+  },
+  "Gibb. Surr.": {
+   "registry": "us-nysurct",
+   "records": 236,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Gild.": {
+   "registry": "us-nm",
+   "records": 230,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Gill": {
+   "registry": "us-md",
+   "records": 426,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Grant": {
+   "registry": "us-pa",
+   "records": 396,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Greene": {
+   "registry": "us-iowa",
+   "records": 626,
+   "share": 0.99841,
+   "cite_type": "state"
+  },
+  "Gummere": {
+   "registry": "us-nj",
+   "records": 1309,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "H. & G.": {
+   "registry": "us-md",
+   "records": 108,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Haw. App.": {
+   "registry": "us-hawapp",
+   "records": 783,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Haw. App. LEXIS": {
+   "registry": "us-hawapp",
+   "records": 2639,
+   "share": 0.99962,
+   "cite_type": "state"
+  },
+  "Haw. LEXIS": {
+   "registry": "us-haw",
+   "records": 8083,
+   "share": 0.99889,
+   "cite_type": "state"
+  },
+  "Hay. & Haz.": {
+   "registry": "us-cadc",
+   "records": 177,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Heisk.": {
+   "registry": "us-tenn",
+   "records": 541,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Hilt.": {
+   "registry": "us-nyctcompl",
+   "records": 294,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Hosea's Rep.": {
+   "registry": "us-ohsuperctcinci",
+   "records": 103,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "How.": {
+   "registry": "us-scotus",
+   "records": 1210,
+   "share": 0.99917,
+   "cite_type": "scotus_early"
+  },
+  "I. & N. Dec.": {
+   "registry": "us-bia",
+   "records": 3162,
+   "share": 1.0,
+   "cite_type": "federal"
+  },
+  "IL": {
+   "registry": "us-ill",
+   "records": 947,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "IL App (1st)": {
+   "registry": "us-illappct",
+   "records": 10244,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "IL App (2d)": {
+   "registry": "us-illappct",
+   "records": 3589,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "IL App (3d)": {
+   "registry": "us-illappct",
+   "records": 2836,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "IL App (4th)": {
+   "registry": "us-illappct",
+   "records": 3821,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "IL App (5th)": {
+   "registry": "us-illappct",
+   "records": 2537,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "Ida. App. LEXIS": {
+   "registry": "us-idahoctapp",
+   "records": 3902,
+   "share": 0.99898,
+   "cite_type": "state"
+  },
+  "Ida. LEXIS": {
+   "registry": "us-idaho",
+   "records": 14638,
+   "share": 0.99993,
+   "cite_type": "state"
+  },
+  "Ill.": {
+   "registry": "us-ill",
+   "records": 37743,
+   "share": 0.99997,
+   "cite_type": "state"
+  },
+  "Ill. 2d": {
+   "registry": "us-ill",
+   "records": 11552,
+   "share": 0.99991,
+   "cite_type": "state"
+  },
+  "Ill. App.": {
+   "registry": "us-illappct",
+   "records": 45930,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. App. 2d": {
+   "registry": "us-illappct",
+   "records": 10071,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. App. 3d": {
+   "registry": "us-illappct",
+   "records": 56973,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. App. LEXIS": {
+   "registry": "us-illappct",
+   "records": 112997,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. Cir. Ct.": {
+   "registry": "us-illcirct",
+   "records": 185,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. Ct. Cl.": {
+   "registry": "us-ilclaimsct",
+   "records": 8094,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. Ct. Cl. LEXIS": {
+   "registry": "us-ilclaimsct",
+   "records": 9398,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ill. LEXIS": {
+   "registry": "us-ill",
+   "records": 15658,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ind.": {
+   "registry": "us-ind",
+   "records": 31985,
+   "share": 0.99994,
+   "cite_type": "state"
+  },
+  "Ind. App. LEXIS": {
+   "registry": "us-indctapp",
+   "records": 39581,
+   "share": 0.99715,
+   "cite_type": "state"
+  },
+  "Ind. LEXIS": {
+   "registry": "us-ind",
+   "records": 30048,
+   "share": 0.99967,
+   "cite_type": "state"
+  },
+  "Ind. Tax LEXIS": {
+   "registry": "us-indtc",
+   "records": 602,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Indian Terr.": {
+   "registry": "us-ctappindterr",
+   "records": 573,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Indian Terr. LEXIS": {
+   "registry": "us-ctappindterr",
+   "records": 523,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Iowa": {
+   "registry": "us-iowa",
+   "records": 39500,
+   "share": 0.99997,
+   "cite_type": "state"
+  },
+  "Iowa App. LEXIS": {
+   "registry": "us-iowactapp",
+   "records": 2720,
+   "share": 0.9989,
+   "cite_type": "state"
+  },
+  "Iowa Sup. LEXIS": {
+   "registry": "us-iowa",
+   "records": 16097,
+   "share": 0.99994,
+   "cite_type": "state"
+  },
+  "J.J. Marsh.": {
+   "registry": "us-kyctapp",
+   "records": 1174,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Johns. Ch.": {
+   "registry": "us-nychanct",
+   "records": 566,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Jones & S.": {
+   "registry": "us-nysuperctnyc",
+   "records": 2738,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Kan.": {
+   "registry": "us-kan",
+   "records": 38456,
+   "share": 0.99588,
+   "cite_type": "state"
+  },
+  "Kan. App.": {
+   "registry": "us-kanctapp",
+   "records": 1615,
+   "share": 0.99938,
+   "cite_type": "state"
+  },
+  "Kan. App. 2d": {
+   "registry": "us-kanctapp",
+   "records": 5837,
+   "share": 0.99863,
+   "cite_type": "state"
+  },
+  "Kan. App. LEXIS": {
+   "registry": "us-kanctapp",
+   "records": 7513,
+   "share": 0.99907,
+   "cite_type": "state"
+  },
+  "Kan. App. Unpub. LEXIS": {
+   "registry": "us-kanctapp",
+   "records": 176,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Kan. LEXIS": {
+   "registry": "us-kan",
+   "records": 31126,
+   "share": 0.99965,
+   "cite_type": "state"
+  },
+  "Keyes": {
+   "registry": "us-ny",
+   "records": 348,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Kirby": {
+   "registry": "us-connsuperct",
+   "records": 202,
+   "share": 0.99507,
+   "cite_type": "state"
+  },
+  "Ky. App. LEXIS": {
+   "registry": "us-kyctapp",
+   "records": 4930,
+   "share": 0.99576,
+   "cite_type": "state"
+  },
+  "Ky. Op.": {
+   "registry": "us-kyctapp",
+   "records": 5902,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "L. Ed.": {
+   "registry": "us-scotus",
+   "records": 23306,
+   "share": 0.99974,
+   "cite_type": "federal"
+  },
+  "La.": {
+   "registry": "us-la",
+   "records": 29734,
+   "share": 0.9996,
+   "cite_type": "state"
+  },
+  "La. Ann.": {
+   "registry": "us-la",
+   "records": 14408,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "La. App.": {
+   "registry": "us-lactapp",
+   "records": 5170,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "La. App. LEXIS": {
+   "registry": "us-lactapp",
+   "records": 75048,
+   "share": 0.99923,
+   "cite_type": "state"
+  },
+  "La. App. Unpub. LEXIS": {
+   "registry": "us-lactapp",
+   "records": 213,
+   "share": 0.99533,
+   "cite_type": "state"
+  },
+  "La. LEXIS": {
+   "registry": "us-la",
+   "records": 141626,
+   "share": 0.9995,
+   "cite_type": "state"
+  },
+  "La.App. 1 Cir.": {
+   "registry": "us-lactapp",
+   "records": 3195,
+   "share": 0.99844,
+   "cite_type": "state"
+  },
+  "La.App. 3 Cir.": {
+   "registry": "us-lactapp",
+   "records": 5871,
+   "share": 0.99932,
+   "cite_type": "state"
+  },
+  "La.App. 4 Cir.": {
+   "registry": "us-lactapp",
+   "records": 4937,
+   "share": 0.99858,
+   "cite_type": "state"
+  },
+  "La.App. 5 Cir.": {
+   "registry": "us-lactapp",
+   "records": 3825,
+   "share": 0.99922,
+   "cite_type": "state"
+  },
+  "Lans.": {
+   "registry": "us-nysupct",
+   "records": 626,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Litt.": {
+   "registry": "us-kyctapp",
+   "records": 522,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Lock. Rev. Cas.": {
+   "registry": "us-nycterr",
+   "records": 224,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "ME": {
+   "registry": "us-me",
+   "records": 4530,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "MSPB": {
+   "registry": "us-mspb",
+   "records": 270,
+   "share": 0.99631,
+   "cite_type": "neutral"
+  },
+  "MT": {
+   "registry": "us-mont",
+   "records": 9011,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "Mann. Unrep. Cas.": {
+   "registry": "us-la",
+   "records": 313,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mart. (N.S.)": {
+   "registry": "us-la",
+   "records": 1357,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mass.": {
+   "registry": "us-mass",
+   "records": 60311,
+   "share": 0.99997,
+   "cite_type": "state"
+  },
+  "Mass. App. Ct.": {
+   "registry": "us-massappct",
+   "records": 12503,
+   "share": 0.99984,
+   "cite_type": "state"
+  },
+  "Mass. App. Div. LEXIS": {
+   "registry": "us-massdistctapp",
+   "records": 2312,
+   "share": 0.99957,
+   "cite_type": "state"
+  },
+  "Mass. App. LEXIS": {
+   "registry": "us-massappct",
+   "records": 9783,
+   "share": 0.99918,
+   "cite_type": "state"
+  },
+  "Mass. App. Unpub. LEXIS": {
+   "registry": "us-massappct",
+   "records": 135,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mass. LEXIS": {
+   "registry": "us-mass",
+   "records": 38812,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "McCanless": {
+   "registry": "us-tenn",
+   "records": 1898,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "McGl.": {
+   "registry": "us-lactapp",
+   "records": 195,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "McGrath": {
+   "registry": "us-mich",
+   "records": 1477,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Md. App.": {
+   "registry": "us-mdctspecapp",
+   "records": 10564,
+   "share": 0.99868,
+   "cite_type": "state"
+  },
+  "Md. App. LEXIS": {
+   "registry": "us-mdctspecapp",
+   "records": 9866,
+   "share": 0.99959,
+   "cite_type": "state"
+  },
+  "Md. Ch.": {
+   "registry": "us-mdch",
+   "records": 384,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Md. LEXIS": {
+   "registry": "us-md",
+   "records": 25840,
+   "share": 0.99957,
+   "cite_type": "state"
+  },
+  "Me.": {
+   "registry": "us-me",
+   "records": 16976,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Me. LEXIS": {
+   "registry": "us-me",
+   "records": 19636,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mich.": {
+   "registry": "us-mich",
+   "records": 47093,
+   "share": 0.99938,
+   "cite_type": "state"
+  },
+  "Mich. App.": {
+   "registry": "us-michctapp",
+   "records": 26672,
+   "share": 0.99996,
+   "cite_type": "state"
+  },
+  "Mich. App. LEXIS": {
+   "registry": "us-michctapp",
+   "records": 11775,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mich. LEXIS": {
+   "registry": "us-mich",
+   "records": 39758,
+   "share": 0.99987,
+   "cite_type": "state"
+  },
+  "Miles": {
+   "registry": "us-pactcomplphilad",
+   "records": 308,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Minn.": {
+   "registry": "us-minn",
+   "records": 33952,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Minn. App. LEXIS": {
+   "registry": "us-minnctapp",
+   "records": 11161,
+   "share": 0.9991,
+   "cite_type": "state"
+  },
+  "Minn. LEXIS": {
+   "registry": "us-minn",
+   "records": 40701,
+   "share": 0.99993,
+   "cite_type": "state"
+  },
+  "Minor": {
+   "registry": "us-ala",
+   "records": 207,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Miss. App. LEXIS": {
+   "registry": "us-missctapp",
+   "records": 7101,
+   "share": 0.99761,
+   "cite_type": "state"
+  },
+  "Miss. Dec.": {
+   "registry": "us-miss",
+   "records": 199,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Miss. LEXIS": {
+   "registry": "us-miss",
+   "records": 24640,
+   "share": 0.99984,
+   "cite_type": "state"
+  },
+  "Mo.": {
+   "registry": "us-mo",
+   "records": 30447,
+   "share": 0.99797,
+   "cite_type": "state"
+  },
+  "Mo. App.": {
+   "registry": "us-moctapp",
+   "records": 24141,
+   "share": 0.9953,
+   "cite_type": "state"
+  },
+  "Mo. App. LEXIS": {
+   "registry": "us-moctapp",
+   "records": 92581,
+   "share": 0.99827,
+   "cite_type": "state"
+  },
+  "Mo. LEXIS": {
+   "registry": "us-mo",
+   "records": 26458,
+   "share": 0.99747,
+   "cite_type": "state"
+  },
+  "Monag.": {
+   "registry": "us-pa",
+   "records": 293,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mont.": {
+   "registry": "us-mont",
+   "records": 26612,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Mont. LEXIS": {
+   "registry": "us-mont",
+   "records": 22861,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Morris": {
+   "registry": "us-iowa",
+   "records": 196,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Munf.": {
+   "registry": "us-va",
+   "records": 210,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Myrick": {
+   "registry": "us-calsuppctsf",
+   "records": 114,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "N. Mar. I.": {
+   "registry": "us-nmariana",
+   "records": 251,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "N. Mar. I. LEXIS": {
+   "registry": "us-nmariana",
+   "records": 235,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "N.C. App.": {
+   "registry": "us-ncctapp",
+   "records": 28739,
+   "share": 0.9999,
+   "cite_type": "state"
+  },
+  "N.C. App. LEXIS": {
+   "registry": "us-ncctapp",
+   "records": 32306,
+   "share": 0.99966,
+   "cite_type": "state"
+  },
+  "N.C. LEXIS": {
+   "registry": "us-nc",
+   "records": 44950,
+   "share": 0.99845,
+   "cite_type": "state"
+  },
+  "N.D.": {
+   "registry": "us-nd",
+   "records": 6563,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "N.D. LEXIS": {
+   "registry": "us-nd",
+   "records": 15642,
+   "share": 0.99949,
+   "cite_type": "state"
+  },
+  "N.H. LEXIS": {
+   "registry": "us-nh",
+   "records": 12261,
+   "share": 0.99992,
+   "cite_type": "state"
+  },
+  "N.J.": {
+   "registry": "us-nj",
+   "records": 22279,
+   "share": 0.99982,
+   "cite_type": "state"
+  },
+  "N.J. LEXIS": {
+   "registry": "us-nj",
+   "records": 46776,
+   "share": 0.99746,
+   "cite_type": "state"
+  },
+  "N.J. Sup. Ct. LEXIS": {
+   "registry": "us-nj",
+   "records": 13354,
+   "share": 0.9994,
+   "cite_type": "state"
+  },
+  "N.J.L.": {
+   "registry": "us-nj",
+   "records": 21043,
+   "share": 0.99967,
+   "cite_type": "state"
+  },
+  "N.M. LEXIS": {
+   "registry": "us-nm",
+   "records": 1917,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "N.Y.": {
+   "registry": "us-ny",
+   "records": 48679,
+   "share": 0.99644,
+   "cite_type": "state"
+  },
+  "ND": {
+   "registry": "us-nd",
+   "records": 6979,
+   "share": 0.99957,
+   "cite_type": "neutral"
+  },
+  "NV": {
+   "registry": "us-nev",
+   "records": 851,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "Neb.": {
+   "registry": "us-neb",
+   "records": 39310,
+   "share": 0.99944,
+   "cite_type": "state"
+  },
+  "Neb. App. LEXIS": {
+   "registry": "us-nebctapp",
+   "records": 1389,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Neb. Ct. App.": {
+   "registry": "us-nebctapp",
+   "records": 2195,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Neb. LEXIS": {
+   "registry": "us-neb",
+   "records": 33860,
+   "share": 0.99982,
+   "cite_type": "state"
+  },
+  "Nev.": {
+   "registry": "us-nev",
+   "records": 11581,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Nev. Adv. Rep.": {
+   "registry": "us-nev",
+   "records": 1132,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Nev. LEXIS": {
+   "registry": "us-nev",
+   "records": 10626,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Nott & McC.": {
+   "registry": "us-sc",
+   "records": 160,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "OK": {
+   "registry": "us-okla",
+   "records": 39659,
+   "share": 0.99862,
+   "cite_type": "neutral"
+  },
+  "OK AG": {
+   "registry": "us-oklaag",
+   "records": 120,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "OK CIV APP": {
+   "registry": "us-oklacivapp",
+   "records": 4595,
+   "share": 0.99783,
+   "cite_type": "neutral"
+  },
+  "OK CR": {
+   "registry": "us-oklacrimapp",
+   "records": 19509,
+   "share": 0.99974,
+   "cite_type": "neutral"
+  },
+  "Ohio App.": {
+   "registry": "us-ohioctapp",
+   "records": 10150,
+   "share": 0.99941,
+   "cite_type": "state"
+  },
+  "Ohio App. 2d": {
+   "registry": "us-ohioctapp",
+   "records": 3033,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio App. 3d": {
+   "registry": "us-ohioctapp",
+   "records": 17607,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio App. LEXIS": {
+   "registry": "us-ohioctapp",
+   "records": 25410,
+   "share": 0.99972,
+   "cite_type": "state"
+  },
+  "Ohio App. Unrep.": {
+   "registry": "us-ohioctapp",
+   "records": 1254,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio C.A.": {
+   "registry": "us-ohioctapp",
+   "records": 990,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio Ch.": {
+   "registry": "us-ohio",
+   "records": 441,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio LEXIS": {
+   "registry": "us-ohio",
+   "records": 23045,
+   "share": 0.99991,
+   "cite_type": "state"
+  },
+  "Ohio St.": {
+   "registry": "us-ohio",
+   "records": 6189,
+   "share": 0.99935,
+   "cite_type": "state"
+  },
+  "Ohio St. (N.S.)": {
+   "registry": "us-ohio",
+   "records": 17615,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio St. 2d": {
+   "registry": "us-ohio",
+   "records": 3376,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ohio St. 3d": {
+   "registry": "us-ohio",
+   "records": 20157,
+   "share": 0.99995,
+   "cite_type": "state"
+  },
+  "Okla.": {
+   "registry": "us-okla",
+   "records": 28769,
+   "share": 0.99944,
+   "cite_type": "state"
+  },
+  "Okla. Civ. App. LEXIS": {
+   "registry": "us-oklacivapp",
+   "records": 4020,
+   "share": 0.99678,
+   "cite_type": "state"
+  },
+  "Okla. Crim.": {
+   "registry": "us-oklacrimapp",
+   "records": 10588,
+   "share": 0.99972,
+   "cite_type": "state"
+  },
+  "Okla. Crim. App. LEXIS": {
+   "registry": "us-oklacrimapp",
+   "records": 17753,
+   "share": 0.99972,
+   "cite_type": "state"
+  },
+  "Okla. LEXIS": {
+   "registry": "us-okla",
+   "records": 38208,
+   "share": 0.99762,
+   "cite_type": "state"
+  },
+  "Or.": {
+   "registry": "us-or",
+   "records": 24538,
+   "share": 0.99574,
+   "cite_type": "state"
+  },
+  "Or. App.": {
+   "registry": "us-orctapp",
+   "records": 37729,
+   "share": 0.9958,
+   "cite_type": "state"
+  },
+  "Or. Tax": {
+   "registry": "us-ortc",
+   "records": 1529,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Ore. LEXIS": {
+   "registry": "us-or",
+   "records": 22785,
+   "share": 0.99996,
+   "cite_type": "state"
+  },
+  "Ore. Tax LEXIS": {
+   "registry": "us-ortc",
+   "records": 624,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Otto": {
+   "registry": "us-scotus",
+   "records": 417,
+   "share": 1.0,
+   "cite_type": "federal"
+  },
+  "P.R. Dec.": {
+   "registry": "us-prsupreme",
+   "records": 20332,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "P.R. Fed.": {
+   "registry": "us-prd",
+   "records": 1341,
+   "share": 1.0,
+   "cite_type": "federal"
+  },
+  "P.R. Sent.": {
+   "registry": "us-prsupreme",
+   "records": 224,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "PR Sup. LEXIS": {
+   "registry": "us-prsupreme",
+   "records": 9880,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Pa. Commw.": {
+   "registry": "us-pacommwct",
+   "records": 17389,
+   "share": 0.99994,
+   "cite_type": "state"
+  },
+  "Pa. Commw. LEXIS": {
+   "registry": "us-pacommwct",
+   "records": 25708,
+   "share": 0.99984,
+   "cite_type": "state"
+  },
+  "Paige Ch.": {
+   "registry": "us-nychanct",
+   "records": 1289,
+   "share": 0.99537,
+   "cite_type": "state"
+  },
+  "Pelt.": {
+   "registry": "us-lactapp",
+   "records": 696,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Pen. & W.": {
+   "registry": "us-pa",
+   "records": 330,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Pet.": {
+   "registry": "us-scotus",
+   "records": 682,
+   "share": 0.99562,
+   "cite_type": "scotus_early"
+  },
+  "Pin.": {
+   "registry": "us-wis",
+   "records": 292,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Port.": {
+   "registry": "us-ala",
+   "records": 661,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Posey": {
+   "registry": "us-texcommnapp",
+   "records": 315,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Pow. Surr.": {
+   "registry": "us-nysurct",
+   "records": 100,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "R.I.": {
+   "registry": "us-ri",
+   "records": 13043,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "R.I. Dec.": {
+   "registry": "us-risuperct",
+   "records": 1443,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "R.I. LEXIS": {
+   "registry": "us-ri",
+   "records": 20431,
+   "share": 0.9999,
+   "cite_type": "state"
+  },
+  "Rawle": {
+   "registry": "us-pa",
+   "records": 347,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Rec. Co. Ch. (S.C.)": {
+   "registry": "us-ctchansc",
+   "records": 347,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Rec. Co. Ct.": {
+   "registry": "us-nysuffolkctyct",
+   "records": 301,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Redf.": {
+   "registry": "us-nysurct",
+   "records": 398,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Rep. Cont. El.": {
+   "registry": "us-masshserep",
+   "records": 230,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "S.C. LEXIS": {
+   "registry": "us-sc",
+   "records": 26810,
+   "share": 0.99933,
+   "cite_type": "state"
+  },
+  "S.D.": {
+   "registry": "us-sd",
+   "records": 10915,
+   "share": 0.99954,
+   "cite_type": "state"
+  },
+  "S.D. LEXIS": {
+   "registry": "us-sd",
+   "records": 16446,
+   "share": 0.9997,
+   "cite_type": "state"
+  },
+  "SD": {
+   "registry": "us-sd",
+   "records": 2842,
+   "share": 0.99859,
+   "cite_type": "neutral"
+  },
+  "Sadler": {
+   "registry": "us-pa",
+   "records": 1079,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Sand. Ch.": {
+   "registry": "us-nychanct",
+   "records": 185,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Sandf.": {
+   "registry": "us-nysuperctnyc",
+   "records": 457,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Scam.": {
+   "registry": "us-ill",
+   "records": 116,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Seld. Notes": {
+   "registry": "us-ny",
+   "records": 194,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Serg. & Rawle": {
+   "registry": "us-pa",
+   "records": 1668,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Shan. Cas.": {
+   "registry": "us-tenn",
+   "records": 665,
+   "share": 0.997,
+   "cite_type": "state"
+  },
+  "Sickels": {
+   "registry": "us-ny",
+   "records": 3035,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Silv. Ct. App.": {
+   "registry": "us-ny",
+   "records": 501,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Silv. Sup.": {
+   "registry": "us-nysupct",
+   "records": 621,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "State Rptr.": {
+   "registry": "us-mont",
+   "records": 3476,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Stew.": {
+   "registry": "us-ala",
+   "records": 352,
+   "share": 0.99717,
+   "cite_type": "state"
+  },
+  "Stew. & P.": {
+   "registry": "us-ala",
+   "records": 280,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Super. Ct. (R.I.)": {
+   "registry": "us-risuperct",
+   "records": 130,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Sweeny": {
+   "registry": "us-nysuperctnyc",
+   "records": 157,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "T.B. Mon.": {
+   "registry": "us-kyctapp",
+   "records": 677,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "T.C.": {
+   "registry": "us-tax",
+   "records": 0,
+   "share": null,
+   "cite_type": "curated"
+  },
+  "T.C. Memo.": {
+   "registry": "us-tax",
+   "records": 26826,
+   "share": 0.99996,
+   "cite_type": "neutral"
+  },
+  "T.C. No.": {
+   "registry": "us-tax",
+   "records": 3109,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "T.C. Summary Opinion": {
+   "registry": "us-tax",
+   "records": 2684,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "T.C.A.": {
+   "registry": "us-prapp",
+   "records": 2680,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "TN WC": {
+   "registry": "us-tennworkcompcl",
+   "records": 1860,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "TN WC App.": {
+   "registry": "us-tennworkcompapp",
+   "records": 650,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "TSPR": {
+   "registry": "us-prsupreme",
+   "records": 4388,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Teiss.": {
+   "registry": "us-lactapp",
+   "records": 1604,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tenn. App. LEXIS": {
+   "registry": "us-tennctapp",
+   "records": 8839,
+   "share": 0.99628,
+   "cite_type": "state"
+  },
+  "Tenn. Ch. R.": {
+   "registry": "us-tennctapp",
+   "records": 394,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tenn. Crim. App.": {
+   "registry": "us-tenncrimapp",
+   "records": 324,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tenn. LEXIS": {
+   "registry": "us-tenn",
+   "records": 10775,
+   "share": 0.99879,
+   "cite_type": "state"
+  },
+  "Tex. Bus.": {
+   "registry": "us-texbizct",
+   "records": 102,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "Tex. Civ. App.": {
+   "registry": "us-texapp",
+   "records": 9512,
+   "share": 0.99958,
+   "cite_type": "state"
+  },
+  "Tex. Crim.": {
+   "registry": "us-texcrimapp",
+   "records": 27223,
+   "share": 0.99989,
+   "cite_type": "state"
+  },
+  "Tex. Ct. App.": {
+   "registry": "us-texapp",
+   "records": 3529,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tex. Sup. Ct. J.": {
+   "registry": "us-tex",
+   "records": 5307,
+   "share": 0.99868,
+   "cite_type": "state"
+  },
+  "Thomp. & Cook": {
+   "registry": "us-nysupct",
+   "records": 1234,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Thompson": {
+   "registry": "us-tenn",
+   "records": 107,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tiess.": {
+   "registry": "us-lactapp",
+   "records": 140,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Trans. App.": {
+   "registry": "us-ny",
+   "records": 444,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tuck. Surr.": {
+   "registry": "us-nysurct",
+   "records": 121,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Tyl.": {
+   "registry": "us-vt",
+   "records": 179,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "UT": {
+   "registry": "us-utah",
+   "records": 2081,
+   "share": 0.99904,
+   "cite_type": "neutral"
+  },
+  "UT App": {
+   "registry": "us-utahctapp",
+   "records": 5235,
+   "share": 0.99866,
+   "cite_type": "neutral"
+  },
+  "Utah": {
+   "registry": "us-utah",
+   "records": 7004,
+   "share": 0.99957,
+   "cite_type": "state"
+  },
+  "Utah 2d": {
+   "registry": "us-utah",
+   "records": 3055,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Utah App. LEXIS": {
+   "registry": "us-utahctapp",
+   "records": 5370,
+   "share": 0.9987,
+   "cite_type": "state"
+  },
+  "Utah LEXIS": {
+   "registry": "us-utah",
+   "records": 16008,
+   "share": 0.99969,
+   "cite_type": "state"
+  },
+  "V.I. Supreme LEXIS": {
+   "registry": "us-virginislands",
+   "records": 436,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "VI Super": {
+   "registry": "us-visuper",
+   "records": 485,
+   "share": 1.0,
+   "cite_type": "neutral"
+  },
+  "VT": {
+   "registry": "us-vt",
+   "records": 2573,
+   "share": 0.99961,
+   "cite_type": "neutral"
+  },
+  "Va. App.": {
+   "registry": "us-vactapp",
+   "records": 5265,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Va. App. LEXIS": {
+   "registry": "us-vactapp",
+   "records": 5020,
+   "share": 0.9994,
+   "cite_type": "state"
+  },
+  "Va. Ch. Dec.": {
+   "registry": "us-vachanct",
+   "records": 143,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Vroom": {
+   "registry": "us-nj",
+   "records": 4443,
+   "share": 0.99977,
+   "cite_type": "state"
+  },
+  "Vt.": {
+   "registry": "us-vt",
+   "records": 20069,
+   "share": 0.9992,
+   "cite_type": "state"
+  },
+  "Vt. LEXIS": {
+   "registry": "us-vt",
+   "records": 12565,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Vt. Unpub. LEXIS": {
+   "registry": "us-vt",
+   "records": 482,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "W. Va.": {
+   "registry": "us-wva",
+   "records": 22469,
+   "share": 0.99978,
+   "cite_type": "state"
+  },
+  "W. Va. LEXIS": {
+   "registry": "us-wva",
+   "records": 20782,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "WI": {
+   "registry": "us-wis",
+   "records": 2589,
+   "share": 0.99807,
+   "cite_type": "neutral"
+  },
+  "WY": {
+   "registry": "us-wyo",
+   "records": 3781,
+   "share": 0.99947,
+   "cite_type": "neutral"
+  },
+  "Walk.": {
+   "registry": "us-pa",
+   "records": 329,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Walk. Ch.": {
+   "registry": "us-michchanct",
+   "records": 116,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wash. 2d": {
+   "registry": "us-wash",
+   "records": 15669,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wash. App.": {
+   "registry": "us-washctapp",
+   "records": 30818,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wash. App. 2d": {
+   "registry": "us-washctapp",
+   "records": 113,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wash. App. LEXIS": {
+   "registry": "us-washctapp",
+   "records": 28728,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wash. LEXIS": {
+   "registry": "us-wash",
+   "records": 32346,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Watts": {
+   "registry": "us-pa",
+   "records": 1269,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Watts & Serg.": {
+   "registry": "us-pa",
+   "records": 934,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Week. No.": {
+   "registry": "us-pa",
+   "records": 229,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Whart.": {
+   "registry": "us-pa",
+   "records": 439,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wheat.": {
+   "registry": "us-scotus",
+   "records": 467,
+   "share": 1.0,
+   "cite_type": "scotus_early"
+  },
+  "Willson": {
+   "registry": "us-texapp",
+   "records": 526,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wis.": {
+   "registry": "us-wis",
+   "records": 26757,
+   "share": 0.99996,
+   "cite_type": "state"
+  },
+  "Wisc. App. LEXIS": {
+   "registry": "us-wisctapp",
+   "records": 8470,
+   "share": 0.99542,
+   "cite_type": "state"
+  },
+  "Wright": {
+   "registry": "us-ohio",
+   "records": 440,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wyo.": {
+   "registry": "us-wyo",
+   "records": 2727,
+   "share": 1.0,
+   "cite_type": "state"
+  },
+  "Wyo. LEXIS": {
+   "registry": "us-wyo",
+   "records": 10031,
+   "share": 0.9999,
+   "cite_type": "state"
+  },
+  "Yeates": {
+   "registry": "us-pa",
+   "records": 733,
+   "share": 1.0,
+   "cite_type": "state"
+  }
+ }
+}
