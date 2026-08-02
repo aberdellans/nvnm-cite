@@ -1,7 +1,8 @@
 [project]
 name = "nvnm-cite"
-version = "0.1.0"
+version = "0.2.0"
 description = "Citation existence verification and filing receipts on NVNM Chain"
+readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "courts-db>=0.10.27",
@@ -9,6 +10,10 @@ dependencies = [
     "pdfplumber>=0.11.9",
     "reporters-db>=3.2.65",
 ]
+
+[project.urls]
+Homepage = "https://nvnmcite.com"
+Repository = "https://github.com/aberdellans/nvnm-cite"
 
 [project.scripts]
 nvnm-cite = "nvnm_cite.cli:main"

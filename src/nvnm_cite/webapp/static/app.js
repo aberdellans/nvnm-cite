@@ -19,8 +19,8 @@
  * record flow is: setup tx → confirmed #id → re-prepare → anchor.
  *
  * DOM vocabulary (classes/shapes) follows the 2026-06-12 design handoff
- * plus the round-2 contract delta (design_handoff_nvnm_cite_r2/
- * HANDOFF-R2.md, 2026-07): verdict banner, severity-grouped table with
+ * plus the round-2 contract delta (the r2 bundle, 2026-07; in git history
+ * and DECISIONS 2026-07-15): verdict banner, severity-grouped table with
  * a NOT COVERED disclosure, chips-as-filters, the registry-line step,
  * wallet callouts, stepper tones, sticky tab bar, and coverage states.
  */

@@ -48,7 +48,9 @@ Case data comes from [CourtListener](https://www.courtlistener.com), a project o
 
 ## Layout
 
-- `src/nvnm_cite/chain/anchoring.json`: vendored NVNM anchoring precompile ABI (5 methods, from the NVNM_MCP_Server project)
-- `src/nvnm_cite/`: the package (`chain/`, `normalizer/`, `loader/`, `webapp/`; `verifier/`, `receipts/` land phase by phase)
+- `src/nvnm_cite/`: the package (`chain/`, `normalizer/`, `loader/`, `verifier/`, `receipts/`, `webapp/`)
+- `src/nvnm_cite/chain/anchoring.json`: vendored NVNM anchoring precompile ABI (v1.2.0, functions + events)
+- `src/nvnm_cite/webapp/static/`: the web UI plus the agent-facing docs served at the site root (`llms.txt`, `agents.md`, `openapi.json`)
 - `tests/`: pytest suites; `tests/golden/` holds the signer and normalizer contracts
-- `docs/`: `canonical-citation-spec.md` and `record-schema.md` (Phase 1); `docs/ARCHIVE/` for superseded plans
+- `scripts/`: operator tools (registry-manifest and reporter-map builders)
+- `docs/`: `canonical-citation-spec.md`, `record-schema.md`, `web-demo.md`, `brief-for-firms.md`; `docs/ARCHIVE/` for superseded plans and historical material

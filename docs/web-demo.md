@@ -73,4 +73,4 @@ with an `eth_estimateGas` probe so a lawyer learns about a missing editor grant
 The visual design follows the 2026-06-12 Claude Design handoff (law report × premium
 fintech; self-hosted Source Serif 4 / Public Sans / IBM Plex Mono, OFL licenses at
 `static/fonts-OFL.txt`); the designer's notes (AA contrast, aria wiring, print) are
-vendored at [design-handoff.md](design-handoff.md).
+vendored at [ARCHIVE/design-handoff.md](ARCHIVE/design-handoff.md).
