@@ -1,0 +1,741 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NVNM Cite web API",
+    "version": "0.2.0",
+    "description": "Citation existence verification and filing receipts on NVNM Chain. Court registries hold canonical US case citations in plaintext; POST a legal document to /api/check and every citation in it is checked against the chain live. A VERIFIED status asserts that a record for the canonical citation exists in the named registry at the block read. The service asserts existence only, never that a case is good law or supports a proposition.\n\nConventions: no authentication. POST bodies are raw file bytes (not multipart); Content-Length is required (chunked transfer is rejected with 411); the upload cap is 30 MB. Custom X-* request header values are URL-decoded server side, so percent-encode non-ASCII values. All errors are `{\"error\": \"message\"}` with a meaningful HTTP status. A 502 means the chain RPC could not be consulted and is never a statement about any citation. Chain lookups return the exact eth_call needed to replay the answer against any NVNM Chain RPC, so no trust in this server is required.\n\nTutorial with worked examples: /agents.md. Discovery: /llms.txt.",
+    "contact": {
+      "url": "https://nvnmcite.com/agents.md"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://nvnmcite.com",
+      "description": "Hosted deployment. GET /api/status reports which NVNM Chain network it serves."
+    },
+    {
+      "url": "http://127.0.0.1:8787",
+      "description": "Local development server (uv run python -m nvnm_cite.webapp)."
+    }
+  ],
+  "paths": {
+    "/api/status": {
+      "get": {
+        "operationId": "getStatus",
+        "summary": "Service and chain identity",
+        "description": "Deployment identity and health: which NVNM Chain network is served (chain id, public RPC URL, explorer, gas token), coverage (number of court registries in the pinned name-to-id manifest and its creator), normalizer and schema versions, live chain probe results, and whether aggregate telemetry is enabled. Read this first; the anchor workflow needs network.public_rpc, network.chain_id, and network.explorer. Cached server side for about 10 seconds.",
+        "responses": {
+          "200": {
+            "description": "Status snapshot.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatusResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/check": {
+      "post": {
+        "operationId": "checkDocument",
+        "summary": "Check every citation in a document against NVNM Chain",
+        "description": "Extracts the text of the uploaded document, finds and normalizes its case citations (eyecite; the normalizer version is reported in the response), and resolves each covered citation with a live keyed records() read of NVNM Chain. The document is parsed in memory and discarded with the response; it is never persisted or put on chain. Supported types by filename extension: .pdf, .docx, .txt, .md.",
+        "parameters": [
+          {
+            "name": "X-Filename",
+            "in": "header",
+            "required": true,
+            "description": "The document's filename; its extension selects the text extractor. URL-encode non-ASCII characters.",
+            "schema": {
+              "type": "string",
+              "examples": ["brief.pdf"]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The raw file bytes. Content-Length required; 30 MB cap; extracted text capped at 2,000,000 characters (413 beyond either).",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-citation verdicts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CheckReport"
+                }
+              }
+            }
+          },
+          "411": {"$ref": "#/components/responses/Error"},
+          "413": {"$ref": "#/components/responses/Error"},
+          "422": {"$ref": "#/components/responses/Error"},
+          "502": {"$ref": "#/components/responses/ChainUnreachable"}
+        }
+      }
+    },
+    "/api/receipt/lookup": {
+      "get": {
+        "operationId": "lookupReceipt",
+        "summary": "Verify a filed document's receipt by registry and hash",
+        "description": "Free keyed lookup: does a receipt record for this document hash exist in this registry? Hash the exact filed bytes locally with SHA-256; the document itself never needs to be uploaded. The registry reference comes from the verification line printed on the filing (\"Citation verifications: NVNM Chain (chain N) registry #ID — name\"). The response includes the exact eth_call to replay the answer against any RPC for this network.",
+        "parameters": [
+          {
+            "name": "registry",
+            "in": "query",
+            "required": true,
+            "description": "Registry reference: the bare number (recommended; avoids URL-encoding), '#number' ('#' must be percent-encoded as %23), the whole pasted verification line, or a legacy registry name (resolved by enumeration; names are not unique on chain, so multiple matches come back as ambiguous candidates).",
+            "schema": {
+              "type": "string",
+              "examples": ["4711"]
+            }
+          },
+          {
+            "name": "sha256",
+            "in": "query",
+            "required": true,
+            "description": "SHA-256 of the exact filed bytes, 64 hex characters.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-fA-F]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lookup result. Check `found`; when the registry reference did not resolve, `registry_exists` is false or `ambiguous` is true with `candidates`, and `note` explains.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LookupResponse"
+                }
+              }
+            }
+          },
+          "422": {"$ref": "#/components/responses/Error"},
+          "502": {"$ref": "#/components/responses/ChainUnreachable"}
+        }
+      }
+    },
+    "/api/receipt/registries": {
+      "get": {
+        "operationId": "listCreatorRegistries",
+        "summary": "List the registries a wallet has created",
+        "description": "All registries on this chain created by the given wallet (0x form; the response echoes its bech32 form, which is how the chain records creators). Used to find an existing receipts registry before anchoring.",
+        "parameters": [
+          {
+            "name": "creator",
+            "in": "query",
+            "required": true,
+            "description": "The wallet's 0x address.",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The wallet's registries.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "creator": {
+                      "type": "object",
+                      "properties": {
+                        "address": {"type": "string"},
+                        "bech32": {"type": "string"}
+                      }
+                    },
+                    "registries": {
+                      "type": "array",
+                      "items": {"$ref": "#/components/schemas/RegistrySummary"}
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {"$ref": "#/components/responses/Error"},
+          "502": {"$ref": "#/components/responses/ChainUnreachable"}
+        }
+      }
+    },
+    "/api/tx": {
+      "get": {
+        "operationId": "inspectTransaction",
+        "summary": "Decode an NVNM Chain anchoring transaction",
+        "description": "Fetches a transaction and decodes anchoring-precompile calldata and events into readable plaintext. After a registry-creation transaction confirms, `registry_id` carries the chain-assigned id recovered from the AddRegistry event; the two-step anchor workflow depends on this.",
+        "parameters": [
+          {
+            "name": "hash",
+            "in": "query",
+            "required": true,
+            "description": "0x-prefixed 32-byte transaction hash.",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Decoded transaction, or `{hash, found: false}` when the node does not know it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TxResponse"
+                }
+              }
+            }
+          },
+          "422": {"$ref": "#/components/responses/Error"},
+          "502": {"$ref": "#/components/responses/ChainUnreachable"}
+        }
+      }
+    },
+    "/api/receipt/prepare": {
+      "post": {
+        "operationId": "prepareReceipt",
+        "summary": "Prepare a filing receipt (returns unsigned transactions; the filer's wallet signs)",
+        "description": "Re-checks the exact uploaded bytes pinned to a block, builds the minimal receipt (document SHA-256, chain id, block checked, normalizer version, court registries read, attesting wallet, timestamp, and a non-identifying status tally; never the list of cited cases), and returns the unsigned anchoring transaction. This server never holds keys and never broadcasts; the wallet named in X-Agent signs and broadcasts. Broadcasting spends gas and writes a public chain, so obtain explicit approval from your user first.\n\nTwo-step flow when no receipts registry exists yet for this firm and case under this wallet: the response carries a `setup` object with an unsigned addRegistry transaction. Sign and broadcast it, recover the assigned registry id from GET /api/tx, put the verification line (with that #id) on the filing, and POST here again with X-Registry-Id set. The verification line must be on the document before its bytes are hashed; `registry_line_found` in the response reports whether it was detected.",
+        "parameters": [
+          {
+            "name": "X-Filename",
+            "in": "header",
+            "required": true,
+            "description": "The document's filename (extension selects the extractor). URL-encode non-ASCII characters.",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "X-Firm",
+            "in": "header",
+            "required": true,
+            "description": "The filer or firm label. Together with X-Case it derives the per-firm-per-case receipts registry name. URL-encode non-ASCII characters.",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "X-Case",
+            "in": "header",
+            "required": true,
+            "description": "The case or matter label. URL-encode non-ASCII characters.",
+            "schema": {"type": "string"}
+          },
+          {
+            "name": "X-Agent",
+            "in": "header",
+            "required": true,
+            "description": "The 0x address of the wallet that will sign. The receipt records it as the attesting address, and gas estimates are probed from it.",
+            "schema": {
+              "type": "string",
+              "pattern": "^0x[0-9a-fA-F]{40}$"
+            }
+          },
+          {
+            "name": "X-Registry-Id",
+            "in": "header",
+            "required": false,
+            "description": "Pins the target receipts registry by its chain-assigned number (from the AddRegistry event of the setup transaction, or a registry picked from /api/receipt/registries). Absent: the server resolves by creator and derived name, returns the setup step when none exists, or `ambiguous` with candidates when several share the name.",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "The raw bytes of the final document as it will be filed. Content-Length required; 30 MB cap.",
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The prepared plan, or `{ambiguous: true, candidates: [...]}` when the wallet has several same-name registries (re-prepare with X-Registry-Id).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrepareResponse"
+                }
+              }
+            }
+          },
+          "411": {"$ref": "#/components/responses/Error"},
+          "413": {"$ref": "#/components/responses/Error"},
+          "422": {"$ref": "#/components/responses/Error"},
+          "502": {"$ref": "#/components/responses/ChainUnreachable"}
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Error": {
+        "description": "Request problem; the message says what to fix.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref": "#/components/schemas/Error"}
+          }
+        }
+      },
+      "ChainUnreachable": {
+        "description": "The chain RPC could not be consulted. This is never a statement about any citation; retry rather than reporting citations as missing.",
+        "content": {
+          "application/json": {
+            "schema": {"$ref": "#/components/schemas/Error"}
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Human-readable failure message."
+          }
+        }
+      },
+      "CitationStatus": {
+        "type": "string",
+        "enum": ["VERIFIED", "NOT_FOUND", "NOT_COVERED", "AMBIGUOUS_JURISDICTION", "UNPARSEABLE"],
+        "description": "VERIFIED: a record for the canonical citation exists in that court's registry on NVNM Chain (existence only, never a good-law or supports-the-proposition claim). NOT_FOUND: the covered registry was read live and has no record under the canonical key; only ever produced by a real chain read. NOT_COVERED: no chain read happened; the court has no registry in the coverage manifest, or the citation is a vendor (Westlaw/LEXIS) identifier, which is never a registry key; a real case may sit behind it. AMBIGUOUS_JURISDICTION: the citation could not be mapped to a single court registry. UNPARSEABLE: not recognizable as a citation."
+      },
+      "Citation": {
+        "type": "object",
+        "description": "One distinct citation from the document, with its verdict.",
+        "properties": {
+          "canonical": {
+            "type": "string",
+            "description": "The normalized first-page citation key that was checked, e.g. '410 U.S. 113'."
+          },
+          "as_written": {"type": "string"},
+          "variants": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Every distinct way the document wrote this citation."
+          },
+          "status": {"$ref": "#/components/schemas/CitationStatus"},
+          "reason": {
+            "type": ["string", "null"],
+            "description": "Why this status; null for VERIFIED."
+          },
+          "registry": {
+            "type": ["string", "null"],
+            "description": "The court registry consulted or implicated, e.g. 'us-scotus'."
+          },
+          "registry_id": {
+            "type": ["integer", "null"],
+            "description": "Its numeric id on this chain (registry names are not unique; the id is canonical)."
+          },
+          "confidence": {
+            "type": ["string", "null"],
+            "description": "'expanded-coverage' on a NOT_FOUND outside the pilot-proven federal appellate registries; null otherwise."
+          },
+          "caution": {
+            "type": ["string", "null"],
+            "description": "Present with confidence 'expanded-coverage': this court's citation formats are still being proven, so treat the miss as a flag to verify the citation yourself, never as proof it is fabricated, and never delete a citation on this signal alone. Relay it verbatim to your user."
+          },
+          "name_check": {
+            "type": "string",
+            "enum": ["match", "mismatch", "unknown"],
+            "description": "Token-overlap comparison between the document's party names and the on-chain record's case name. 'mismatch' flags a real citation paired with an invented case name; 'unknown' when it cannot be sure."
+          },
+          "occurrences": {"type": "integer"},
+          "kinds": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Citation forms seen (full, short, id, supra)."
+          },
+          "court": {"type": ["string", "null"]},
+          "year": {"type": ["integer", "null"]},
+          "plaintiff": {"type": ["string", "null"]},
+          "defendant": {"type": ["string", "null"]},
+          "first_span": {
+            "type": "array",
+            "items": {"type": "integer"},
+            "description": "[start, end] character offsets of the first occurrence in the extracted text."
+          },
+          "spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "span": {"type": "array", "items": {"type": "integer"}},
+                "kind": {"type": "string"},
+                "as_written": {"type": "string"},
+                "pin_cite": {"type": ["string", "null"]}
+              }
+            }
+          },
+          "record": {
+            "type": ["object", "null"],
+            "description": "The on-chain record when found: case name(s), year, CourtListener URL."
+          },
+          "query": {
+            "type": ["object", "null"],
+            "description": "The exact keyed records() lookup that was made, replayable via eth_call against any RPC for this network."
+          },
+          "snippet": {
+            "type": ["string", "null"],
+            "description": "Source context around the citation; provided for AMBIGUOUS_JURISDICTION and UNPARSEABLE so the token is findable in the document."
+          }
+        }
+      },
+      "CheckReport": {
+        "type": "object",
+        "properties": {
+          "normalizer": {
+            "type": "object",
+            "properties": {
+              "version": {"type": "string"},
+              "spec": {"type": "string"}
+            },
+            "description": "The normalizer that produced the canonical keys; part of every receipt's provenance."
+          },
+          "coverage": {
+            "type": "object",
+            "properties": {
+              "count": {"type": "integer", "description": "Court registries in the pinned coverage manifest."},
+              "covered": {
+                "type": ["array", "null"],
+                "items": {"type": "string"},
+                "description": "The registry names, only when the list is small; null for full-corpus deployments."
+              },
+              "source": {"type": "string"}
+            }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "occurrences": {"type": "integer", "description": "Total citation occurrences in the document."},
+              "distinct": {"type": "integer", "description": "Distinct citations checked."},
+              "by_status": {
+                "type": "object",
+                "description": "Count per status; keys are the five CitationStatus values.",
+                "additionalProperties": {"type": "integer"}
+              },
+              "name_mismatches": {"type": "integer"}
+            }
+          },
+          "citations": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/Citation"},
+            "description": "In document order."
+          },
+          "document": {
+            "type": "object",
+            "properties": {
+              "filename": {"type": "string"},
+              "sha256": {
+                "type": "string",
+                "description": "SHA-256 of the exact uploaded bytes; what a filing receipt anchors."
+              },
+              "bytes": {"type": "integer"},
+              "extraction": {
+                "type": "object",
+                "properties": {
+                  "method": {"type": "string"},
+                  "chars": {"type": "integer"},
+                  "warning": {"type": ["string", "null"]}
+                }
+              }
+            }
+          },
+          "privacy": {
+            "type": "object",
+            "properties": {
+              "persisted": {"type": "boolean", "description": "Always false: the document is parsed in memory and discarded with this response."},
+              "note": {"type": "string"}
+            }
+          },
+          "generated_at": {"type": "string", "description": "UTC timestamp."},
+          "elapsed_ms": {"type": "integer"}
+        }
+      },
+      "ReceiptVersion": {
+        "type": "object",
+        "description": "One anchored version of a receipt record.",
+        "properties": {
+          "index": {"type": "integer", "description": "Version number; the latest index is the version count."},
+          "is_latest": {"type": "boolean"},
+          "record_id": {"type": "integer"},
+          "registry_id": {"type": "integer"},
+          "chain_timestamp": {"type": "string"},
+          "status": {"type": "string"},
+          "uri": {"type": "string"},
+          "checksum_algo": {"type": "string"},
+          "metadata_bytes": {"type": "integer"},
+          "receipt": {
+            "description": "The receipt JSON, parsed: document hash, chain id, block checked, normalizer version, court registries read, attesting wallet, timestamp, and a non-identifying status tally. Never the list of cited cases.",
+            "type": ["object", "string", "null"]
+          },
+          "metadata_raw": {"type": "string"}
+        }
+      },
+      "LookupResponse": {
+        "type": "object",
+        "description": "Variants: resolved (registry_exists true, found true/false, versions, proof), registry missing (registry_exists false, note), or ambiguous legacy-name reference (ambiguous true, candidates, note).",
+        "properties": {
+          "registry": {"type": "string", "description": "Registry name."},
+          "registry_id": {"type": "integer"},
+          "registry_owner": {"type": "string", "description": "Creator, bech32 form."},
+          "sha256": {"type": "string"},
+          "registry_exists": {"type": "boolean"},
+          "found": {"type": "boolean"},
+          "head_block": {"type": "integer", "description": "Chain head at lookup time."},
+          "versions": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/ReceiptVersion"}
+          },
+          "proof": {
+            "type": "object",
+            "description": "The exact eth_call (method, to, data) to replay this lookup against any RPC for this network; no trust in this server required.",
+            "properties": {
+              "note": {"type": "string"},
+              "request": {"type": "object"}
+            }
+          },
+          "ambiguous": {"type": "boolean"},
+          "candidates": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/RegistrySummary"}
+          },
+          "note": {"type": "string"}
+        }
+      },
+      "RegistrySummary": {
+        "type": "object",
+        "properties": {
+          "id": {"type": "integer"},
+          "name": {"type": "string"},
+          "creator": {"type": "string", "description": "bech32 form."},
+          "created_at": {"type": "string"}
+        }
+      },
+      "TxResponse": {
+        "type": "object",
+        "properties": {
+          "hash": {"type": "string"},
+          "found": {"type": "boolean"},
+          "pending": {"type": "boolean", "description": "True until the transaction is included in a block."},
+          "success": {"type": ["boolean", "null"]},
+          "from": {"type": ["string", "null"]},
+          "to": {"type": ["string", "null"]},
+          "block": {"type": ["integer", "null"]},
+          "block_time": {"type": ["string", "null"]},
+          "gas_used": {"type": ["integer", "null"]},
+          "gas_price_gwei": {"type": ["number", "null"]},
+          "is_anchoring_precompile": {"type": "boolean"},
+          "decoded": {
+            "type": ["object", "null"],
+            "description": "The anchoring call decoded to its function name and plaintext arguments."
+          },
+          "events": {
+            "type": "array",
+            "items": {"type": "object"},
+            "description": "Anchoring-precompile events from the receipt logs (AddRegistry, AddRecord, UpdateRecordStatus, GrantRole, RevokeRole)."
+          },
+          "registry_id": {
+            "type": ["integer", "null"],
+            "description": "From the AddRegistry event when present: the chain-assigned id of a newly created registry. The anchor workflow's step 2 reads it here."
+          },
+          "input_preview": {"type": ["string", "null"]},
+          "explorer": {"type": "string", "description": "Explorer URL for this transaction."}
+        }
+      },
+      "UnsignedTx": {
+        "type": "object",
+        "description": "An unsigned transaction for the filer's wallet to sign and broadcast. This server never signs and never broadcasts.",
+        "properties": {
+          "to": {"type": "string", "description": "The anchoring precompile address."},
+          "data": {"type": "string", "description": "0x calldata."},
+          "value": {"type": "string", "const": "0x0"}
+        }
+      },
+      "WriteProbe": {
+        "type": "object",
+        "description": "eth_estimateGas from the X-Agent address. Doubles as a permission check: writes are deny-by-default, so ok true implies this address may send the call.",
+        "properties": {
+          "ok": {"type": "boolean"},
+          "gas": {"type": "integer"},
+          "kind": {
+            "type": "string",
+            "enum": ["unauthorized", "registry-missing", "other"],
+            "description": "Present when ok is false."
+          },
+          "message": {"type": "string"}
+        }
+      },
+      "PrepareResponse": {
+        "type": "object",
+        "description": "Variants: ready to anchor (tx, receipt, registry_line present), setup needed (setup present with the unsigned addRegistry transaction; sign, broadcast, recover the id via /api/tx, put the verification line on the filing, re-prepare with X-Registry-Id), or ambiguous (ambiguous true, candidates; re-prepare with X-Registry-Id).",
+        "properties": {
+          "registry": {"type": "string", "description": "The derived per-firm-per-case receipts registry name."},
+          "registry_id": {"type": ["integer", "null"]},
+          "registry_exists": {"type": "boolean"},
+          "name_matches": {"type": "boolean", "description": "Whether the pinned registry's on-chain name matches the derived name."},
+          "already_anchored": {"type": "boolean", "description": "True when this exact document hash already has a record in the registry."},
+          "agent": {
+            "type": "object",
+            "properties": {"address": {"type": "string"}}
+          },
+          "document_sha256": {"type": "string"},
+          "checked_at_block": {"type": "integer", "description": "The block the re-check was pinned to; recorded in the receipt."},
+          "registries_read": {"type": "integer"},
+          "receipt": {
+            "type": "object",
+            "description": "The receipt to be anchored. `json` is the exact metadata string that goes on chain; it carries the document hash, provenance, and a status tally, never the cited cases.",
+            "properties": {
+              "schema": {"type": "string"},
+              "json": {"type": "string"},
+              "object": {"type": "object"},
+              "summary": {"type": "object"},
+              "timestamp": {"type": "string"},
+              "bytes": {"type": "integer"},
+              "cap": {"type": "integer"}
+            }
+          },
+          "chain": {
+            "type": "object",
+            "properties": {
+              "chain_id": {"type": "integer"},
+              "checked_at_block": {"type": "integer"}
+            }
+          },
+          "writes": {"type": "integer", "description": "How many chain writes the full plan needs (1, or 2 when setup is included)."},
+          "registry_line": {
+            "type": "string",
+            "description": "The verification line to print on the filing: 'Citation verifications: NVNM Chain (chain N) registry #ID — name'. Must be on the document before its bytes are hashed, or a future verifier has nothing to go on."
+          },
+          "registry_line_found": {
+            "type": "string",
+            "enum": ["id", "name", "none"],
+            "description": "Whether the document's extracted text carries the verification line: 'id' (the canonical '#ID' is present), 'name' (name only, a weak pointer since names are not unique), or 'none'."
+          },
+          "tx": {"$ref": "#/components/schemas/UnsignedTx"},
+          "write_probe": {"$ref": "#/components/schemas/WriteProbe"},
+          "setup": {
+            "type": "object",
+            "description": "Present when the receipts registry must be created first. Contains the registry creation strings, the unsigned addRegistry transaction in `tx`, a gas `probe`, and a `note` explaining the one-time setup. The creating wallet becomes the registry's admin.",
+            "properties": {
+              "tx": {"$ref": "#/components/schemas/UnsignedTx"},
+              "probe": {"$ref": "#/components/schemas/WriteProbe"},
+              "note": {"type": "string"}
+            }
+          },
+          "ambiguous": {"type": "boolean"},
+          "candidates": {
+            "type": "array",
+            "items": {"$ref": "#/components/schemas/RegistrySummary"}
+          },
+          "note": {"type": "string"}
+        }
+      },
+      "StatusResponse": {
+        "type": "object",
+        "properties": {
+          "app": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "version": {"type": "string"},
+              "network": {"type": "string"}
+            }
+          },
+          "network": {
+            "type": "object",
+            "description": "The NVNM Chain network this deployment serves.",
+            "properties": {
+              "key": {"type": "string"},
+              "label": {"type": "string"},
+              "chain_id": {"type": "integer"},
+              "chain_id_hex": {"type": "string"},
+              "cosmos_chain_id": {"type": "string"},
+              "rpc_urls": {"type": "array", "items": {"type": "string"}},
+              "public_rpc": {"type": "string", "description": "Where to broadcast signed transactions and replay proof eth_calls."},
+              "explorer": {"type": "string"},
+              "gas_token": {"type": "object"},
+              "gas_price_gwei": {"type": ["number", "null"]}
+            }
+          },
+          "chain": {
+            "type": "object",
+            "description": "Live probe: rpc_ok, chain_id, chain_id_ok, head_block; error when the probe failed.",
+            "properties": {
+              "rpc_ok": {"type": "boolean"},
+              "chain_id": {"type": "integer"},
+              "chain_id_ok": {"type": "boolean"},
+              "head_block": {"type": "integer"},
+              "error": {"type": "string"}
+            }
+          },
+          "registries": {
+            "type": "object",
+            "description": "Sentinel court registries probed live as a sanity check on the manifest.",
+            "additionalProperties": {"type": "object"}
+          },
+          "coverage": {
+            "type": "object",
+            "description": "The pinned creator-verified name-to-id manifest: count, creator, generation block.",
+            "properties": {
+              "count": {"type": "integer"},
+              "source": {"type": "string"},
+              "creator": {"type": "string"},
+              "generated_at": {"type": "string"},
+              "generated_at_block": {"type": "integer"}
+            }
+          },
+          "index": {"type": "object", "description": "Local audit-cache coverage; never the lookup authority."},
+          "loader": {"type": "object"},
+          "telemetry": {
+            "type": "object",
+            "properties": {
+              "enabled": {"type": "boolean", "description": "Opt-in aggregate by-citation lookup counting; never tied to a document or identity."}
+            }
+          },
+          "versions": {
+            "type": "object",
+            "properties": {
+              "normalizer": {"type": "string"},
+              "citation_spec": {"type": "string"},
+              "receipt_schema": {"type": "string"},
+              "record_schema": {"type": "string"}
+            }
+          },
+          "constants": {
+            "type": "object",
+            "properties": {
+              "precompile": {"type": "string", "description": "The anchoring precompile address."},
+              "chain_id": {"type": "integer"},
+              "explorer": {"type": "string"},
+              "rpc_url": {"type": "string"},
+              "receipt_uri": {"type": "string"}
+            }
+          },
+          "attribution": {"type": "string"}
+        }
+      }
+    }
+  }
+}

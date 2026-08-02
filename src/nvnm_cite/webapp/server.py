@@ -48,7 +48,9 @@ _STATIC_TYPES = {
     ".js": "application/javascript; charset=utf-8",
     ".svg": "image/svg+xml",
     ".woff2": "font/woff2",
-    ".txt": "text/plain; charset=utf-8",  # vendored font licenses
+    ".txt": "text/plain; charset=utf-8",  # vendored font licenses, llms.txt, robots.txt
+    ".json": "application/json; charset=utf-8",  # openapi.json (agent-facing API contract)
+    ".md": "text/markdown; charset=utf-8",  # agents.md (agent-facing tutorial)
 }
 _CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self'; "

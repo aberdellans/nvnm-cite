@@ -634,6 +634,26 @@ def test_server_static_and_csp(live_server):
     assert res.status == 404
 
 
+def test_server_agent_docs(live_server):
+    # The agent-facing artifacts (llms.txt convention + OpenAPI + tutorial)
+    # serve from the static whitelist with the right content types.
+    for path, ctype, needle in (
+        ("/llms.txt", "text/plain", b"NVNM Cite"),
+        ("/robots.txt", "text/plain", b"/llms.txt"),
+        ("/agents.md", "text/markdown", b"/api/check"),
+        ("/openapi.json", "application/json", b'"openapi"'),
+    ):
+        res, data = _request(live_server, "GET", path)
+        assert res.status == 200, path
+        assert (res.getheader("Content-Type") or "").startswith(ctype), path
+        assert needle in data, path
+    spec = json.loads(_request(live_server, "GET", "/openapi.json")[1])
+    assert set(spec["paths"]) == {
+        "/api/status", "/api/check", "/api/receipt/lookup",
+        "/api/receipt/registries", "/api/tx", "/api/receipt/prepare",
+    }
+
+
 def test_server_check_surfaces_dead_rpc(live_server):
     # The check now reads the chain LIVE (item 0). The fixture's RPC is
     # unroutable, so the check must FAIL LOUDLY (502) — never silently report

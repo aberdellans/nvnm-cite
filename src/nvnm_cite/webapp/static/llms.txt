@@ -1,0 +1,27 @@
+# NVNM Cite
+
+> Citation existence verification and filing receipts on NVNM Chain. Per-court registries of canonical US case citations are stored in plaintext on chain; this service extracts the citations from a legal document, checks each one against the chain live, and can prepare a filing receipt that binds the document's SHA-256 to the chain state consulted.
+
+What an answer asserts: a VERIFIED status means a record for that canonical citation exists in the named court registry on NVNM Chain at the block read. The service itself asserts existence only, never that a case is good law or supports a proposition. What you conclude from its answers, and what other tools you combine them with, is up to you and your user.
+
+Everything is a plain HTTP JSON API on this origin. No authentication, no API keys. Read endpoints are GET; document checks are POST with the raw file bytes as the body. Errors always come back as `{"error": "message"}` with a meaningful HTTP status. Answers are replayable: chain lookups return the exact `eth_call` you can run against any NVNM Chain RPC to confirm the result without trusting this server.
+
+## Docs
+
+- [Agent guide](/agents.md): task-oriented tutorial with curl examples for every workflow (check a document, verify a filed document, inspect a transaction, anchor a receipt).
+- [OpenAPI specification](/openapi.json): the formal contract for all six endpoints, including the custom header conventions on the POST endpoints.
+
+## API
+
+- POST /api/check: upload a document (.pdf, .docx, .txt, .md; raw bytes body, filename in the X-Filename header), get per-citation statuses: VERIFIED, NOT_FOUND, NOT_COVERED, AMBIGUOUS_JURISDICTION, or UNPARSEABLE.
+- GET /api/receipt/lookup?registry=REF&sha256=HEX: verify a filed document. Hash the exact file bytes locally with SHA-256; REF is the registry number from the filing's verification line (for example `#4711` or the whole pasted line).
+- GET /api/tx?hash=0x...: decode an NVNM Chain anchoring transaction into readable plaintext.
+- GET /api/receipt/registries?creator=0x...: list the receipt registries a wallet has created.
+- POST /api/receipt/prepare: prepare a filing receipt. Returns an unsigned transaction; the filer's own wallet signs. This server never holds keys.
+- GET /api/status: service and chain identity (network, chain id, explorer URL, coverage count, normalizer version). Read this first to learn which network this deployment serves.
+
+## Notes
+
+- Documents are parsed in memory and discarded with the response; they are never written to disk or put on chain. The access log strips query strings.
+- A NOT_FOUND result can carry a `caution` field for courts in newly expanded coverage. Surface it verbatim: a miss there is a flag to verify the citation, not proof it is fabricated.
+- Case data comes from CourtListener bulk data, a Free Law Project service. Citation parsing builds on Free Law Project's eyecite, reporters-db, and courts-db.

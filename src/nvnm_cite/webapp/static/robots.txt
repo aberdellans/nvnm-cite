@@ -1,0 +1,3 @@
+# NVNM Cite. AI agents: start at /llms.txt, then /agents.md and /openapi.json.
+User-agent: *
+Allow: /
