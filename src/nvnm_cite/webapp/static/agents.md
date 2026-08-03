@@ -34,8 +34,8 @@ Supported types: `.pdf`, `.docx`, `.txt`, `.md`. The filename extension tells th
 
 The response you care about:
 
-- `summary.by_status`: counts for the five statuses (listed below).
-- `citations[]`: one entry per distinct citation, in document order. Key fields per entry:
+- `summary.by_status`: counts for the five statuses (listed below), one per authority.
+- `citations[]`: one entry per cited authority, in document order. A run of parallel reporters for the same case ("133 Ohio St.3d 10, 2012-Ohio-5270, 979 N.E.2d 1229") is one entry: the strongest member is the row and the rest stay visible in its `parallels` array with their own statuses. Key fields per entry:
   - `canonical`: the normalized citation key that was checked (first-page form, e.g. `410 U.S. 113`), and `as_written` / `variants` for how the document actually wrote it.
   - `status` and `reason`: the verdict and why.
   - `registry` / `registry_id`: which court registry was consulted (e.g. `us-scotus`).
@@ -44,6 +44,7 @@ The response you care about:
   - `record`: the on-chain record when one was found (case name, year, CourtListener URL).
   - `query`: the exact keyed lookup that was made, so the result can be replayed against any NVNM Chain RPC.
   - `occurrences` and `spans`: where the citation appears in the document.
+- `summary.law_sections_out_of_scope` and `unresolved_references`: accounting for what the table deliberately excludes — statute/regulation section fragments (registries hold case citations only) and Id./supra references whose antecedent could not be determined. Nothing is silently dropped.
 - `document.sha256`: the SHA-256 of the exact bytes you uploaded. This is what a filing receipt anchors.
 - `normalizer.version` and `coverage.count`: provenance of the check.
 - `privacy.note`: what happened to the document (parsed in memory, discarded with the response).

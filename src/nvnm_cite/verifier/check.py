@@ -180,19 +180,26 @@ def source_snippet(text: str, span: list[int] | tuple[int, int], context: int = 
 # --- occurrence grouping ---
 
 
-def _group_occurrences(citations: list) -> dict[tuple, dict]:
+def _entry_key(occ) -> tuple:
+    if occ.disposition is Disposition.OK:
+        return ("ok", occ.registry, occ.canonical)
+    if occ.disposition is Disposition.AMBIGUOUS_JURISDICTION:
+        return ("ambiguous", occ.canonical or occ.as_written)
+    if occ.disposition is Disposition.VENDOR:
+        return ("vendor", occ.canonical or occ.as_written)
+    return ("unresolved", occ.as_written.strip().lower())
+
+
+def _group_occurrences(citations: list) -> tuple[dict[tuple, dict], list[tuple]]:
     """Collapse repeated occurrences of the same citation into one entry,
-    keyed so OK/ambiguous/unresolved never merge across dispositions."""
+    keyed so OK/ambiguous/unresolved never merge across dispositions.
+    Also returns each occurrence's entry key, in input order, so the
+    parallel-citation clustering can trace occurrences back to entries."""
     entries: dict[tuple, dict] = {}
+    keys: list[tuple] = []
     for occ in citations:
-        if occ.disposition is Disposition.OK:
-            key = ("ok", occ.registry, occ.canonical)
-        elif occ.disposition is Disposition.AMBIGUOUS_JURISDICTION:
-            key = ("ambiguous", occ.canonical or occ.as_written)
-        elif occ.disposition is Disposition.VENDOR:
-            key = ("vendor", occ.canonical or occ.as_written)
-        else:
-            key = ("unresolved", occ.as_written.strip().lower())
+        key = _entry_key(occ)
+        keys.append(key)
         entry = entries.get(key)
         if entry is None:
             entry = entries[key] = {
@@ -222,7 +229,32 @@ def _group_occurrences(citations: list) -> dict[tuple, dict]:
                 entry[field_name] = getattr(occ, field_name)
         if entry["year"] is None:
             entry["year"] = occ.year
-    return entries
+    return entries, keys
+
+
+def _unresolved_references_view(occurrences: list, cleaned: str) -> dict:
+    """Unresolved Id./supra references, folded into one accounting block:
+    per-form counts plus a locating snippet for the first occurrence."""
+    forms: dict[str, dict] = {}
+    for occ in occurrences:
+        norm = occ.as_written.strip().lower()
+        form = forms.get(norm)
+        if form is None:
+            form = forms[norm] = {
+                "as_written": occ.as_written,
+                "occurrences": 0,
+                "snippet": source_snippet(cleaned, occ.span),
+            }
+        form["occurrences"] += 1
+    return {
+        "count": len(occurrences),
+        "forms": sorted(forms.values(), key=lambda f: -f["occurrences"]),
+        "note": (
+            "reference forms (Id., supra) whose antecedent citation could "
+            "not be determined; accounted for here, excluded from the "
+            "citations table"
+        ),
+    }
 
 
 # --- the core ---
@@ -248,12 +280,32 @@ def check_text(
         registry_ids = default_registry_ids()
 
     result = normalize(text)
-    entries = _group_occurrences(result.citations)
+    cleaned = result.cleaned_text
 
-    citations: list[dict] = []
-    counts = {s: 0 for s in STATUS_ORDER}
-    mismatches = 0
-    for (kind, *_), entry in entries.items():
+    # 1.2.0: non-case occurrences leave the table before grouping, but are
+    # never silently dropped — they come back as summary accounting below.
+    case_occurrences: list = []
+    law_sections = 0
+    law_section_examples: list[str] = []
+    unresolved_refs: list = []
+    for occ in result.citations:
+        if occ.disposition is Disposition.OUT_OF_SCOPE:
+            law_sections += 1
+            if occ.as_written not in law_section_examples and len(law_section_examples) < 5:
+                law_section_examples.append(occ.as_written)
+        elif occ.disposition is Disposition.UNRESOLVED and occ.kind in ("id", "supra"):
+            # An unresolved Id./supra can never be checked on its own; a
+            # per-token UNPARSEABLE row is noise (measured: real merits
+            # briefs surface a handful per document).
+            unresolved_refs.append(occ)
+        else:
+            case_occurrences.append(occ)
+
+    entries, occ_keys = _group_occurrences(case_occurrences)
+
+    rows: dict[tuple, dict] = {}
+    for key, entry in entries.items():
+        kind = key[0]
         record: pc.Record | None = None
         query: dict | None = None
         registry_id: int | None = None
@@ -278,6 +330,16 @@ def check_text(
                     if entry["registry"] not in FEDERAL_APPELLATE:
                         confidence = "expanded-coverage"
                         caution = EXPANDED_COVERAGE_CAUTION
+                    elif entry["registry"] == "us-scotus":
+                        # Measured on real merits briefs (2026-08-02): the
+                        # source data records some SCOTUS cases under only
+                        # one of the parallel official U.S. / S. Ct. cites.
+                        reason += (
+                            ". Note: some SCOTUS cases appear here under "
+                            "only one of the parallel U.S. / S. Ct. "
+                            "citations — check this case's other reporter "
+                            "before concluding"
+                        )
             else:
                 status = NOT_COVERED
                 reason = (
@@ -294,14 +356,10 @@ def check_text(
             status, reason = NOT_COVERED, entry["reason"]
         else:
             status, reason = UNPARSEABLE, entry["reason"]
-        counts[status] += 1
-
         names = record_names(record.metadata) if record is not None else []
         check = name_check(entry["plaintiff"], entry["defendant"], names)
-        if check == "mismatch":
-            mismatches += 1
 
-        citations.append(
+        rows[key] = (
             {
                 "registry": entry["registry"],
                 "registry_id": registry_id,
@@ -327,13 +385,99 @@ def check_text(
                 # in the reader's own document; omitted where the citation
                 # cell already identifies the location.
                 "snippet": (
-                    source_snippet(text, entry["first_span"])
+                    source_snippet(cleaned, entry["first_span"])
                     if status in (AMBIGUOUS, UNPARSEABLE)
                     else None
                 ),
             }
         )
+
+    # --- parallel-citation clustering (1.2.0) ---
+    # Real filings cite a case by several reporters in one run ("133 Ohio
+    # St.3d 10, 2012-Ohio-5270, 979 N.E.2d 1229"): back-to-back full cites
+    # separated by nothing but a comma, where the follow-on members carry
+    # no party names of their own. Those runs are ONE authority. Cluster
+    # the entries, present the strongest member (STATUS_ORDER: a VERIFIED
+    # parallel outranks an ambiguous one) as the row, and keep the other
+    # members visible under "parallels" — collapsed, never hidden.
+    parent: dict[tuple, tuple] = {}
+
+    def _find(k: tuple) -> tuple:
+        while parent.get(k, k) != k:
+            parent[k] = parent.get(parent[k], parent[k])
+            k = parent[k]
+        return k
+
+    def _union(a: tuple, b: tuple) -> None:
+        ra, rb = _find(a), _find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    full_occs = sorted(
+        ((occ, key) for occ, key in zip(case_occurrences, occ_keys) if occ.kind == "full"),
+        key=lambda t: t[0].span[0],
+    )
+
+    def _name_key(value: str | None) -> str:
+        # eyecite renders the same back-propagated party differently per
+        # citation class (measured: "Buckeye Wind, L.L.C." from a reporter
+        # cite, "Buckeye Wind, LLC" from the neutral cite in the same run),
+        # so names compare punctuation- and case-insensitively.
+        return re.sub(r"[^a-z0-9]", "", (value or "").lower())
+
+    for (a, ka), (b, kb) in zip(full_occs, full_occs[1:]):
+        gap_text = cleaned[a.span[1] : b.span[0]]
+        # A run member may be separated by a pin page as well as the comma
+        # ("58 Ohio St.2d 108, 110, 388 N.E.2d 1370"): commas, spaces, and
+        # one bare page (or page range) are run-internal; anything else —
+        # a semicolon, a case name, prose — ends the run.
+        gap_ok = len(gap_text) <= 16 and re.fullmatch(
+            r"[\s,]*(?:\d{1,5}(?:[-–—]\d{1,5})?)?[\s,]*", gap_text
+        )
+        # eyecite back-propagates the case name across a parallel run, so
+        # matching party names corroborate the merge; a follow-on member
+        # with no names at all is the bare-parallel form.
+        names_agree = (
+            (b.plaintiff, b.defendant) == (None, None)
+            or (
+                _name_key(b.plaintiff) == _name_key(a.plaintiff)
+                and _name_key(b.defendant) == _name_key(a.defendant)
+            )
+        )
+        if ka != kb and gap_ok and names_agree:
+            _union(ka, kb)
+
+    clusters: dict[tuple, list[tuple]] = {}
+    for key in rows:
+        clusters.setdefault(_find(key), []).append(key)
+
+    def _parallel_view(row: dict) -> dict:
+        return {
+            field: row[field]
+            for field in (
+                "canonical", "as_written", "status", "registry", "registry_id",
+                "occurrences", "kinds", "reason", "name_check", "record",
+            )
+        }
+
+    citations = []
+    for member_keys in clusters.values():
+        members = sorted(
+            (rows[k] for k in member_keys),
+            key=lambda r: (STATUS_ORDER.index(r["status"]), r["first_span"]),
+        )
+        primary = members[0]
+        primary["parallels"] = [_parallel_view(m) for m in members[1:]]
+        primary["first_span"] = min(m["first_span"] for m in members)
+        citations.append(primary)
+
     citations.sort(key=lambda c: c["first_span"])
+    counts = {s: 0 for s in STATUS_ORDER}
+    mismatches = 0
+    for row in citations:
+        counts[row["status"]] += 1
+        if row["name_check"] == "mismatch":
+            mismatches += 1
 
     covered_names = sorted(registry_ids)
     return {
@@ -346,11 +490,18 @@ def check_text(
             "source": "NVNM Chain (live keyed records() reads)",
         },
         "summary": {
-            "occurrences": len(result.citations),
+            "occurrences": len(case_occurrences),
             "distinct": len(citations),
             "by_status": counts,
             "name_mismatches": mismatches,
+            # 1.2.0 accounting for what the citations table deliberately
+            # excludes: nothing is silently dropped.
+            "law_sections_out_of_scope": {
+                "count": law_sections,
+                "examples": law_section_examples,
+            },
         },
+        "unresolved_references": _unresolved_references_view(unresolved_refs, cleaned),
         "citations": citations,
         "privacy": {
             "persisted": False,

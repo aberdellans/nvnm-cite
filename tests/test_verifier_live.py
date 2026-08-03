@@ -72,7 +72,9 @@ def test_live_check_exercises_all_statuses(rpc_url: str):
 
     assert by["100 F.3d 200"]["status"] == "NOT_COVERED"  # 2d Cir., outside pilot
     assert by["12 F.3d 34"]["status"] == "AMBIGUOUS_JURISDICTION"  # no court parenthetical
-    assert any(c["status"] == "UNPARSEABLE" for c in report["citations"])  # orphan Id.
+    # 1.2.0: the orphan Id. is accounted for in unresolved_references,
+    # no longer an UNPARSEABLE table row.
+    assert report["unresolved_references"]["count"] >= 1
 
     counts = report["summary"]["by_status"]
     assert counts["VERIFIED"] == 2

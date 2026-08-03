@@ -618,6 +618,24 @@ function buildSummaryChips(report) {
     c.appendChild(el("span", "l", SUM_LABEL[s]));
     chips.appendChild(c);
   });
+  // 1.2.0 accounting chips: what the table deliberately excludes is still
+  // counted, never silently dropped.
+  const refs = report.unresolved_references;
+  if (refs && refs.count) {
+    const c = el("div", "sum-chip");
+    c.title = refs.note;
+    c.appendChild(el("span", "n", String(refs.count)));
+    c.appendChild(el("span", "l", "Id./supra unresolved"));
+    chips.appendChild(c);
+  }
+  const sections = report.summary.law_sections_out_of_scope;
+  if (sections && sections.count) {
+    const c = el("div", "sum-chip");
+    c.title = "Statute and regulation section references. Registries hold case citations only.";
+    c.appendChild(el("span", "n", String(sections.count)));
+    c.appendChild(el("span", "l", "§ out of scope"));
+    chips.appendChild(c);
+  }
 }
 
 function checkRow(c, collapsed) {
@@ -639,6 +657,15 @@ function checkRow(c, collapsed) {
   }
   if (c.reason) tdC.appendChild(el("span", "cite-reason", c.reason));
   if (c.caution) tdC.appendChild(el("span", "cite-caution", "⚠ " + c.caution));
+  if (c.parallels && c.parallels.length) {
+    // 1.2.0: one authority cited by several reporters in a run renders as
+    // one row; the other members stay visible here, never hidden.
+    tdC.appendChild(el("span", "attr-label", "parallel citations of this authority"));
+    c.parallels.forEach((p) => {
+      tdC.appendChild(el("span", "cite-sub",
+        `${p.canonical || p.as_written} · ${SUM_LABEL[p.status] || p.status}`));
+    });
+  }
   if (c.snippet) {
     const sn = el("span", "cite-snippet");
     sn.appendChild(el("span", "snip-label", "source text"));

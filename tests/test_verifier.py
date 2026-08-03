@@ -101,15 +101,70 @@ def test_all_five_statuses_and_name_mismatch():
     assert by_key["950 F.3d 1000"]["name_check"] == "mismatch"
     assert by_key["100 F.3d 200"]["status"] == "NOT_COVERED"
     assert by_key["12 F.3d 34"]["status"] == "AMBIGUOUS_JURISDICTION"
-    unparseable = [c for c in report["citations"] if c["status"] == "UNPARSEABLE"]
-    assert unparseable and "orphan short form" in (unparseable[0]["reason"] or "")
+    # 1.2.0: the document-opening orphan "Id." is accounted for in the
+    # unresolved-references block, no longer an UNPARSEABLE table row.
+    refs = report["unresolved_references"]
+    assert refs["count"] == 1
+    assert refs["forms"][0]["as_written"].lower().startswith("id.")
+    assert not any(c["status"] == "UNPARSEABLE" for c in report["citations"])
 
     counts = report["summary"]["by_status"]
     assert counts == {
         "VERIFIED": 2, "NOT_FOUND": 1, "NOT_COVERED": 1,
-        "AMBIGUOUS_JURISDICTION": 1, "UNPARSEABLE": 1,
+        "AMBIGUOUS_JURISDICTION": 1, "UNPARSEABLE": 0,
     }
     assert report["summary"]["name_mismatches"] == 1
+
+
+def test_parallel_citations_cluster_into_one_authority():
+    # "410 U.S. 113, 93 S. Ct. 705 (1973)" is ONE authority cited by two
+    # reporters. The strongest member (VERIFIED official cite) is the row;
+    # the S. Ct. parallel stays visible under "parallels".
+    text = "Roe v. Wade, 410 U.S. 113, 93 S. Ct. 705 (1973), controls."
+    report = check_text(text, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    assert len(report["citations"]) == 1
+    row = report["citations"][0]
+    assert row["canonical"] == "410 U.S. 113" and row["status"] == "VERIFIED"
+    assert [p["canonical"] for p in row["parallels"]] == ["93 S. Ct. 705"]
+    assert row["parallels"][0]["status"] == "NOT_FOUND"
+    # Authority-level tally: one VERIFIED, nothing else.
+    assert report["summary"]["by_status"]["VERIFIED"] == 1
+    assert report["summary"]["by_status"]["NOT_FOUND"] == 0
+
+
+def test_parallel_run_with_pin_page_between_members_clusters():
+    # Bluebook style interleaves a pin page before the parallel reporter:
+    # "58 Ohio St.2d 108, 110, 388 N.E.2d 1370". Still one authority.
+    text = "Counsel v. Pub. Util. Comm., 58 Ohio St.2d 108, 110, 388 N.E.2d 1370 (1979)."
+    report = check_text(text, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    assert len(report["citations"]) == 1
+    assert len(report["citations"][0]["parallels"]) == 1
+
+
+def test_string_cites_with_semicolons_do_not_cluster():
+    text = (
+        "See Roe v. Wade, 410 U.S. 113 (1973); Acme Corp. v. Zenith Ltd., "
+        "950 F.3d 1000 (11th Cir. 2020)."
+    )
+    report = check_text(text, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    assert len(report["citations"]) == 2
+    assert all(c["parallels"] == [] for c in report["citations"])
+
+
+def test_law_section_tokens_are_accounted_not_unparseable():
+    text = "The Act, §2000d, applies. See Roe v. Wade, 410 U.S. 113 (1973)."
+    report = check_text(text, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    assert report["summary"]["law_sections_out_of_scope"]["count"] == 1
+    assert "§2000d" in report["summary"]["law_sections_out_of_scope"]["examples"][0]
+    assert not any(c["status"] == "UNPARSEABLE" for c in report["citations"])
+
+
+def test_scotus_not_found_notes_parallel_reporter_lag():
+    text = "Fulton v. City of Philadelphia, 141 S. Ct. 1868 (2021)."
+    report = check_text(text, FakeResolver(), registry_ids=TEST_REGISTRY_IDS)
+    row = report["citations"][0]
+    assert row["status"] == "NOT_FOUND"
+    assert "parallel U.S. / S. Ct." in row["reason"]
 
 
 def test_not_covered_never_hits_the_chain():

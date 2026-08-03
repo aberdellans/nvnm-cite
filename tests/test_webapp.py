@@ -281,13 +281,15 @@ def test_check_exercises_all_five_statuses():
     assert by_key["950 F.3d 1000"]["name_check"] == "mismatch"
     assert by_key["100 F.3d 200"]["status"] == "NOT_COVERED"
     assert by_key["12 F.3d 34"]["status"] == "AMBIGUOUS_JURISDICTION"
-    unparseable = [c for c in report["citations"] if c["status"] == "UNPARSEABLE"]
-    assert unparseable and "orphan short form" in (unparseable[0]["reason"] or "")
+    # 1.2.0: the orphan "Id." is accounted for in unresolved_references,
+    # not surfaced as an UNPARSEABLE table row.
+    assert report["unresolved_references"]["count"] == 1
+    assert not any(c["status"] == "UNPARSEABLE" for c in report["citations"])
 
     counts = report["summary"]["by_status"]
     assert counts["VERIFIED"] == 2 and counts["NOT_FOUND"] == 1
     assert counts["NOT_COVERED"] == 1 and counts["AMBIGUOUS_JURISDICTION"] == 1
-    assert counts["UNPARSEABLE"] >= 1
+    assert counts["UNPARSEABLE"] == 0
     assert report["summary"]["name_mismatches"] == 1
 
 

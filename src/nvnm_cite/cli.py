@@ -127,6 +127,20 @@ def _render(report: dict) -> str:
                     f"{c['occurrences']}×",
                 )
             )
+            for p in c.get("parallels") or []:
+                pnote = p["reason"] or ""
+                if p["status"] == VERIFIED and p.get("record") and p["record"]["cases"]:
+                    pnote = p["record"]["cases"][0].get("name", "") or "(unnamed)"
+                pn = {"match": "match", "mismatch": "MISMATCH"}.get(p["name_check"], "")
+                rows.append(
+                    (
+                        _STATUS_LABEL[p["status"]],
+                        _truncate("└ " + (p["canonical"] or p["as_written"]), 22),
+                        _truncate("parallel cite · " + pnote, 46),
+                        pn,
+                        f"{p['occurrences']}×",
+                    )
+                )
         headers = ("STATUS", "CITATION", "CASE ON CHAIN / NOTE", "NAME", "OCC")
         widths = [
             max(len(headers[i]), max(len(r[i]) for r in rows)) for i in range(len(headers))
@@ -155,6 +169,20 @@ def _render(report: dict) -> str:
         f"  {summary['occurrences']} citation occurrence"
         f"{'s' if summary['occurrences'] != 1 else ''}, {summary['distinct']} distinct."
     )
+    refs = report.get("unresolved_references") or {}
+    if refs.get("count"):
+        n = refs["count"]
+        lines.append(
+            f"  {n} unresolved Id./supra reference{'s' if n != 1 else ''} "
+            "(antecedent unknown — accounted for, not checkable; see --json)."
+        )
+    sections = summary.get("law_sections_out_of_scope") or {}
+    if sections.get("count"):
+        n = sections["count"]
+        lines.append(
+            f"  {n} statute/regulation section reference{'s' if n != 1 else ''} "
+            "ignored — registries hold case citations only."
+        )
     if any(c.get("confidence") == "expanded-coverage" for c in citations):
         lines.append("")
         lines.append(

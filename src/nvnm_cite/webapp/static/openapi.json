@@ -399,6 +399,24 @@
           "snippet": {
             "type": ["string", "null"],
             "description": "Source context around the citation; provided for AMBIGUOUS_JURISDICTION and UNPARSEABLE so the token is findable in the document."
+          },
+          "parallels": {
+            "type": "array",
+            "description": "Other reporters this same authority was cited by in the same run ('133 Ohio St.3d 10, 2012-Ohio-5270, 979 N.E.2d 1229' is one authority). The row presents the strongest member; each parallel keeps its own status here. Empty for a solo citation.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "canonical": {"type": ["string", "null"]},
+                "as_written": {"type": "string"},
+                "status": {"$ref": "#/components/schemas/CitationStatus"},
+                "registry": {"type": ["string", "null"]},
+                "registry_id": {"type": ["integer", "null"]},
+                "occurrences": {"type": "integer"},
+                "reason": {"type": ["string", "null"]},
+                "name_check": {"type": "string"},
+                "record": {"type": ["object", "null"]}
+              }
+            }
           }
         }
       },
@@ -435,13 +453,40 @@
                 "description": "Count per status; keys are the five CitationStatus values.",
                 "additionalProperties": {"type": "integer"}
               },
-              "name_mismatches": {"type": "integer"}
+              "name_mismatches": {"type": "integer"},
+              "law_sections_out_of_scope": {
+                "type": "object",
+                "description": "Statute/regulation section fragments (§…) found in the document: counted here, excluded from the citations table (registries hold case citations only).",
+                "properties": {
+                  "count": {"type": "integer"},
+                  "examples": {"type": "array", "items": {"type": "string"}}
+                }
+              }
             }
           },
           "citations": {
             "type": "array",
             "items": {"$ref": "#/components/schemas/Citation"},
-            "description": "In document order."
+            "description": "One row per authority, in document order (parallel-reporter runs collapse into one row; see the parallels field)."
+          },
+          "unresolved_references": {
+            "type": "object",
+            "description": "Id./supra reference forms whose antecedent could not be determined: accounted for here, excluded from the citations table.",
+            "properties": {
+              "count": {"type": "integer"},
+              "forms": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "as_written": {"type": "string"},
+                    "occurrences": {"type": "integer"},
+                    "snippet": {"type": "string"}
+                  }
+                }
+              },
+              "note": {"type": "string"}
+            }
           },
           "document": {
             "type": "object",

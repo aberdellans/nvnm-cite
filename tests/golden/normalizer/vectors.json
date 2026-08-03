@@ -3,8 +3,8 @@
   "spec": "cite-canonical-v1",
   "generator": "generate_vectors.py",
   "note": "Expectations hand-derived from docs/canonical-citation-spec.md; adjudications recorded in DECISIONS.md. Compared fields: as_written, canonical, registry, disposition, kind.",
-  "vector_count": 236,
-  "expectation_rows": 256
+  "vector_count": 242,
+  "expectation_rows": 269
  },
  "vectors": [
   {
@@ -3437,6 +3437,139 @@
      "canonical": "100 F.3d 200",
      "registry": null,
      "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "short_fallback-001",
+   "category": "short_fallback",
+   "text": "Grutter v. Bollinger, 539 U.S. 306 (2003), and Gratz v. Bollinger, 539 U.S. 244 (2003), control. Deference applies, 539 U.S. at 331; quotas do not, 539 U.S. at 270.",
+   "expect": [
+    {
+     "as_written": "539 U.S. 306",
+     "canonical": "539 U.S. 306",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "539 U.S. 244",
+     "canonical": "539 U.S. 244",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "539 U.S. at 331",
+     "canonical": "539 U.S. 306",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "short"
+    },
+    {
+     "as_written": "539 U.S. at 270",
+     "canonical": "539 U.S. 244",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "short_fallback-002",
+   "category": "short_fallback",
+   "text": "Otto v. City of Boca Raton, 981 F.3d 854 (11th Cir. 2020), controls. The panel said so, 981 F.3d at 860.",
+   "expect": [
+    {
+     "as_written": "981 F.3d 854",
+     "canonical": "981 F.3d 854",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "981 F.3d at 860",
+     "canonical": "981 F.3d 854",
+     "registry": "us-ca11",
+     "disposition": "ok",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "short_fallback-003",
+   "category": "short_fallback",
+   "text": "Grutter v. Bollinger, 539 U.S. 306 (2003), and Gratz v. Bollinger, 539 U.S. 244 (2003), control. See 539 U.S. at 200.",
+   "expect": [
+    {
+     "as_written": "539 U.S. 306",
+     "canonical": "539 U.S. 306",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "539 U.S. 244",
+     "canonical": "539 U.S. 244",
+     "registry": "us-scotus",
+     "disposition": "ok",
+     "kind": "full"
+    },
+    {
+     "as_written": "539 U.S. at 200",
+     "canonical": null,
+     "registry": null,
+     "disposition": "unresolved",
+     "kind": "short"
+    }
+   ]
+  },
+  {
+   "id": "law_sections-001",
+   "category": "law_sections",
+   "text": "The Act, 42 U.S.C. §2000d, applies. See also §2101(e).",
+   "expect": [
+    {
+     "as_written": "§2000d,",
+     "canonical": null,
+     "registry": null,
+     "disposition": "out_of_scope",
+     "kind": "unknown"
+    },
+    {
+     "as_written": "§2101(e).",
+     "canonical": null,
+     "registry": null,
+     "disposition": "out_of_scope",
+     "kind": "unknown"
+    }
+   ]
+  },
+  {
+   "id": "state_gate-001",
+   "category": "state_gate",
+   "text": "Astudillo v. Port Auth., 7 Misc. 3d 1004(A), *4 (Sup. Ct. 2004) (same).",
+   "expect": [
+    {
+     "as_written": "7 Misc. 3d 1004(A)",
+     "canonical": "7 Misc. 3d 1004(A)",
+     "registry": null,
+     "disposition": "ambiguous_jurisdiction",
+     "kind": "full"
+    }
+   ]
+  },
+  {
+   "id": "state_gate-002",
+   "category": "state_gate",
+   "text": "Matter of Smith, 100 Misc. 2d 500 (N.Y. Sup. Ct. 1979).",
+   "expect": [
+    {
+     "as_written": "100 Misc. 2d 500",
+     "canonical": "100 Misc. 2d 500",
+     "registry": "us-nysupct",
+     "disposition": "ok",
      "kind": "full"
     }
    ]

@@ -55,9 +55,11 @@ Character spans reported by the normalizer index into the **cleaned** text.
 
 Short cites (`410 U.S. at 120`), `id.`, and `supra` citations do not contain a first page and cannot be keyed alone. They inherit the canonical key, registry, and case metadata of their antecedent full citation, resolved per eyecite's resolution semantics within the same document.
 
+**Fallback resolution (added 2026-08-02, normalizer 1.2.0).** eyecite resolves short cites by antecedent case name and strands the rest (measured on real merits briefs: `NIFLA, 138 S. Ct. at 2371` stays orphaned when the full cite spelled the name out). A stranded short cite still names its volume and edition, and a pin page sits at or past its opinion's first page, so it is attached to the full citation in the same document with the same volume and edition whose first page is the **largest not exceeding the pin page** (`539 U.S. at 331` with Gratz at 244 and Grutter at 306 in the document resolves to Grutter). Equal first pages are the same canonical key, so the choice cannot be wrong; with no qualifying candidate the short stays unresolved rather than guessed.
+
 A short form whose antecedent cannot be resolved in the document is reported as **unresolved**, with its own occurrence in the output (implementations must not silently drop it; a dangling `id.` is still a citation the verifier must account for).
 
-## 4. Jurisdiction mapping (amended 2026-08-01, normalizer 1.1.0; adjudications in DECISIONS)
+## 4. Jurisdiction mapping (amended 2026-08-01 normalizer 1.1.0, 2026-08-02 normalizer 1.2.0; adjudications in DECISIONS)
 
 Every canonical key belongs to a registry. Registry names are courts-db court IDs prefixed `us-`: `us-scotus`, `us-ca11`, `us-nysd`. An explicit court signal always outranks a reporter-derived default. Mapping rules, in order:
 
@@ -70,11 +72,15 @@ Every canonical key belongs to a registry. Registry names are courts-db court ID
 
 **Vendor identifiers.** Westlaw (`2019 WL 1439098`) and the generic/federal LEXIS families hold zero records in the registry key space, so they are reported as a distinct **vendor** disposition — outside coverage, no chain read — even when a court parenthetical is present (a lookup could only manufacture a false "not found" for a possibly-real case). Court-specific LEXIS editions that ARE corpus keys (92 editions, 3.28M parallel records) behave as ordinary reporters under rules 2–5.
 
+**State-consistency gate (added 2026-08-02, normalizer 1.2.0).** A court claimed by rule 2 or matched by rule 4 whose state contradicts the reporter's own state set (reporters-db `mlz_jurisdiction`, e.g. `Misc.` is a N.Y./Fla. reporter) is refused — measured trigger: eyecite claims the D.C. court `supctdc` from `(Sup. Ct. 2004)` after a N.Y. `Misc. 3d` cite. The gate is inert when either side is unknown (federal and national reporters carry no state set; federal, foreign, and territorial-era courts carry no gated location), so it can only remove wrong answers, never produce one. Pin-cite material ahead of a corroborating parenthetical includes star pagination (`, *4 (Sup. Ct. 2004)`).
+
 A citation that parses and maps to a court whose registry is not on chain is a coverage question for the verifier (NOT_COVERED), not a mapping failure.
 
 ## 5. Scope: case citations only
 
 Statute citations (`42 U.S.C. § 1983`), regulation, and journal citations (`103 Harv. L. Rev. 405`) are out of scope, as are short forms that resolve to them. Registries hold case citations only.
+
+Law-section fragments the parser surfaces as unknown citations (`§2000d` severed from its title by a PDF line break; measured throughout real filings) carry a distinct **out_of_scope** disposition as of normalizer 1.2.0: accounted for in the output, never presented as unparseable case citations (added 2026-08-02).
 
 ## 6. Parallel citations
 

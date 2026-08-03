@@ -21,6 +21,7 @@ them are excluded: registries hold case citations only.
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -48,7 +49,17 @@ from nvnm_cite.normalizer.jurisdiction import map_citation, vendor_in_key_space,
 # reporter-edition inference (reporter_registries.json), and the VENDOR
 # disposition for Westlaw/LEXIS identifiers. The cite-canonical/v1 KEY
 # format is unchanged.
-NORMALIZER_VERSION = "1.1.0"
+# 1.2.0 (2026-08-02, driven by the real-filings corpus run): (a) orphan
+# short-form fallback — a short cite eyecite could not resolve is attached
+# to the unique same-volume/reporter full cite whose first page bounds the
+# pin page; (b) law-section tokens (§…) classified OUT_OF_SCOPE instead of
+# surfacing as unparseable citations; (c) rule-2/rule-4 state-consistency
+# gate — a claimed court whose state contradicts the reporter's own
+# reporters-db state set is refused (measured: eyecite claims the D.C.
+# court 'supctdc' for a N.Y. "Misc. 3d" cite over "(Sup. Ct. 2004)");
+# (d) star pagination ("*4") recognized as pin-cite material ahead of a
+# court parenthetical. The cite-canonical/v1 KEY format is unchanged.
+NORMALIZER_VERSION = "1.2.0"
 CANONICAL_SPEC = "cite-canonical-v1"
 
 # all_whitespace repairs line-break-mangled cites ("410\nU. S. 113");
@@ -71,6 +82,15 @@ class Disposition(str, Enum):
     AMBIGUOUS_JURISDICTION = "ambiguous_jurisdiction"
     VENDOR = "vendor"
     UNRESOLVED = "unresolved"
+    # Law-section tokens (§/§§ fragments eyecite reports as UnknownCitation
+    # when a statute or regulation cite is split by PDF line breaks). They
+    # are accounted for — never silently dropped — but they are not case
+    # citations, so the verifier keeps them out of the citations table.
+    OUT_OF_SCOPE = "out_of_scope"
+
+
+# A law-section fragment: an optional opening bracket, then § (one or more).
+_SECTION_TOKEN = re.compile(r"^[\(\[]?§")
 
 
 _KIND_BY_TYPE: dict[type, str] = {
@@ -180,6 +200,44 @@ def normalize(text: str, *, clean_steps: tuple[str, ...] = CLEAN_STEPS) -> Norma
         for member in members:
             membership[id(member)] = (group_index, case_anchor)
 
+    # 1.2.0 orphan short-form fallback. eyecite resolves short cites by
+    # antecedent case name and strands the rest ("NIFLA, 138 S. Ct. at
+    # 2371" when the full cite spelled the name differently — measured on
+    # real merits briefs, where this stranded 15 shorts in one document).
+    # A stranded short still names its volume and reporter, and a pin page
+    # sits at or past its opinion's first page, so the full cite it means
+    # is the same-volume/edition full cite with the LARGEST first page
+    # <= the pin page ("539 U.S. at 331" with Gratz at 244 and Grutter at
+    # 306 in the document -> Grutter). Equal first pages are the same
+    # canonical key, so the choice cannot be wrong; no candidate leaves
+    # the short an orphan as before.
+    def _norm_vol(v: str) -> str:
+        return str(int(v)) if v.isdigit() else v
+
+    fulls: list[tuple[str, str, int, FullCaseCitation]] = []
+    for c in citations:
+        if isinstance(c, FullCaseCitation) and id(c) in membership:
+            groups = c.groups or {}
+            vol, page = groups.get("volume") or "", groups.get("page") or ""
+            edition = c.corrected_reporter()
+            if vol and edition and page.isdigit():
+                fulls.append((_norm_vol(vol), edition, int(page), c))
+    for c in citations:
+        if isinstance(c, ShortCaseCitation) and id(c) not in membership:
+            groups = c.groups or {}
+            vol, pin = groups.get("volume") or "", groups.get("page") or ""
+            edition = c.corrected_reporter()
+            if not (vol and edition and pin.isdigit()):
+                continue
+            candidates = [
+                (first, full)
+                for fvol, fed, first, full in fulls
+                if fvol == _norm_vol(vol) and fed == edition and first <= int(pin)
+            ]
+            if candidates:
+                _, full = max(candidates, key=lambda t: t[0])
+                membership[id(c)] = membership[id(full)]
+
     results: list[NormalizedCitation] = []
     for citation in citations:
         kind = _KIND_BY_TYPE.get(type(citation))
@@ -246,12 +304,22 @@ def normalize(text: str, *, clean_steps: tuple[str, ...] = CLEAN_STEPS) -> Norma
         else:
             canonical = registry = court = plaintiff = defendant = None
             year = None
-            disposition = Disposition.UNRESOLVED
-            reason = (
-                "unrecognized citation form"
-                if kind == "unknown"
-                else "orphan short form: no antecedent resolved in this document"
-            )
+            if kind == "unknown" and _SECTION_TOKEN.match(citation.matched_text()):
+                # A §/§§ fragment of a statute or regulation cite (PDF line
+                # breaks routinely sever these). Accounted for, but not a
+                # case citation and never a registry key.
+                disposition = Disposition.OUT_OF_SCOPE
+                reason = (
+                    "law-section reference (statute or regulation) — "
+                    "registries hold case citations only"
+                )
+            else:
+                disposition = Disposition.UNRESOLVED
+                reason = (
+                    "unrecognized citation form"
+                    if kind == "unknown"
+                    else "orphan short form: no antecedent resolved in this document"
+                )
 
         pin_cite = getattr(citation.metadata, "pin_cite", None) or None
         results.append(

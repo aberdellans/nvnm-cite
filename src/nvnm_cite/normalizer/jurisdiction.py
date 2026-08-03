@@ -46,6 +46,7 @@ from importlib import resources
 
 import courts_db
 from eyecite.models import CaseCitation
+from reporters_db import REPORTERS
 
 REGISTRY_PREFIX = "us-"
 
@@ -76,7 +77,7 @@ _CIRCUIT_BY_ORDINAL: dict[str, str] = {
     "9th": "ca9", "10th": "ca10", "11th": "ca11", "D.C.": "cadc", "Fed.": "cafc",
 }
 _CIRCUIT_PARENTHETICAL = re.compile(
-    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.]*)"  # optional pin cites only
+    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.\*]*)"  # optional pin cites only (incl. *4 star pages)
     r"\((?P<ordinal>1st|2d|2nd|3d|3rd|4th|5th|6th|7th|8th|9th|10th|11th|D\.C\.|Fed\.)"
     r"\s+Cir\.?(?:[\s,][^)]*)?\)"
 )
@@ -93,7 +94,7 @@ def _circuit_from_following_text(following_text: str) -> str | None:
 # after the cite (same pin-cite-only guard as the circuit fallback, so a
 # neighboring citation's parenthetical is never misattributed).
 _ANY_PARENTHETICAL = re.compile(
-    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.]*)\((?P<content>[^)]{1,80})\)"
+    r"^(?:\s*,?\s*(?:at\s+)?[\d\s,\-–&n\.\*]*)\((?P<content>[^)]{1,80})\)"
 )
 
 # "App. Div." / department parentheticals are STATE-GATED on the reporter:
@@ -151,8 +152,97 @@ def _court_from_parenthetical(following_text: str, edition: str | None = None) -
     index, keys_longest_first = _citation_string_index()
     for key in keys_longest_first:
         if _prefix_match(content, key):
-            return index[key]
+            court_id = index[key]
+            # State gate: a prefix match whose court sits outside the
+            # reporter's own state set is a misattribution, not a signal.
+            if edition and _state_conflict(edition, court_id):
+                return None
+            return court_id
     return None
+
+
+# --- state-consistency gate (1.2.0) ---
+# reporters-db ties most state reporters to a small state set via
+# mlz_jurisdiction ("us:ny;supreme.court" -> ny). A claimed court — from
+# eyecite's metadata.court or a rule-4 prefix match — located in a state
+# OUTSIDE the reporter's own set is refused (measured trigger: eyecite
+# claims the D.C. court 'supctdc' from "(Sup. Ct. 2004)" after a N.Y.
+# "Misc. 3d" cite). The gate is deliberately inert when either side is
+# unknown: federal/national reporters have no state set, and courts-db
+# locations outside the table below (federal courts' "United States",
+# foreign and territorial-era locations) never conflict.
+
+_LOCATION_STATE: dict[str, str] = {
+    "Alabama": "al", "Alaska": "ak", "Arizona": "az", "Arkansas": "ar",
+    "California": "ca", "Colorado": "co", "Connecticut": "ct",
+    "Delaware": "de", "Florida": "fl", "Georgia": "ga", "Hawaii": "hi",
+    "Idaho": "id", "Illinois": "il", "Indiana": "in", "Iowa": "ia",
+    "Kansas": "ks", "Kentucky": "ky", "Louisiana": "la", "Maine": "me",
+    "Maryland": "md", "Massachusetts": "ma", "Michigan": "mi",
+    "Minnesota": "mn", "Mississippi": "ms", "Missouri": "mo",
+    "Montana": "mt", "Nebraska": "ne", "Nevada": "nv",
+    "New Hampshire": "nh", "New Jersey": "nj", "New Mexico": "nm",
+    "New York": "ny", "North Carolina": "nc", "North Dakota": "nd",
+    "Ohio": "oh", "Oklahoma": "ok", "Oregon": "or", "Pennsylvania": "pa",
+    "Rhode Island": "ri", "South Carolina": "sc", "South Dakota": "sd",
+    "Tennessee": "tn", "Texas": "tx", "Utah": "ut", "Vermont": "vt",
+    "Virginia": "va", "Washington": "wa", "West Virginia": "wv",
+    "Wisconsin": "wi", "Wyoming": "wy",
+    # D.C. appears under several spellings (one a courts-db typo).
+    "D.C.": "dc", "DC": "dc", "Washington D.C.": "dc", "Washignton D.C.": "dc",
+    "Puerto Rico": "pr", "Guam": "gu", "Virgin Islands": "vi",
+    "American Samoa": "as", "Northern Mariana Islands": "mp",
+}
+
+
+@lru_cache(maxsize=1)
+def _edition_state_table() -> dict[str, frozenset[str]]:
+    """Edition string -> the state codes reporters-db ties it to.
+
+    An edition is absent from the table (no constraint) when any reporter
+    entry carrying it is national/federal-scoped ("us;...") or has no
+    mlz_jurisdiction data at all.
+    """
+    table: dict[str, set[str] | None] = {}
+    for entries in REPORTERS.values():
+        for entry in entries:
+            states: set[str] = set()
+            unconstrained = False
+            mlz = entry.get("mlz_jurisdiction") or []
+            if not mlz:
+                unconstrained = True
+            for j in mlz:
+                head = j.split(";", 1)[0]
+                parts = head.split(":")
+                if parts[0] != "us":
+                    continue
+                if len(parts) >= 2 and parts[1]:
+                    states.add(parts[1])
+                else:
+                    unconstrained = True  # "us;..." national scope
+            for ed in entry.get("editions") or {}:
+                if unconstrained or not states:
+                    table[ed] = None
+                elif table.get(ed, set()) is not None:
+                    table[ed] = (table.get(ed) or set()) | states
+    return {ed: frozenset(s) for ed, s in table.items() if s}
+
+
+@lru_cache(maxsize=1)
+def _court_state_table() -> dict[str, str]:
+    return {
+        c["id"]: _LOCATION_STATE[loc]
+        for c in courts_db.courts
+        if (loc := (c.get("location") or "").strip()) in _LOCATION_STATE
+    }
+
+
+def _state_conflict(edition: str | None, court_id: str) -> bool:
+    """True when the reporter's state set and the court's state both exist
+    and disagree — the only case the gate acts on."""
+    states = _edition_state_table().get(edition or "")
+    court_state = _court_state_table().get(court_id)
+    return bool(states) and court_state is not None and court_state not in states
 
 
 # Reporter-edition inference table (rule 5): corpus-derived, guarded,
@@ -218,6 +308,12 @@ def map_citation(
     table_default = _reporter_registry_table().get(edition or "")
 
     court = (citation.metadata.court or "").strip()
+    if court and _state_conflict(edition, court):
+        # eyecite's claimed court sits in a state the citation's own
+        # reporter never covers (measured: 'supctdc' for a N.Y. Misc. 3d
+        # cite). The reporter is part of the citation itself — drop the
+        # claim and let rules 3-6 decide from the citation's own signals.
+        court = ""
     if court:
         if court not in _VALID_COURT_IDS:
             # eyecite court IDs come from courts-db, so this branch should be

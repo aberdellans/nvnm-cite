@@ -595,6 +595,74 @@ vec(
     [full("100 F.3d 200", "100 F.3d 200", None, AMB)],
 )
 
+# --- 13. Normalizer 1.2.0 (2026-08-02): real-filings corpus-run fixes ------
+# (a) Orphan short-form fallback: a short cite eyecite strands attaches to
+# the same-volume/edition full cite whose first page bounds the pin page;
+# two same-volume candidates split by the page window (Gratz 244 / Grutter
+# 306: "at 331" -> Grutter, "at 270" -> Gratz).
+OOS = "out_of_scope"
+vec(
+    "short_fallback",
+    "Grutter v. Bollinger, 539 U.S. 306 (2003), and Gratz v. Bollinger, "
+    "539 U.S. 244 (2003), control. Deference applies, 539 U.S. at 331; "
+    "quotas do not, 539 U.S. at 270.",
+    [
+        full("539 U.S. 306", "539 U.S. 306", "us-scotus"),
+        full("539 U.S. 244", "539 U.S. 244", "us-scotus"),
+        full("539 U.S. at 331", "539 U.S. 306", "us-scotus", OK, "short"),
+        full("539 U.S. at 270", "539 U.S. 244", "us-scotus", OK, "short"),
+    ],
+)
+vec(
+    "short_fallback",
+    "Otto v. City of Boca Raton, 981 F.3d 854 (11th Cir. 2020), controls. "
+    "The panel said so, 981 F.3d at 860.",
+    [
+        full("981 F.3d 854", "981 F.3d 854", "us-ca11"),
+        full("981 F.3d at 860", "981 F.3d 854", "us-ca11", OK, "short"),
+    ],
+)
+# A pin page BELOW every candidate's first page cannot belong to any of
+# them: the short stays an orphan rather than guessing. (Two same-volume
+# candidates, so eyecite itself strands the short and the fallback tier —
+# where the page window lives — is what decides; with a single antecedent
+# eyecite resolves natively without any page check, measured 2.7.6.)
+vec(
+    "short_fallback",
+    "Grutter v. Bollinger, 539 U.S. 306 (2003), and Gratz v. Bollinger, "
+    "539 U.S. 244 (2003), control. See 539 U.S. at 200.",
+    [
+        full("539 U.S. 306", "539 U.S. 306", "us-scotus"),
+        full("539 U.S. 244", "539 U.S. 244", "us-scotus"),
+        full("539 U.S. at 200", None, None, UNR, "short"),
+    ],
+)
+# (b) Law-section tokens (§ fragments) are OUT_OF_SCOPE, never unparseable
+# case citations (measured shapes from the real-filings run).
+vec(
+    "law_sections",
+    "The Act, 42 U.S.C. §2000d, applies. See also §2101(e).",
+    [
+        full("§2000d,", None, None, OOS, "unknown"),
+        full("§2101(e).", None, None, OOS, "unknown"),
+    ],
+)
+# (c) State-consistency gate: eyecite claims the D.C. court 'supctdc' from
+# "(Sup. Ct. 2004)" after a N.Y. Misc. 3d cite (measured on the Mata reply
+# brief). Misc. is a NY/FL reporter, so the claim is refused and the cite
+# is honestly ambiguous (Misc. stays multi-court by design).
+vec(
+    "state_gate",
+    "Astudillo v. Port Auth., 7 Misc. 3d 1004(A), *4 (Sup. Ct. 2004) (same).",
+    [full("7 Misc. 3d 1004(A)", "7 Misc. 3d 1004(A)", None, AMB)],
+)
+# Gate is inert when the claimed court's state agrees with the reporter's.
+vec(
+    "state_gate",
+    "Matter of Smith, 100 Misc. 2d 500 (N.Y. Sup. Ct. 1979).",
+    [full("100 Misc. 2d 500", "100 Misc. 2d 500", "us-nysupct")],
+)
+
 
 def main() -> None:
     out = Path(__file__).parent / "vectors.json"
