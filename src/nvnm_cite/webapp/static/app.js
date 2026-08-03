@@ -367,12 +367,21 @@ async function loadStatus() {
   } else {
     kvRow(box, "RPC", `unreachable — ${(st.chain && st.chain.error) || "unknown error"}`);
   }
-  for (const [name, reg] of Object.entries(st.registries || {})) {
-    kvRow(box, name, reg.exists
-      ? `registry id ${reg.id} · created ${String(reg.created_at).slice(0, 10)}`
-      : "not created yet", { mono: true });
+  // Manifest drift check: two sentinel registries are probed live each
+  // refresh to confirm the pinned name→id manifest still matches the
+  // chain. One line — not a coverage listing (coverage is the manifest).
+  const sentinels = Object.entries(st.registries || {});
+  if (sentinels.length) {
+    const allOk = sentinels.every(([, r]) => r.exists && r.name_matches_manifest !== false);
+    const detail = sentinels.map(([n, r]) => `${n} #${r.id}`).join(", ");
+    kvRow(box, "Manifest check", allOk
+      ? `ok — sentinels verified live (${detail})`
+      : `⚠ MISMATCH — a sentinel registry does not match the pinned manifest (${detail}); do not trust verdicts until resolved`,
+      { mono: true });
   }
-  kvRow(box, "Bulk load", st.loader && st.loader.bulk_load_running ? "running (tranche 1)" : "not running");
+  if (st.loader && st.loader.bulk_load_running) {
+    kvRow(box, "Registry load", "in progress — a live check may temporarily miss real citations");
+  }
   if (st.constants) {
     kvRow(box, "Anchoring precompile", st.constants.precompile, { mono: true, copy: st.constants.precompile });
   }
@@ -407,6 +416,9 @@ function renderCoverage(st) {
   const tbody = clear($("coverage-table").querySelector("tbody"));
   const lede = $("about-coverage-lede");
   const emptyBox = $("coverage-empty");
+  // The table exists for instances with a local index (per-registry key
+  // counts); without one it would be an empty shell — hide it whole.
+  $("coverage-table").closest(".table-scroll").classList.toggle("hidden", !rows.length);
   let totalRecords = 0;
   let snapshot = "";
 
@@ -438,19 +450,11 @@ function renderCoverage(st) {
         ". Citations to courts without a registry are reported honestly as “not covered” rather than guessed at.";
     }
   } else {
-    // No local index on this instance: honest state, never "loading".
-    emptyBox.classList.toggle("hidden", liveNames.length === 0 && !(manifest && manifest.count));
-    liveNames.forEach((name) => {
-      const reg = st.registries[name];
-      const tr = el("tr");
-      const t1 = el("td"); t1.appendChild(el("span", "cite-canon", name)); tr.appendChild(t1);
-      tr.appendChild(el("td", null, "live sentinel probe"));
-      tr.appendChild(el("td", "num", "—"));
-      tr.appendChild(el("td", null, reg.exists
-        ? `registry id ${reg.id} · created ${String(reg.created_at).slice(0, 10)}`
-        : "not created yet"));
-      tbody.appendChild(tr);
-    });
+    // No local index on this instance: the pinned manifest IS the
+    // coverage statement, so the lede carries it alone — no table of
+    // sentinel probes (they are a drift check, not a coverage listing),
+    // and no "counts unavailable" apology.
+    emptyBox.classList.add("hidden");
     if (lede) {
       lede.textContent = manifest && manifest.count
         ? `NVNM Cite checks against ${manifest.count.toLocaleString("en-US")} US court registries on NVNM Chain ` +
