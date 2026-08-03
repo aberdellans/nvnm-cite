@@ -60,8 +60,8 @@
     <div class="panel-head">
       <h2>Check citations</h2>
       <p class="lede">Every citation in your brief is checked for <em>existence</em> against the public
-      case-citation registries on NVNM&nbsp;Chain — <span id="coverage-scope">the canonical record of every Supreme&nbsp;Court and
-      Eleventh&nbsp;Circuit citation during the pilot</span>. A fabricated citation has no record to find.</p>
+      case-citation registries on NVNM&nbsp;Chain — <span id="coverage-scope">the canonical citation record of
+      the covered US court registries</span>. A fabricated citation has no record to find.</p>
     </div>
 
     <div class="callout callout-privacy">
@@ -138,7 +138,7 @@
           <div><dt><span class="chip chip-NOT_FOUND">Not found</span></dt><dd>No record in the covering registry. Treat as presumptively fabricated until proven otherwise.</dd></div>
           <div><dt><span class="chip chip-NOT_COVERED">Not covered</span></dt><dd>The cited reporter or court is outside coverage (<span id="legend-coverage">the covered court registries</span>). No conclusion either way.</dd></div>
           <div><dt><span class="chip chip-AMBIGUOUS_JURISDICTION">Ambiguous</span></dt><dd>The citation alone cannot place the court. Add the court parenthetical and re-check.</dd></div>
-          <div><dt><span class="chip chip-UNPARSEABLE">Unparseable</span></dt><dd>Not recognized as a citation — often an orphan short form (<em>Id.</em>, <em>supra</em>) with no resolved antecedent.</dd></div>
+          <div><dt><span class="chip chip-UNPARSEABLE">Unparseable</span></dt><dd>Looks like a citation but could not be read as one — usually a short cite of a case that appears nowhere else in the document (sometimes the brief’s own typo). Untraceable <em>Id.</em>/<em>supra</em> references and statute sections are counted above the table instead.</dd></div>
         </dl>
       </div>
       <div class="next-step">
@@ -392,8 +392,10 @@
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-doc"></use></svg>
         <h3>It checks citations are real</h3>
-        <p>Every citation in a brief is matched against a public registry of real decisions: real, not found,
-        or not yet covered. A fabricated cite has no record to find.</p>
+        <p>Every cited authority in a brief is matched against a public registry of real decisions: real, not
+        found, or not yet covered. Parallel reporter citations of the same case count as one authority, short
+        cites resolve to the case they refer to, and statute references are set aside and counted rather than
+        guessed at. A fabricated cite has no record to find.</p>
       </div>
       <div class="about-card">
         <svg class="ic" aria-hidden="true"><use href="#i-scales"></use></svg>
@@ -418,19 +420,26 @@
 
     <h3 class="overline">How it works</h3>
     <ol class="how-steps">
-      <li><strong>Check</strong> — upload a brief; each citation comes back real, not found, not covered,
-      ambiguous, or unparseable.</li>
+      <li><strong>Check</strong> — upload a brief; every cited authority comes back verified, not found, not
+      covered, ambiguous, or unparseable. A case cited by several reporters in a run is one authority and gets
+      one row, with the other reporters listed under it. Short forms (<em>Id.</em>, “539 U.S. at 331”) resolve
+      to the case they refer to. References that are not case citations — statute and regulation sections,
+      untraceable <em>Id.</em>/<em>supra</em> — are counted above the table instead of cluttering it. A miss in
+      a newly-expanded state court carries an explicit caution, not a bare accusation.</li>
       <li><strong>Record</strong> — optionally save a tamper-proof, timestamped receipt that this exact
-      document was checked, signed by your wallet, into a registry you own for the matter.</li>
-      <li><strong>Verify</strong> — anyone with the filed document and the registry link can confirm, for free,
-      that a receipt exists for that exact file.</li>
+      document was checked, signed by your wallet, into a registry you own for the matter. The verification
+      line, with the registry number, goes on the filing itself.</li>
+      <li><strong>Verify</strong> — anyone with the filed document and the verification line printed on it can
+      confirm, for free, that a receipt exists for that exact file.</li>
     </ol>
 
     <h3 class="overline">Who it’s for</h3>
     <p class="about-who">Drafting attorneys and their AI tools (catch fabrications pre-filing); opposing counsel
     and courts (confirm a filing was checked); malpractice insurers and legal-ops (proof-of-process). Checking
     and verifying need no wallet or account; recording a receipt uses a wallet, normally handled by the firm’s
-    tool or agent.</p>
+    tool or agent. AI agents get the same API this page uses, documented at
+    <a href="/agents.md">agents.md</a> (machine-readable contract at <a href="/openapi.json">openapi.json</a>,
+    discovery at <a href="/llms.txt">llms.txt</a>).</p>
 
     <h3 class="overline">Live status</h3>
     <div id="about-status" class="kv"></div>
@@ -461,8 +470,23 @@
         <p>It’s a real, published decision. You must still confirm it’s good law and on point — verification is
         existence only.</p></details>
       <details><summary>What does “not found” mean — is my citation definitely fake?</summary>
-        <p>No record matched in a covered court. It could be fabricated, mistyped, a pin-cite rather than a
-        first-page cite, or a court not yet covered. Investigate before relying on it.</p></details>
+        <p>No record matched under that citation in the court’s registry. Before concluding it is fabricated,
+        check three things. First, the volume and page as written — typos in briefs are real (one merits brief
+        we tested cited “575 U.S.” for a case reported at 579 U.S.). Second, whether the case is recorded under
+        its parallel reporter — some Supreme Court decisions are on record under only one of the official
+        U.S. / S.&nbsp;Ct. citations, and the result says so when that may apply. Third, in newly-expanded
+        state coverage the result carries an explicit caution: citation formats there are still being proven,
+        so treat the miss as a flag to verify, never as proof of fabrication, and never delete a citation on
+        this signal alone.</p></details>
+      <details><summary>Why did several citations collapse into one row?</summary>
+        <p>Briefs cite the same case by several reporters in a run — “133 Ohio St.3d 10, 2012-Ohio-5270,
+        979 N.E.2d 1229” is one authority, not three citations. It gets one row: the strongest result
+        presents, and the other reporters stay listed under it with their own outcomes.</p></details>
+      <details><summary>What are the “Id./supra unresolved” and “out of scope” counts above the table?</summary>
+        <p>References that are not checkable case citations: <em>Id.</em> and <em>supra</em> references whose
+        antecedent could not be traced, and statute or regulation section references. The registries hold case
+        citations only, so these are counted — nothing is silently dropped — but they are not verdicts on
+        anything.</p></details>
       <details><summary>Is my document made public or stored anywhere?</summary>
         <p>No. It’s parsed in memory to find its citations and discarded immediately — never stored, never put
         on chain. Only a fingerprint (and, if you record, the check tally) can go on chain, and only when you
@@ -504,6 +528,7 @@
     <p>Anchoring precompile <span class="mono">0x0000…0A00</span></p>
     <p class="footer-ethic">Provenance, not truth.</p>
     <p>Case data: CourtListener / Free Law Project</p>
+    <p>For AI agents: <a href="/agents.md">agents.md</a> · <a href="/openapi.json">openapi.json</a> · <a href="/llms.txt">llms.txt</a></p>
     <p>This page never sees a private key.</p>
   </div>
 </footer>

@@ -468,7 +468,7 @@ function renderCoverage(st) {
   if (scope && manifest && manifest.count) {
     scope.textContent = manifest.count > 2
       ? `the canonical citation record of ${manifest.count.toLocaleString("en-US")} US court registries`
-      : `the canonical record across ${coveredNames.join(", ")} during the pilot`;
+      : `the canonical record across ${coveredNames.join(", ")} on this network`;
   }
 }
 
@@ -574,7 +574,7 @@ function buildVerdict(report) {
     title.setAttribute("data-print", "ALL VERIFIED");
     const verifiedBit = `${nVerified} ${nVerified === 1 ? "citation has" : "citations have"} a registry record. `;
     sub.textContent = nOutside > 0
-      ? verifiedBit + `${nOutside} ${nOutside === 1 ? "citation is" : "citations are"} outside pilot coverage — no conclusion either way. Existence only; good-law status remains your judgment.`
+      ? verifiedBit + `${nOutside} ${nOutside === 1 ? "citation is" : "citations are"} outside the covered registries — no conclusion either way. Existence only; good-law status remains your judgment.`
       : verifiedBit + "Existence only; good-law status remains your judgment.";
     head.appendChild(body);
     v.appendChild(head);
@@ -583,7 +583,7 @@ function buildVerdict(report) {
     head.appendChild(icon("i-info"));
     title.textContent = "No covered citations to verify.";
     title.setAttribute("data-print", "OUTSIDE COVERAGE");
-    sub.textContent = "Every citation found is outside pilot coverage or could not be read as a citation. The check makes no claim either way about this document.";
+    sub.textContent = "Every citation found is outside the covered registries or could not be read as a citation. The check makes no claim either way about this document.";
     head.appendChild(body);
     v.appendChild(head);
   }
@@ -726,7 +726,7 @@ function renderCheckTable(report) {
     btn.setAttribute("aria-expanded", coveredExpanded ? "true" : "false");
     btn.appendChild(chipFor("NOT_COVERED"));
     btn.appendChild(el("span", null,
-      `${covered.length} ${covered.length === 1 ? "citation" : "citations"} outside pilot coverage — ${coveredExpanded ? "hide" : "show"}`));
+      `${covered.length} ${covered.length === 1 ? "citation" : "citations"} outside the covered registries — ${coveredExpanded ? "hide" : "show"}`));
     btn.addEventListener("click", () => { coveredExpanded = !coveredExpanded; renderCheckTable(report); });
     td.appendChild(btn);
     trG.appendChild(td);
