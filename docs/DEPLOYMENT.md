@@ -13,8 +13,8 @@ database, a volume, a secret, or a backup.
 - Before anything is pushed, CI runs the full test suite and a container
   smoke test: the image must boot, serve `/`, and report a reachable
   mainnet RPC, the right chain id, full manifest coverage, and telemetry off.
-- The GHCR package is created under the NVNM-Chain org on first push and
-  starts org-visible; an org admin can make it public or grant pull access.
+- The GHCR package is linked to this public repo and is publicly pullable
+  (verified 2026-08-04): no registry credentials are needed to pull.
 
 Local run, no Kubernetes needed:
 
