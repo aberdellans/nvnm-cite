@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import signal
 from pathlib import Path
 
 from nvnm_cite.config import get_network, load_dotenv
@@ -47,6 +48,12 @@ def main() -> None:
     print("  drafting checks read NVNM Chain live (item 0) — point-to-point, never published")
     if telemetry_path:
         print(f"  telemetry: ON — aggregate by-citation counts at {telemetry_path}")
+    # Container runtimes stop with SIGTERM, which would otherwise kill the
+    # process mid-request; route it onto the same clean path as Ctrl-C.
+    def _terminate(signum: int, frame: object) -> None:
+        raise KeyboardInterrupt
+
+    signal.signal(signal.SIGTERM, _terminate)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -42,6 +42,15 @@ machine), anchor a filing receipt with your own wallet, verify a document
 hash for free, and decode anchoring transactions to readable plaintext.
 Details and the privacy model: [docs/web-demo.md](docs/web-demo.md).
 
+## Deployment
+
+The public instance runs the Docker image `ghcr.io/nvnm-chain/nvnm-cite`,
+built and smoke-tested by [CI](.github/workflows/ci.yml) from this repo
+(linux/amd64 + linux/arm64). One stateless container, no database, no
+server-side keys; TLS and the domain live at the ingress. Ops details —
+health checks, ingress requirements, Kubernetes notes:
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Data attribution
 
 Case data comes from [CourtListener](https://www.courtlistener.com), a project of the [Free Law Project](https://free.law). Citation parsing builds on Free Law Project's eyecite, reporters-db, and courts-db.

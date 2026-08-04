@@ -1,0 +1,10 @@
+# Allowlist build context: only what the image build needs. Everything else
+# (including .env and any local databases) never reaches the Docker daemon.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+**/__pycache__/
+**/*.pyc
+**/.DS_Store
