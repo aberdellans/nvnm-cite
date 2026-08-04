@@ -8,6 +8,12 @@ FROM python:3.11-slim-bookworm AS build
 
 COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /uvx /usr/local/bin/
 
+# fast-diff-match-patch (via eyecite) ships no aarch64 wheel: the arm64 leg
+# compiles its C++ extension here. Build stage only; the runtime stays slim.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # Use the image's Python (matches the 3.11 the test suite runs on) and
 # precompile bytecode so cold starts don't write .pyc at runtime.
 ENV UV_PYTHON_DOWNLOADS=0 \
