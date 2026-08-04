@@ -13,7 +13,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://nvnmcite.com"
-Repository = "https://github.com/aberdellans/nvnm-cite"
+Repository = "https://github.com/NVNM-Chain/nvnm-cite"
 
 [project.scripts]
 nvnm-cite = "nvnm_cite.cli:main"
