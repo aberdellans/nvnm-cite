@@ -177,11 +177,30 @@ def _add_registry_log(registry_id: int, name: str) -> dict:
     }
 
 
+def _add_record_log(registry_id: int, record_id: int, index: int, checksum: str) -> dict:
+    topic0 = next(t for t, n in pc.EVENT_TOPICS.items() if n == "AddRecord")
+    data = abi.encode_values(
+        [
+            {"name": "registryId", "type": "uint64"},
+            {"name": "recordId", "type": "uint64"},
+            {"name": "index", "type": "uint64"},
+            {"name": "checksum", "type": "string"},
+        ],
+        [registry_id, record_id, index, checksum],
+    )
+    return {
+        "address": pc.PRECOMPILE_ADDRESS.lower(),
+        "topics": [topic0, "0x" + "00" * 12 + AGENT.removeprefix("0x")],
+        "data": "0x" + data.hex(),
+    }
+
+
 class FakeRpc:
-    def __init__(self, new_registry_id=TARGET_ID):
+    def __init__(self, new_registry_id=TARGET_ID, new_record_id=4242):
         self.sent = []
         self._nonce = 5
         self._new_registry_id = new_registry_id
+        self._new_record_id = new_record_id
 
     def chain_id(self):
         return CHAIN_ID
@@ -204,6 +223,8 @@ class FakeRpc:
         receipt = {"status": "0x1", "blockNumber": "0x10", "gasUsed": "0x15f90", "logs": []}
         if len(self.sent) == 1 and self._new_registry_id is not None:
             receipt["logs"] = [_add_registry_log(self._new_registry_id, TARGET_NAME)]
+        elif self._new_record_id is not None:
+            receipt["logs"] = [_add_record_log(TARGET_ID, self._new_record_id, 1, SHA)]
         return receipt
 
 
@@ -236,19 +257,26 @@ def test_send_sequences_create_then_record_and_recovers_id():
     assert sent[0]["registry_id"] == TARGET_ID
     expected = pc.build_add_record(TARGET_ID, RECEIPT_URI, SHA, "sha256", '{"x":1}')
     assert plan.record_calldata == expected
+    # ... and the assigned recordId from the AddRecord event
+    assert sent[1]["record_id"] == 4242
+    assert sent[1]["record_index"] == 1
 
 
 def test_send_halts_when_create_confirms_without_event():
-    rpc = FakeRpc(new_registry_id=None)  # confirmed receipt but no event log
+    rpc = FakeRpc(new_registry_id=None, new_record_id=None)  # confirmed receipt but no event log
     with pytest.raises(RuntimeError, match="AddRegistry event"):
         send(_plan(create=True), rpc, key=1, chain_id=CHAIN_ID)
 
 
 def test_send_record_only_when_registry_exists():
-    rpc = FakeRpc()
+    rpc = FakeRpc(new_registry_id=None)  # one tx: the receipt carries AddRecord
     sent = send(_plan(create=False), rpc, key=1, chain_id=CHAIN_ID)
     assert [s["label"] for s in sent] == ["anchor-receipt"]
     assert len(rpc.sent) == 1
+    assert sent[0]["record_id"] == 4242
+    # A confirmed anchor with no decodable AddRecord event still reports ok.
+    sent_bare = send(_plan(create=False), FakeRpc(new_registry_id=None, new_record_id=None), key=1, chain_id=CHAIN_ID)
+    assert sent_bare[0]["ok"] is True and "record_id" not in sent_bare[0]
 
 
 def test_send_refuses_chain_mismatch():

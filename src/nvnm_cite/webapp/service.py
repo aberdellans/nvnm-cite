@@ -665,10 +665,14 @@ class TxService:
                 int(block["timestamp"], 16), tz=timezone.utc
             ).strftime("%Y-%m-%dT%H:%M:%SZ")
         # Precompile events from the receipt logs: the AddRegistry event is
-        # how a newly created receipts registry's #id is recovered.
+        # how a newly created receipts registry's #id is recovered, and the
+        # AddRecord event carries an anchor's assigned recordId.
         events = pc.decode_event_logs(receipt.get("logs", [])) if receipt else []
         registry_id = next(
             (e["registryId"] for e in events if e["event"] == "AddRegistry"), None
+        )
+        record_id = next(
+            (e["recordId"] for e in events if e["event"] == "AddRecord"), None
         )
         return {
             "hash": tx_hash,
@@ -685,6 +689,7 @@ class TxService:
             "decoded": decoded,
             "events": events,
             "registry_id": registry_id,
+            "record_id": record_id,
             "input_preview": input_preview,
             "explorer": f"{self.network.explorer}/tx/{tx_hash}",
         }

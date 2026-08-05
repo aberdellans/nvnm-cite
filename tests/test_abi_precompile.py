@@ -18,6 +18,7 @@ from nvnm_cite.chain.precompile import (
     build_registries_query,
     build_revoke_role,
     build_update_record_status,
+    decode_add_record_log,
     decode_add_record_result,
     decode_add_registry_log,
     decode_add_registry_result,
@@ -177,6 +178,36 @@ def test_decode_add_registry_log_from_golden() -> None:
     # Foreign-address and unknown-topic logs are skipped, never an error.
     assert decode_event_logs([{"address": "0x" + "11" * 20, "topics": [], "data": "0x"}]) == []
     assert decode_add_registry_log([]) is None
+
+
+def test_decode_add_record_log() -> None:
+    caller = "0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf"
+    data = abi.encode_values(
+        [
+            {"name": "registryId", "type": "uint64"},
+            {"name": "recordId", "type": "uint64"},
+            {"name": "index", "type": "uint64"},
+            {"name": "checksum", "type": "string"},
+        ],
+        [82, 138702, 1, "410 U.S. 113"],
+    )
+    receipt_log = {
+        "address": PRECOMPILE_ADDRESS.lower(),
+        "topics": [
+            next(t for t, n in EVENT_TOPICS.items() if n == "AddRecord"),
+            "0x" + "00" * 12 + caller.removeprefix("0x").lower(),
+        ],
+        "data": "0x" + data.hex(),
+    }
+    assert decode_add_record_log([receipt_log]) == {
+        "record_id": 138702,
+        "registry_id": 82,
+        "index": 1,
+        "checksum": "410 U.S. 113",
+        "caller": caller.lower(),
+    }
+    # An AddRegistry-only receipt yields None here (and vice versa).
+    assert decode_add_record_log([]) is None
 
 
 def test_encode_decode_roundtrip_on_record_tuple() -> None:

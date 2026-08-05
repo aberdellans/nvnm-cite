@@ -605,6 +605,10 @@
             "type": ["integer", "null"],
             "description": "From the AddRegistry event when present: the chain-assigned id of a newly created registry. The anchor workflow's step 2 reads it here."
           },
+          "record_id": {
+            "type": ["integer", "null"],
+            "description": "From the AddRecord event when present: the chain-assigned id of a newly anchored record."
+          },
           "input_preview": {"type": ["string", "null"]},
           "explorer": {"type": "string", "description": "Explorer URL for this transaction."}
         }

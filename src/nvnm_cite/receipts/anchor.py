@@ -301,6 +301,15 @@ def send(plan: AnchorPlan, rpc: EvmRpc, key: int, chain_id: int) -> list[dict]:
     if plan.record_calldata is None:
         raise RuntimeError("plan has no record calldata and no create step")
     anchored = _send_one(rpc, key, chain_id, plan.record_calldata, "anchor-receipt")
-    anchored.pop("logs", None)
+    logs = anchored.pop("logs", [])
+    if anchored["ok"]:
+        # The assigned recordId/index come from the AddRecord event, the same
+        # way the registryId came from AddRegistry. Informational here — the
+        # keyed lookup needs only (registry_id, checksum) — so a missing event
+        # never fails an anchor that already confirmed.
+        record_ev = pc.decode_add_record_log(logs)
+        if record_ev is not None:
+            anchored["record_id"] = record_ev["record_id"]
+            anchored["record_index"] = record_ev["index"]
     sent.append(anchored)
     return sent

@@ -271,3 +271,19 @@ def decode_add_registry_log(logs: list[dict[str, Any]]) -> dict[str, Any] | None
                 "caller": ev.get("caller", ""),
             }
     return None
+
+
+def decode_add_record_log(logs: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """The recordId (and version index) a confirmed addRecord tx was assigned,
+    from its receipt logs: {"record_id": int, "registry_id": int, "index": int,
+    "checksum": str, "caller": 0x...} or None."""
+    for ev in decode_event_logs(logs):
+        if ev["event"] == "AddRecord":
+            return {
+                "record_id": ev["recordId"],
+                "registry_id": ev["registryId"],
+                "index": ev["index"],
+                "checksum": ev["checksum"],
+                "caller": ev.get("caller", ""),
+            }
+    return None

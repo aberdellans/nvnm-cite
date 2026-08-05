@@ -601,6 +601,40 @@ def test_decode_call_roundtrips_the_codec():
     assert decode_call(b"") is None
 
 
+def test_tx_inspect_surfaces_assigned_ids():
+    # /api/tx: the chain-assigned ids ride the receipt events — registry_id
+    # from AddRegistry (anchor workflow step 2), record_id from AddRecord.
+    data = abi.encode_values(
+        [
+            {"name": "registryId", "type": "uint64"},
+            {"name": "recordId", "type": "uint64"},
+            {"name": "index", "type": "uint64"},
+            {"name": "checksum", "type": "string"},
+        ],
+        [82, 138702, 1, "410 U.S. 113"],
+    )
+    record_log = {
+        "address": pc.PRECOMPILE_ADDRESS.lower(),
+        "topics": [
+            next(t for t, n in pc.EVENT_TOPICS.items() if n == "AddRecord"),
+            "0x" + "00" * 12 + "ab" * 20,
+        ],
+        "data": "0x" + data.hex(),
+    }
+
+    class Gw:
+        def transaction(self, tx_hash):
+            tx = {"input": "0x", "from": "0x" + "ab" * 20, "to": pc.PRECOMPILE_ADDRESS}
+            receipt = {"status": "0x1", "gasUsed": "0x2", "logs": [record_log]}
+            return tx, receipt, None
+
+    out = TxService(Gw(), TESTNET).inspect("0x" + "cd" * 32)
+    assert out["found"] is True and out["success"] is True
+    assert out["record_id"] == 138702
+    assert out["registry_id"] is None  # no AddRegistry event in this receipt
+    assert [e["event"] for e in out["events"]] == ["AddRecord"]
+
+
 # ---------------------------------------------------------------- server
 
 

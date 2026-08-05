@@ -86,7 +86,7 @@ The hash binds exact bytes. If verification fails, first confirm you hashed the 
 curl -sS "https://nvnmcite.com/api/tx?hash=0x<64-hex>"
 ```
 
-Decodes an NVNM Chain anchoring transaction into readable form: the function called with its plaintext arguments, the precompile events it emitted, `success`/`pending`, gas, and an explorer link. After a registry-creation transaction confirms, the `registry_id` field carries the chain-assigned id recovered from the AddRegistry event; the anchor workflow below depends on this.
+Decodes an NVNM Chain anchoring transaction into readable form: the function called with its plaintext arguments, the precompile events it emitted, `success`/`pending`, gas, and an explorer link. After a registry-creation transaction confirms, the `registry_id` field carries the chain-assigned id recovered from the AddRegistry event; the anchor workflow below depends on this. After an anchor transaction confirms, `record_id` carries the chain-assigned record id from the AddRecord event the same way.
 
 ## Anchor a filing receipt
 

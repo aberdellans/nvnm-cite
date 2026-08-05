@@ -280,6 +280,8 @@ def _render_sent(sent: list[dict], explorer: str, plan=None) -> str:
         status = "ok" if s["ok"] else "FAILED"
         lines.append(f"  {s['label']}: {s['tx_hash']}")
         extra = f" · registry #{s['registry_id']}" if "registry_id" in s else ""
+        if "record_id" in s:
+            extra += f" · record {s['record_id']} v{s['record_index']}"
         lines.append(f"     block {s['block']:,} · gas {s['gas_used']:,} · {status}{extra}")
         lines.append(f"     {explorer}/tx/{s['tx_hash']}")
     if plan is not None and plan.registry_id is not None:
