@@ -14,6 +14,10 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# Local demo material and scratch files (never for the public repo)
+demo/
+prep_body.txt
+
 # macOS
 .DS_Store
 

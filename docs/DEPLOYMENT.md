@@ -90,6 +90,27 @@ prefix.
   a document SHA-256 in the query string; the app's own access log already
   strips them). Log the path only, or disable access logging for this host.
 - No CORS configuration; the app is same-origin only and sends a strict CSP.
+- If a WAF or content-filtering proxy sits in front, exempt the two
+  raw-bytes upload endpoints — `POST /api/check` and
+  `POST /api/receipt/prepare` — from body-inspection rules: compressed
+  PDF/DOCX bytes can false-positive as attack signatures and get blocked
+  before the request ever reaches the app. Body inspection buys nothing
+  here (the app treats uploads as opaque bytes — never stored, reflected,
+  or executed — and enforces its own 30 MB cap); keep header, URI, and
+  rate-based rules enforced.
+- Every hop in front (load balancer, CDN-less proxy, ingress) needs its
+  idle/read timeout at or above the 60 s requirement — the shortest
+  timeout in the chain wins.
+- TLS certificates must cover EVERY public hostname that reaches the app
+  (apex, www, any internal alias). A registrar "domain forward" is not a
+  substitute for real DNS + certificate coverage: such forwards typically
+  pass only GET on the root path, silently breaking deep links and API
+  POSTs.
+
+After any change to the front chain (WAF rules, certificates, timeouts),
+smoke it end to end from outside: POST a real PDF to `/api/check` on the
+public hostname and confirm the app's JSON verdict comes back — not a
+proxy's own error page.
 
 ingress-nginx annotations that satisfy the above:
 
@@ -106,4 +127,5 @@ nginx.ingress.kubernetes.io/proxy-send-timeout: "75"
 - Starting resources: requests `100m` / `256Mi`, limits `1` / `1Gi`
   (parsing a 30 MB PDF is the peak; tune from observed usage).
 - DNS: `nvnmcite.com` is in Inveniam's GoDaddy account (transferred
-  2026-08-04); point it at the ingress when ready.
+  2026-08-04); point apex and www at the ingress directly (see the
+  certificate-coverage note above).
