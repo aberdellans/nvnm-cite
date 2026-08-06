@@ -26,6 +26,7 @@ from dataclasses import dataclass, field
 
 from nvnm_cite.normalizer import NORMALIZER_VERSION
 from nvnm_cite.receipts.chainio import ChainReader
+from nvnm_cite.receipts.discover import find_anchors
 from nvnm_cite.receipts.schema import summary_tally
 from nvnm_cite.verifier.check import check_document
 from nvnm_cite.verifier.resolver import ChainResolver, records_query
@@ -175,3 +176,46 @@ def verify_document(
         checked_at_block=checked_at_block, normalizer_version_receipt=receipt_norm,
         notes=notes,
     )
+
+
+def verify_document_anywhere(
+    data: bytes,
+    filename: str,
+    *,
+    rpc_factory=None,
+    reader: ChainReader | None = None,
+    resolver=None,
+    registry_ids: Mapping[str, int] | None = None,
+    expected_chain_id: int | None = None,
+    exclude_ids: set[int] | frozenset[int] = frozenset(),
+) -> dict:
+    """Registry-free verification: hash the file, sweep every non-court
+    registry for that fingerprint (``exclude_ids`` = the pinned court-manifest
+    ids), then run the full ``verify_document`` against each hit. No registry
+    pointer required — the answer is WHERE the document is anchored, by whom,
+    and whether each receipt verifies. A hit's meaning comes from its
+    registry's creator wallet, which travels in the result."""
+    sha = hashlib.sha256(data).hexdigest()
+    if reader is None:
+        if rpc_factory is None:
+            raise ValueError("verify_document_anywhere needs rpc_factory or reader")
+        reader = ChainReader(rpc_factory)
+    sweep = find_anchors(reader, sha, exclude_ids=exclude_ids)
+    results = [
+        verify_document(
+            data, filename, registry_id=hit["registry"]["id"], rpc_factory=rpc_factory,
+            reader=reader, resolver=resolver, registry_ids=registry_ids,
+            expected_chain_id=expected_chain_id,
+        )
+        for hit in sweep["hits"]
+    ]
+    return {
+        "document_sha256": sha,
+        "found": bool(results),
+        "registries_swept": sweep["registries_swept"],
+        "registries_excluded": sweep["registries_excluded"],
+        "creators": {
+            hit["registry"]["id"]: hit["registry"]["creator"] for hit in sweep["hits"]
+        },
+        "results": results,
+    }

@@ -306,25 +306,26 @@
   <section class="panel" id="panel-verify" role="tabpanel" aria-labelledby="tab-verify">
     <div class="panel-head">
       <h2>Verify a receipt</h2>
-      <p class="lede">For opposing counsel, clerks of court, and judges: paste the citation-verification
-      registry named on the filing, drop in the filed document, and see instantly whether a receipt exists
-      for that exact file. Free, read-only — no wallet, no account.</p>
+      <p class="lede">For opposing counsel, clerks of court, and judges: drop in the filed document — or paste
+      its SHA-256 fingerprint — and see instantly whether a receipt exists for that exact file anywhere on
+      this chain, when it was recorded, and by whom. No registry number needed. Free, read-only — no wallet,
+      no account.</p>
     </div>
 
     <div class="callout callout-privacy">
       <svg class="ic" aria-hidden="true"><use href="#i-fingerprint"></use></svg>
       <div>
         <strong>The document never leaves your computer.</strong>
-        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint and the
-        registry name are sent for the lookup. The file itself is never uploaded.</p>
+        <p>It is fingerprinted (SHA-256) in your browser; only the 64-character fingerprint — plus the
+        registry #id, if you narrow the search — is sent for the lookup. The file itself is never uploaded.</p>
       </div>
     </div>
 
     <div class="field-row">
-      <label for="verify-registry">Citation-verification registry #id</label>
-      <input type="text" id="verify-registry" class="mono" maxlength="120" placeholder="e.g. #4711 — or paste the whole verification line from the filing" spellcheck="false">
-      <p class="hint">Copy it from the “Citation verifications” link printed on the filing. It points to the
-      registry that holds the receipt.</p>
+      <label for="verify-registry">Citation-verification registry #id (optional)</label>
+      <input type="text" id="verify-registry" class="mono" maxlength="120" placeholder="optional — e.g. #4711, or paste the verification line from the filing" spellcheck="false">
+      <p class="hint">Leave blank to search every receipts registry on this chain. If the filing prints a
+      “Citation verifications” line, pasting it narrows the lookup to that one registry.</p>
     </div>
 
     <div class="dropzone" id="verify-drop" role="button" tabindex="0" aria-label="Drop a document or press Enter to choose a file">

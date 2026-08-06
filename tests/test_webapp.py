@@ -561,6 +561,32 @@ def test_receipt_lookup_by_id_found_versions_and_missing():
         make_service(gw).lookup("Bad Registry Name!!", sha)
 
 
+def test_receipt_lookup_chain_wide_without_registry():
+    # No registry reference at all (2026-08-06): the sweep checks every
+    # non-court registry and returns each hit with its owner.
+    sha = "b" * 64
+    receipt_meta = compact_json(minimal_receipt(sha, block=5))
+    gw = FakeGateway(
+        registries={737: "us-scotus", 738: "us-ca11", 901: REG, 902: "other--case"},
+        receipt_versions={(901, sha): fake_record(901, sha, receipt_meta, index=1)},
+    )
+    out = make_service(gw).lookup("", sha.upper())
+    assert out["chain_wide"] is True and out["found"] is True
+    # The two court registries (the service's pinned manifest ids) are excluded.
+    assert out["sweep"]["registries_checked"] == 2
+    assert out["sweep"]["court_registries_excluded"] == 2
+    assert [h["registry_id"] for h in out["hits"]] == [901]
+    hit = out["hits"][0]
+    assert hit["registry"] == REG and hit["registry_owner"] == "nvnm1fake"
+    assert hit["versions"][0]["receipt"]["schema"] == "nvnm-cite-receipt/v1"
+    assert hit["proof"]["request"]["method"] == "eth_call"
+
+    # Not anchored anywhere → found False with the sweep facts still stated.
+    miss = make_service(gw).lookup("  ", "c" * 64)
+    assert miss["chain_wide"] is True and miss["found"] is False
+    assert miss["hits"] == [] and miss["sweep"]["registries_checked"] == 2
+
+
 def test_receipt_lookup_legacy_name_fallback():
     sha = "b" * 64
     receipt_meta = compact_json(minimal_receipt(sha, block=5))

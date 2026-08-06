@@ -88,14 +88,14 @@
     "/api/receipt/lookup": {
       "get": {
         "operationId": "lookupReceipt",
-        "summary": "Verify a filed document's receipt by registry and hash",
-        "description": "Free keyed lookup: does a receipt record for this document hash exist in this registry? Hash the exact filed bytes locally with SHA-256; the document itself never needs to be uploaded. The registry reference comes from the verification line printed on the filing (\"Citation verifications: NVNM Chain (chain N) registry #ID — name\"). The response includes the exact eth_call to replay the answer against any RPC for this network.",
+        "summary": "Verify a filed document's receipt by hash — chain-wide, or scoped to a registry",
+        "description": "Free lookup: is this document hash anchored on this chain? Hash the exact filed bytes locally with SHA-256; the document itself never needs to be uploaded. WITHOUT `registry` (the default), the server sweeps every receipts registry on the chain with the keyed records() read — court citation registries excluded — and returns every hit with its registry, owner (creator wallet), and chain timestamps (`chain_wide` true, `hits`, `sweep`). WITH `registry` (from the verification line printed on the filing: \"Citation verifications: NVNM Chain (chain N) registry #ID — name\"), a single keyed lookup against that registry. Each result includes the exact eth_call to replay the answer against any RPC for this network.",
         "parameters": [
           {
             "name": "registry",
             "in": "query",
-            "required": true,
-            "description": "Registry reference: the bare number (recommended; avoids URL-encoding), '#number' ('#' must be percent-encoded as %23), the whole pasted verification line, or a legacy registry name (resolved by enumeration; names are not unique on chain, so multiple matches come back as ambiguous candidates).",
+            "required": false,
+            "description": "Optional registry reference — omit to search every receipts registry on the chain. Accepts the bare number (recommended; avoids URL-encoding), '#number' ('#' must be percent-encoded as %23), the whole pasted verification line, or a legacy registry name (resolved by enumeration; names are not unique on chain, so multiple matches come back as ambiguous candidates).",
             "schema": {
               "type": "string",
               "examples": ["4711"]
@@ -114,7 +114,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Lookup result. Check `found`; when the registry reference did not resolve, `registry_exists` is false or `ambiguous` is true with `candidates`, and `note` explains.",
+            "description": "Lookup result. Check `found`. Chain-wide (no registry given): `chain_wide` is true and every anchoring registry is in `hits` with `sweep` describing what was searched. Scoped: when the registry reference did not resolve, `registry_exists` is false or `ambiguous` is true with `candidates`, and `note` explains.",
             "content": {
               "application/json": {
                 "schema": {
@@ -540,7 +540,7 @@
       },
       "LookupResponse": {
         "type": "object",
-        "description": "Variants: resolved (registry_exists true, found true/false, versions, proof), registry missing (registry_exists false, note), or ambiguous legacy-name reference (ambiguous true, candidates, note).",
+        "description": "Variants: chain-wide (chain_wide true, found, sweep, hits — the no-registry default), resolved (registry_exists true, found true/false, versions, proof), registry missing (registry_exists false, note), or ambiguous legacy-name reference (ambiguous true, candidates, note).",
         "properties": {
           "registry": {"type": "string", "description": "Registry name."},
           "registry_id": {"type": "integer"},
@@ -549,6 +549,21 @@
           "registry_exists": {"type": "boolean"},
           "found": {"type": "boolean"},
           "head_block": {"type": "integer", "description": "Chain head at lookup time."},
+          "chain_wide": {"type": "boolean", "description": "True when no registry was given: the whole chain was searched."},
+          "sweep": {
+            "type": "object",
+            "description": "What the chain-wide search covered.",
+            "properties": {
+              "registries_checked": {"type": "integer"},
+              "court_registries_excluded": {"type": "integer", "description": "The pinned court citation registries, skipped by design — they hold citation keys, never document receipts."},
+              "note": {"type": "string"}
+            }
+          },
+          "hits": {
+            "type": "array",
+            "description": "Chain-wide only: one resolved lookup result per registry that anchors this hash (registry, registry_id, registry_owner, versions, proof).",
+            "items": {"type": "object"}
+          },
           "versions": {
             "type": "array",
             "items": {"$ref": "#/components/schemas/ReceiptVersion"}

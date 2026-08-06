@@ -30,7 +30,7 @@ from nvnm_cite.receipts.anchor import send as anchor_send
 from nvnm_cite.receipts.chainio import ChainReader
 from nvnm_cite.receipts.schema import ReceiptError, receipt_registry_name
 from nvnm_cite.receipts.verify import VERIFIED as VERIFY_OK
-from nvnm_cite.receipts.verify import verify_document
+from nvnm_cite.receipts.verify import verify_document, verify_document_anywhere
 from nvnm_cite.verifier.check import (
     AMBIGUOUS,
     NOT_COVERED,
@@ -334,9 +334,12 @@ def cmd_anchor(args: argparse.Namespace) -> int:
         return 2
 
     load_dotenv()
-    # Anchoring WRITES; dev writes stay on testnet. Mainnet requires the
-    # signing_context opt-in pair (ops only, never a session).
-    network = get_network(args.network, default="testnet")
+    # Anchoring WRITES. Mainnet is the default like every other command
+    # (Albert 2026-08-06: everything runs mainnet, demos included; testnet is
+    # opt-in via --network testnet). The signing_context opt-in pair still
+    # gates every mainnet signature, so the flipped default cannot make the
+    # ambient dev key sign chain 1611.
+    network = get_network(args.network)
     rpc_url = args.rpc or network.rpc_url()
     rpc_factory = lambda: EvmRpc(rpc_url)  # noqa: E731
     registry_ids = load_manifest(network.key).all_registries()
@@ -443,6 +446,44 @@ def cmd_verify(args: argparse.Namespace) -> int:
     rpc_url = args.rpc or network.rpc_url()
     rpc_factory = lambda: EvmRpc(rpc_url)  # noqa: E731
 
+    court_ids = load_manifest(network.key).all_registries()
+
+    if not args.registry:
+        # No registry given: chain-wide search. Every non-court registry is
+        # checked by keyed read; each hit gets the full pinned re-verification.
+        try:
+            outcome = verify_document_anywhere(
+                data, path.name, rpc_factory=rpc_factory, registry_ids=court_ids,
+                expected_chain_id=network.chain_id,
+                exclude_ids=set(court_ids.values()),
+            )
+        except (RpcError, OSError) as exc:
+            print(f"error: could not reach NVNM Chain at {rpc_url} ({exc})", file=sys.stderr)
+            return 2
+        if args.json:
+            payload = dict(outcome, results=[dataclasses.asdict(r) for r in outcome["results"]])
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(f"nvnm-cite verify — chain-wide search ({network.label})")
+            print(f"  Document SHA-256: {outcome['document_sha256']}")
+            print(
+                f"  Searched {outcome['registries_swept']} receipt registries "
+                f"({outcome['registries_excluded']} court citation registries excluded — "
+                "they hold citation keys, never document receipts)."
+            )
+            if not outcome["found"]:
+                print(
+                    "  No receipt anywhere on this chain for this exact document. "
+                    "A single changed byte changes the fingerprint; otherwise it "
+                    "was never anchored."
+                )
+            for result in outcome["results"]:
+                owner = outcome["creators"].get(result.registry_id, "?")
+                print()
+                print(_render_verify(result))
+                print(f"  Registry owner:   {owner}")
+        return 0 if any(r.verdict == VERIFY_OK for r in outcome["results"]) else 1
+
     registry_id = _parse_registry_ref(args.registry)
     if registry_id is None:
         print(
@@ -455,7 +496,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     try:
         result = verify_document(
             data, path.name, registry_id=registry_id, rpc_factory=rpc_factory,
-            registry_ids=load_manifest(network.key).all_registries(),
+            registry_ids=court_ids,
             expected_chain_id=network.chain_id,
         )
     except (RpcError, OSError) as exc:
@@ -645,7 +686,9 @@ def build_parser() -> argparse.ArgumentParser:
         description=(
             "Check a document, then record a minimal, non-enumerating receipt on "
             "NVNM Chain. Without --anchor this is a dry run that only shows the plan; "
-            "with --anchor it sends the transaction(s), signing with NVNM_TESTNET_KEY."
+            "with --anchor it sends the transaction(s). Signing goes through "
+            "config.signing_context: NVNM_TESTNET_KEY on testnet; on mainnet the "
+            "explicit NVNM_MAINNET_WRITE_OK=1 + NVNM_MAINNET_KEY ops pair."
         ),
     )
     anchor.add_argument("path", help="path to the document (.pdf, .docx, .txt, .md)")
@@ -661,7 +704,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--network",
         choices=["mainnet", "testnet"],
         default=None,
-        help="which network to anchor on (default: testnet — writes are dev-gated; mainnet needs the ops opt-in)",
+        help="which network to anchor on (default: mainnet, or NVNM_NETWORK; mainnet writes still need the signing opt-in pair)",
     )
     anchor.add_argument("--rpc", default=None, help="EVM RPC URL (default: the selected network's public RPC)")
     anchor.add_argument("--anchor", action="store_true", help="actually send the transaction(s) (default: dry-run plan only)")
@@ -671,18 +714,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify = sub.add_parser(
         "verify",
-        help="verify a filing receipt from (registry + file), read-only",
+        help="verify a filing receipt from the file alone (chain-wide), read-only",
         description=(
-            "Given the original file and the receipt registry from a filing's "
-            "verification link, confirm a receipt exists for this exact document and "
-            "re-run the check pinned to the receipt's block. Read-only."
+            "Given the original file, find its receipt anywhere on the chain: every "
+            "non-court registry is checked by keyed read, and each hit is verified "
+            "with the check re-run pinned to the receipt's block. Passing --registry "
+            "narrows the lookup to the #id from the filing's verification line. "
+            "Read-only."
         ),
     )
     verify.add_argument("path", help="path to the original document")
     verify.add_argument(
         "--registry",
-        required=True,
-        help="the receipt registry's #id from the filing's verification line (accepts '#4711', '4711', or the whole line)",
+        default=None,
+        help="optional: the receipt registry's #id from the filing's verification "
+        "line (accepts '#4711', '4711', or the whole line); omit to search every "
+        "receipts registry on the chain",
     )
     verify.add_argument(
         "--network",

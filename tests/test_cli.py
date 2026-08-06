@@ -143,6 +143,23 @@ def test_anchor_dry_run_does_not_send(brief_file, monkeypatch, capsys):
     assert "will be CREATED" in out
 
 
+def test_anchor_defaults_to_mainnet(brief_file, monkeypatch, capsys):
+    """No --network means mainnet, like every other command (Albert
+    2026-08-06: everything runs mainnet, demos included; testnet is opt-in)."""
+    monkeypatch.delenv("NVNM_NETWORK", raising=False)
+    seen = {}
+
+    def fake_prepare(*args, **kwargs):
+        seen.update(kwargs)
+        return _fake_plan()
+
+    monkeypatch.setattr(cli, "prepare_anchor", fake_prepare)
+    monkeypatch.setattr(cli, "find_receipt_registries", lambda *a, **k: [])
+    rc = cli.main(["anchor", str(brief_file), "--firm", "Inveniam", "--case", "Mata v. Avianca", "--agent", "0x" + "ab" * 20])
+    assert rc == 0
+    assert seen["chain_id"] == 1611
+
+
 def test_anchor_ambiguous_registries_require_explicit_id(brief_file, monkeypatch, capsys):
     matches = [
         {"id": 900, "name": "inveniam--mata-v-avianca", "creator": "nvnm1x", "created_at": "t1"},
@@ -178,6 +195,39 @@ def test_verify_exit_code_not_found(brief_file, monkeypatch, capsys):
     rc = cli.main(["verify", str(brief_file), "--registry", "900"])
     assert rc == 1  # nonzero when not cleanly verified
     assert "NO RECEIPT" in capsys.readouterr().out
+
+
+def _sweep_outcome(results):
+    return {
+        "document_sha256": "a" * 64,
+        "found": bool(results),
+        "registries_swept": 71,
+        "registries_excluded": 2114,
+        "creators": {r.registry_id: "nvnm1firm" for r in results},
+        "results": results,
+    }
+
+
+def test_verify_without_registry_sweeps_chain(brief_file, monkeypatch, capsys):
+    # No --registry (2026-08-06): chain-wide search; a verified hit exits 0.
+    monkeypatch.setattr(
+        cli, "verify_document_anywhere",
+        lambda *a, **k: _sweep_outcome([_verify_result("verified")]),
+    )
+    rc = cli.main(["verify", str(brief_file)])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "chain-wide search" in out and "71 receipt registries" in out
+    assert "VERIFIED" in out and "nvnm1firm" in out
+
+
+def test_verify_without_registry_no_hits_exits_nonzero(brief_file, monkeypatch, capsys):
+    monkeypatch.setattr(
+        cli, "verify_document_anywhere", lambda *a, **k: _sweep_outcome([])
+    )
+    rc = cli.main(["verify", str(brief_file)])
+    assert rc == 1
+    assert "No receipt anywhere on this chain" in capsys.readouterr().out
 
 
 # ---------------------------------------------------------------- stats / delegation

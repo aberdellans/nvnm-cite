@@ -14,7 +14,7 @@ Everything is a plain HTTP JSON API on this origin. No authentication, no API ke
 ## API
 
 - POST /api/check: upload a document (.pdf, .docx, .txt, .md; raw bytes body, filename in the X-Filename header), get per-citation statuses: VERIFIED, NOT_FOUND, NOT_COVERED, AMBIGUOUS_JURISDICTION, or UNPARSEABLE.
-- GET /api/receipt/lookup?registry=REF&sha256=HEX: verify a filed document. Hash the exact file bytes locally with SHA-256; REF is the registry number from the filing's verification line (for example `#4711` or the whole pasted line).
+- GET /api/receipt/lookup?sha256=HEX: verify a filed document. Hash the exact file bytes locally with SHA-256; every receipts registry on the chain is searched and each hit returns with its registry, owner, and chain timestamps. Add &registry=REF (the number from the filing's verification line, e.g. `4711`) to scope the lookup to one registry.
 - GET /api/tx?hash=0x...: decode an NVNM Chain anchoring transaction into readable plaintext.
 - GET /api/receipt/registries?creator=0x...: list the receipt registries a wallet has created.
 - POST /api/receipt/prepare: prepare a filing receipt. Returns an unsigned transaction; the filer's own wallet signs. This server never holds keys.

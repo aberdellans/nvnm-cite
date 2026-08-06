@@ -42,11 +42,10 @@ class ChainReader:
         reg = rows[0]
         return {"id": reg.id, "name": reg.name, "creator": reg.creator, "created_at": reg.created_at}
 
-    def registries_by_creator(self, creator: str) -> list[dict]:
-        """All registries created by ``creator`` (bech32 nvnm1... string), via
-        a full offset-paged enumeration — the only name/owner search v1.2.0
-        allows. Same-named duplicates are all returned; callers must surface
-        ambiguity, never pick a row silently."""
+    def all_registries(self) -> list[dict]:
+        """Every registry on the chain, via the full offset-paged enumeration —
+        the only whole-set read v1.2.0 allows (there is no name filter and no
+        reverse index)."""
         rpc = self._rpc_factory()
         out: list[dict] = []
         offset = 0
@@ -59,19 +58,24 @@ class ChainReader:
             if not rows:
                 break
             for reg in rows:
-                if reg.creator == creator:
-                    out.append(
-                        {
-                            "id": reg.id,
-                            "name": reg.name,
-                            "creator": reg.creator,
-                            "created_at": reg.created_at,
-                        }
-                    )
+                out.append(
+                    {
+                        "id": reg.id,
+                        "name": reg.name,
+                        "creator": reg.creator,
+                        "created_at": reg.created_at,
+                    }
+                )
             offset += len(rows)
             if len(rows) < 200:
                 break
         return out
+
+    def registries_by_creator(self, creator: str) -> list[dict]:
+        """All registries created by ``creator`` (bech32 nvnm1... string).
+        Same-named duplicates are all returned; callers must surface
+        ambiguity, never pick a row silently."""
+        return [r for r in self.all_registries() if r["creator"] == creator]
 
     def keyed_record(self, registry_id: int, checksum: str, block: str = "latest") -> pc.Record | None:
         """Latest record for (registry_id, checksum), or None on a keyed miss."""

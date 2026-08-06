@@ -49,6 +49,7 @@ from nvnm_cite.config import Network
 from nvnm_cite.loader.records import METADATA_CAP
 from nvnm_cite.normalizer import CANONICAL_SPEC, NORMALIZER_VERSION
 from nvnm_cite.receipts.anchor import prepare_anchor, registry_line
+from nvnm_cite.receipts.discover import find_anchors
 from nvnm_cite.receipts.schema import (
     RECEIPT_SCHEMA,
     RECEIPT_URI,
@@ -494,10 +495,17 @@ class ReceiptService:
     # --- lookup (free, read-only; registry ref + hash) ---
 
     def lookup(self, registry_ref: str, sha256: str) -> dict:
-        """Keyed ``records(registry_id, hash)`` read. The #id comes from the
-        filing's discovery line; the hash is computed in the visitor's browser
-        (item 4), so the document itself never reaches us here. A legacy NAME
-        is accepted as a fallback: it is matched against a cached enumeration,
+        """Receipt lookup by fingerprint. The hash is computed in the
+        visitor's browser (item 4), so the document itself never reaches us
+        here.
+
+        With NO registry reference (the default UX, 2026-08-06): a chain-wide
+        sweep — every non-court registry is checked with the keyed
+        ``records(registry_id, hash)`` read and every hit is returned with
+        its registry's creator, so the visitor sees where the document is
+        anchored, when, and on whose word. With a reference: the single keyed
+        read against that #id (the filing's discovery line). A legacy NAME is
+        accepted as a fallback: it is matched against a cached enumeration,
         and multiple same-name matches are surfaced for the visitor to pick —
         never silently resolved."""
         sha = sha256.strip().lower()
@@ -505,6 +513,8 @@ class ReceiptService:
             raise WebAppError("expected a 64-character hex SHA-256")
 
         ref = (registry_ref or "").strip()
+        if not ref:
+            return self._lookup_anywhere(sha)
         registry_id = parse_registry_ref(ref)
         legacy_note = None
         if registry_id is None:
@@ -560,6 +570,15 @@ class ReceiptService:
                     "the verification line printed on the filing"
                 ),
             }
+        result = self._registry_lookup(facts, sha, head)
+        if legacy_note:
+            result["note"] = legacy_note
+        return result
+
+    def _registry_lookup(self, facts: dict, sha: str, head: int) -> dict:
+        """The keyed lookup result for one registry (versions ladder + the
+        replayable proof). Shared by the scoped path and the chain-wide sweep."""
+        registry_id = facts["id"]
         query = pc.build_records_query(registry_id=registry_id, checksum=sha)
         record = self.gateway.keyed_record(registry_id, sha)
         versions: list[dict] = []
@@ -575,7 +594,7 @@ class ReceiptService:
                 if earlier is not None:
                     versions.append(_render_receipt_record(earlier))
             versions.sort(key=lambda v: v["index"])
-        result = {
+        return {
             "registry": facts["name"],
             "registry_id": registry_id,
             "registry_owner": facts["creator"],
@@ -598,9 +617,34 @@ class ReceiptService:
                 },
             },
         }
-        if legacy_note:
-            result["note"] = legacy_note
-        return result
+
+    def _lookup_anywhere(self, sha: str) -> dict:
+        """Chain-wide sweep: the keyed read against every registry except the
+        pinned court set (citation keys live there, never document receipts).
+        Each hit carries its registry's creator — a hit's meaning is exactly
+        'this wallet's registry anchors this fingerprint', so who says so is
+        part of the answer, not a hidden detail."""
+        exclude = set(self.registry_ids.values())
+        sweep = find_anchors(self.gateway, sha, exclude_ids=exclude)
+        head = self.gateway.head_block()
+        hits = [self._registry_lookup(h["registry"], sha, head) for h in sweep["hits"]]
+        return {
+            "sha256": sha,
+            "chain_wide": True,
+            "found": bool(hits),
+            "head_block": head,
+            "sweep": {
+                "registries_checked": sweep["registries_swept"],
+                "court_registries_excluded": sweep["registries_excluded"],
+                "note": (
+                    "every receipts registry on this chain was checked with the "
+                    "keyed records(registry_id, fingerprint) read; the court "
+                    "citation registries are excluded — they hold citation keys, "
+                    "never document receipts"
+                ),
+            },
+            "hits": hits,
+        }
 
 
 def _registry_line_found(

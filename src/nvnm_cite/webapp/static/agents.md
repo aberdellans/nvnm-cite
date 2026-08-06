@@ -63,22 +63,28 @@ Jurisdiction mapping was proven end to end for the federal appellate registries 
 
 ## Verify a filed document
 
-Anyone can verify that a filed document's receipt is anchored, for free, without uploading the document anywhere. You need two things: the exact filed bytes, and the registry number from the verification line printed on the filing. The line looks like:
+Anyone can verify that a filed document's receipt is anchored, for free, without uploading the document anywhere. All you need is the exact filed bytes. Hash the file locally, then look the hash up — no registry reference required:
+
+```
+shasum -a 256 filed.pdf
+curl -sS "https://nvnmcite.com/api/receipt/lookup?sha256=<64-hex-digest>"
+```
+
+Without a `registry` parameter the server searches every receipts registry on the chain by keyed read (the court citation registries are excluded — they hold citation keys, never document receipts). The response: `chain_wide` true, `found`, `sweep` (how many registries were checked), and `hits[]` — one entry per registry that anchors this hash, each with `registry` / `registry_id` / `registry_owner`, `versions[]` (each anchored version with its chain timestamp and the receipt JSON: document hash, chain id, block checked, normalizer version, court registries read, attesting wallet, and a status tally), and `proof.request`: the exact `eth_call` (method, `to`, `data`) to replay against any RPC for this network, so no trust in this server is required. Any wallet can anchor any hash into its own registry, so relay each hit's `registry_owner` — who recorded the receipt is part of the answer.
+
+If the filing prints a verification line, you can scope the lookup to that one registry instead:
 
 ```
 Citation verifications: NVNM Chain (chain 1611) registry #4711 — example-firm--example-case
 ```
 
-Hash the file locally, then look it up. The `registry` parameter accepts the bare number, `#number`, or the whole pasted line; the bare number avoids URL-encoding mistakes (`#` must be `%23` in a URL).
-
 ```
-shasum -a 256 filed.pdf
 curl -sS "https://nvnmcite.com/api/receipt/lookup?registry=4711&sha256=<64-hex-digest>"
 ```
 
-The response: `found` (whether a receipt record exists for that hash in that registry), `registry` / `registry_id` / `registry_owner`, `versions[]` (each anchored version with its chain timestamp and the receipt JSON: document hash, chain id, block checked, normalizer version, court registries read, attesting wallet, and a status tally), and `proof.request`: the exact `eth_call` (method, `to`, `data`) to replay against any RPC for this network, so no trust in this server is required.
+The `registry` parameter accepts the bare number, `#number`, or the whole pasted line; the bare number avoids URL-encoding mistakes (`#` must be `%23` in a URL). The scoped response is the single-registry form (`found`, `registry` / `registry_id` / `registry_owner`, `versions[]`, `proof.request`), with `note` distinguishing a missing registry from a missing record.
 
-The hash binds exact bytes. If verification fails, first confirm you hashed the file as filed (one changed byte changes the SHA-256), and check the response's `note` field: it distinguishes a missing registry from a missing record.
+The hash binds exact bytes. If verification fails, first confirm you hashed the file as filed (one changed byte changes the SHA-256).
 
 ## Inspect a transaction
 

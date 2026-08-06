@@ -1486,7 +1486,57 @@ function receiptCard(v, latestIndex, total) {
   return card;
 }
 
+function renderChainWide(res) {
+  // Chain-wide sweep result: no registry number was given, so the server
+  // checked every receipts registry on the chain (court citation registries
+  // excluded — they hold citation keys, never document receipts).
+  const box = clear($("verify-result"));
+  const searched = res.sweep.registries_checked.toLocaleString("en-US");
+
+  if (res.found) {
+    const b = banner("ok", "i-seal", "Receipt found on this chain", "");
+    const sub = b.querySelector(".rb-sub");
+    sub.appendChild(document.createTextNode("Document "));
+    sub.appendChild(el("span", "mono", `${res.sha256.slice(0, 12)}…${res.sha256.slice(-8)}`));
+    sub.appendChild(document.createTextNode(
+      ` is anchored in ${res.hits.length} registr${res.hits.length > 1 ? "ies" : "y"}. ` +
+      `Searched ${searched} receipts registries at chain head ${res.head_block.toLocaleString("en-US")} — no registry number needed.`));
+    box.appendChild(b);
+    res.hits.forEach((hit) => {
+      const latestIndex = Math.max(...hit.versions.map((v) => v.index));
+      const kv = el("div", "kv");
+      kvRow(kv, "Registry", `#${hit.registry_id} — ${hit.registry}`, { mono: true });
+      kvRow(kv, "Recorded by (registry owner)", hit.registry_owner, { mono: true, copy: hit.registry_owner });
+      box.appendChild(kv);
+      [...hit.versions].sort((a, c) => c.index - a.index).forEach((v) => box.appendChild(receiptCard(v, latestIndex, hit.versions.length)));
+    });
+    box.appendChild(el("p", "honesty-line",
+      "A receipt proves this exact document was citation-checked at a point in time — existence, not good law. " +
+      "Any wallet can anchor any fingerprint into its own registry, so who recorded it (the registry owner above) is part of the answer."));
+    if (res.hits[0] && res.hits[0].proof) {
+      const p = res.hits[0].proof;
+      const curl = `curl -s -X POST ${RPC_URL} \\\n  -H 'Content-Type: application/json' \\\n  -H 'User-Agent: nvnm-cite-verify' \\\n  -d '${JSON.stringify({ jsonrpc: "2.0", id: 1, method: p.request.method, params: p.request.params })}'`;
+      $("replay-curl").textContent = curl;
+      $("replay-details").classList.remove("hidden");
+    }
+  } else {
+    const b = banner("bad", "i-alert", "No receipt anywhere on this chain",
+      "No citation-check receipt exists on this chain for this exact file. A one-byte change — re-saving, stamping, flattening — produces a different fingerprint and breaks the match. If you expected a receipt, confirm you have the file exactly as filed.");
+    const kv = el("div", "kv");
+    kvRow(kv, "Fingerprint", res.sha256, { mono: true, copy: res.sha256 });
+    kvRow(kv, "Registries searched", `${searched} (court citation registries excluded)`, { mono: true });
+    kvRow(kv, "Chain head at lookup", res.head_block.toLocaleString("en-US"), { mono: true });
+    b.appendChild(kv);
+    box.appendChild(b);
+  }
+  show("verify-result");
+}
+
 function renderLookup(res) {
+  if (res.chain_wide) {
+    renderChainWide(res);
+    return;
+  }
   const box = clear($("verify-result"));
   const regLabel = res.registry_id != null
     ? `#${res.registry_id}${res.registry ? " — " + res.registry : ""}`
@@ -1558,7 +1608,12 @@ async function lookupHash(registry, sha) {
   hide("verify-result", "verify-error");
   show("verify-busy");
   try {
-    renderLookup(await apiGet(`/api/receipt/lookup?registry=${encodeURIComponent(registry)}&sha256=${encodeURIComponent(sha)}`));
+    // No registry -> chain-wide search: the server sweeps every receipts
+    // registry for this fingerprint. With one -> the single keyed read.
+    const qs = registry
+      ? `registry=${encodeURIComponent(registry)}&sha256=${encodeURIComponent(sha)}`
+      : `sha256=${encodeURIComponent(sha)}`;
+    renderLookup(await apiGet(`/api/receipt/lookup?${qs}`));
   } catch (err) {
     showError("verify-error", err);
   } finally {
@@ -1566,28 +1621,21 @@ async function lookupHash(registry, sha) {
   }
 }
 
-function verifyRegistryOrError() {
-  // The canonical reference is the registry #id from the filing's
-  // verification line; the raw input goes to the server as-is — it accepts
-  // "#4711", "4711", the whole pasted line, or a legacy registry name.
-  const registry = $("verify-registry").value.trim();
-  if (!registry) {
-    showError("verify-error", new Error("Enter the registry #id from the filing's verification line first."));
-    return null;
-  }
-  return registry;
+function verifyRegistryValue() {
+  // Optional: blank = search everywhere. A value narrows the lookup — it
+  // goes to the server as-is and accepts "#4711", "4711", the whole pasted
+  // verification line, or a legacy registry name.
+  return $("verify-registry").value.trim();
 }
 
 function initVerify() {
   wireDropzone("verify-drop", "verify-file", async (f) => {
-    const registry = verifyRegistryOrError();
-    if (!registry) return;
     hide("verify-result", "verify-error");
     show("verify-busy");
     try {
       const sha = await sha256HexOf(await f.arrayBuffer());
       $("hash-input").value = sha;
-      await lookupHash(registry, sha);
+      await lookupHash(verifyRegistryValue(), sha);
     } catch (err) {
       hide("verify-busy");
       showError("verify-error", err);
@@ -1595,10 +1643,8 @@ function initVerify() {
   });
   $("hash-toggle").addEventListener("click", () => $("hash-area").classList.toggle("hidden"));
   $("hash-lookup").addEventListener("click", () => {
-    const registry = verifyRegistryOrError();
-    if (!registry) return;
     const sha = $("hash-input").value.trim().toLowerCase();
-    if (/^[0-9a-f]{64}$/.test(sha)) lookupHash(registry, sha);
+    if (/^[0-9a-f]{64}$/.test(sha)) lookupHash(verifyRegistryValue(), sha);
     else showError("verify-error", new Error("That is not a 64-character hex SHA-256."));
   });
   $("hash-input").addEventListener("keydown", (e) => { if (e.key === "Enter") $("hash-lookup").click(); });
