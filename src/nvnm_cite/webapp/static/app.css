@@ -424,6 +424,13 @@ main { padding-top: 8px; }
 .btn-wallet { font-variant-numeric: tabular-nums; }
 .btn-wallet.connected { font-family: var(--mono); font-size: 12.5px; font-weight: 500; }
 .btn-wallet.wrong-network { border-color: var(--bad-line); color: var(--bad); background: var(--bad-tint); }
+.btn-wallet.confirm-disconnect {
+  border-color: var(--bad-line);
+  color: var(--bad);
+  background: var(--bad-tint);
+  font-family: var(--sans);
+  font-size: 13.5px;
+}
 
 .linklike {
   appearance: none;

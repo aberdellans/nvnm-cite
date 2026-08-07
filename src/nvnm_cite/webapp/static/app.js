@@ -237,7 +237,7 @@ let lastFile = null;     // {bytes, name} of the last checked file (re-sent to p
 let lastSource = "file"; // "file" | "paste" | "sample" — drives the paste warning + sample tag
 let prepared = null;     // last /api/receipt/prepare response
 let chosenRegistryId = null; // pinned receipts-registry #id (picker choice or post-create)
-let wallet = { address: null, chainOk: false, detected: false };
+let wallet = { address: null, chainOk: false, detected: false, confirmingDisconnect: false };
 let filterSet = new Set();      // statuses the summary-chip filters keep visible
 let coveredExpanded = false;    // NOT COVERED disclosure state
 
@@ -841,9 +841,29 @@ function initCheck() {
 
 function providerOrNull() { return window.ethereum || null; }
 
+/* A site-side disconnect must survive reloads even when the wallet ignores
+   wallet_revokePermissions, so it persists until the next explicit connect. */
+const WALLET_DISCONNECTED_KEY = "nvnm-cite.wallet-disconnected";
+function userDisconnected() {
+  try { return localStorage.getItem(WALLET_DISCONNECTED_KEY) === "1"; } catch (_) { return false; }
+}
+function setUserDisconnected(on) {
+  try {
+    if (on) localStorage.setItem(WALLET_DISCONNECTED_KEY, "1");
+    else localStorage.removeItem(WALLET_DISCONNECTED_KEY);
+  } catch (_) {}
+}
+
+let disarmTimer = null;
+function disarmDisconnect() {
+  if (disarmTimer) { clearTimeout(disarmTimer); disarmTimer = null; }
+  wallet.confirmingDisconnect = false;
+}
+
 async function refreshWalletState() {
   const eth = providerOrNull();
   const btn = $("wallet-btn");
+  disarmDisconnect();
   btn.className = "btn btn-outline btn-wallet";
   btn.disabled = false;
   wallet.detected = !!eth;
@@ -867,11 +887,12 @@ async function refreshWalletState() {
     return;
   }
   const accounts = await eth.request({ method: "eth_accounts" }).catch(() => []);
-  wallet.address = accounts[0] || null;
+  wallet.address = userDisconnected() ? null : accounts[0] || null;
   if (wallet.address) {
     const chainHex = await eth.request({ method: "eth_chainId" }).catch(() => null);
     wallet.chainOk = chainHex && parseInt(chainHex, 16) === netChainId();
     btn.classList.add("connected");
+    btn.title = `Connected as ${wallet.address}. Click to disconnect this site from your wallet.`;
     if (wallet.chainOk) {
       btn.textContent = shortHex(wallet.address, 5);
     } else {
@@ -881,6 +902,7 @@ async function refreshWalletState() {
   } else {
     wallet.chainOk = false;
     btn.textContent = "Connect wallet";
+    btn.title = "Connect a wallet to record receipts. Checking and verifying never need a wallet.";
   }
   syncRecordPanel();
 }
@@ -888,6 +910,7 @@ async function refreshWalletState() {
 async function connectWallet() {
   const eth = providerOrNull();
   if (!eth || !NET) return;
+  setUserDisconnected(false);
   try {
     await eth.request({ method: "eth_requestAccounts" });
     const chainHex = await eth.request({ method: "eth_chainId" });
@@ -896,6 +919,34 @@ async function connectWallet() {
     if (err && err.code !== 4001) alert(`Wallet error: ${err.message || err}`);
   }
   refreshWalletState();
+}
+
+async function disconnectWallet() {
+  const eth = providerOrNull();
+  if (eth) {
+    // MetaMask forgets the site immediately; wallets without revoke support
+    // still go to "Connect wallet" via the persisted site-side flag above.
+    await eth.request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] }).catch(() => {});
+  }
+  setUserDisconnected(true);
+  refreshWalletState();
+}
+
+/* One button, two jobs: disconnected → connect; connected → disconnect, in
+   two clicks (the first arms "Disconnect?", the second within 4 s does it)
+   so a stray click on the address can never drop the session unannounced. */
+function walletButtonClick() {
+  if (!wallet.address) { connectWallet(); return; }
+  if (!wallet.confirmingDisconnect) {
+    wallet.confirmingDisconnect = true;
+    const btn = $("wallet-btn");
+    btn.classList.add("confirm-disconnect");
+    btn.textContent = "Disconnect?";
+    btn.title = "Click again to disconnect this site from your wallet.";
+    disarmTimer = setTimeout(refreshWalletState, 4000);
+    return;
+  }
+  disconnectWallet();
 }
 
 async function switchNetwork() {
@@ -913,7 +964,9 @@ async function switchNetwork() {
 }
 
 function initWallet() {
-  $("wallet-btn").addEventListener("click", connectWallet);
+  const btn = $("wallet-btn");
+  btn.addEventListener("click", walletButtonClick);
+  btn.addEventListener("blur", () => { if (wallet.confirmingDisconnect) refreshWalletState(); });
   const eth = providerOrNull();
   if (eth && eth.on) {
     eth.on("accountsChanged", refreshWalletState);
